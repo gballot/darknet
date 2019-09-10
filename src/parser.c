@@ -35,6 +35,7 @@
 #include "shortcut_layer.h"
 #include "softmax_layer.h"
 #include "lstm_layer.h"
+#include "fspt_layer.h"
 #include "utils.h"
 
 typedef struct{
@@ -83,6 +84,7 @@ LAYER_TYPE string_to_layer_type(char * type)
             || strcmp(type, "[softmax]")==0) return SOFTMAX;
     if (strcmp(type, "[route]")==0) return ROUTE;
     if (strcmp(type, "[upsample]")==0) return UPSAMPLE;
+    if (strcmp(type, "[fspt]")==0) return FSPT;
     return BLANK;
 }
 
@@ -639,6 +641,13 @@ route_layer parse_route(list *options, size_params params, network *net)
     return layer;
 }
 
+//TODO GAB
+layer parse_fspt(list *options, size_params params)
+{
+  layer l;
+  return l;
+}
+
 learning_rate_policy get_policy(char *s)
 {
     if (strcmp(s, "random")==0) return RANDOM;
@@ -834,6 +843,8 @@ network *parse_network_cfg(char *filename)
             l.output_gpu = net->layers[count-1].output_gpu;
             l.delta_gpu = net->layers[count-1].delta_gpu;
 #endif
+        }else if (lt == FSPT){
+          l = parse_fspt(options, params);
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
         }

@@ -602,6 +602,12 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
         draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        //TODO GAB
+        printf("TODO GAB : GET THE INPUT FOR FSPT\n");
+        layer small_obj_layer = net->layers[81];
+        layer medium_obj_layer = net->layers[93];
+        layer big_obj_layer = net->layers[105];
+        // END TODO
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);

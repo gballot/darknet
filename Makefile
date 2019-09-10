@@ -98,6 +98,9 @@ backup:
 results:
 	mkdir -p results
 
+simple-test: $(EXEC)
+	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
+
 .PHONY: clean
 
 clean:

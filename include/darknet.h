@@ -87,7 +87,8 @@ typedef enum {
     UPSAMPLE,
     LOGXENT,
     L2NORM,
-    BLANK
+    BLANK,
+    FSPT
 } LAYER_TYPE;
 
 typedef enum{
@@ -427,7 +428,7 @@ typedef enum {
     CONSTANT, STEP, EXP, POLY, STEPS, SIG, RANDOM
 } learning_rate_policy;
 
-typedef struct network{
+struct network{
     int n;
     int batch;
     size_t *seen;
@@ -493,7 +494,7 @@ typedef struct network{
     float *output_gpu;
 #endif
 
-} network;
+};
 
 typedef struct {
     int w;
