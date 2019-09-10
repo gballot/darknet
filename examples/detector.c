@@ -612,7 +612,6 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         layer big_yolo = net->layers[106];
         int i,j;                                                                    
 
-        printf("prediction medium yolo\n");
         for(i = 0; i < nboxes; ++i){
           char labelstr[4096] = {0};
           int class = -1;
