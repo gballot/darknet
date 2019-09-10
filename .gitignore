@@ -9,6 +9,14 @@
 *.dll
 *.lib
 *.dylib
+*.jpg
+*.pyc
+old/
+*.jpg
+*.pyc
+libdarknet.a
+libdarknet.so
+old/
 mnist/
 data/
 caffe/
@@ -22,6 +30,9 @@ cfg/
 build/darknet/*
 build_*/
 !build/darknet/YoloWrapper.cs
+darknet
+weights/
+darknet
 .fuse*
 *.weights
 build/*.cmake
@@ -33,6 +44,14 @@ build/detect_cuda_compute_capabilities.cu
 build/.ninja_deps
 build/.ninja_log
 build/Makefile
+.ale_config
+.lvimrc
+VOCdevkit/
+backup/
+coco/
+gpu-job*
+tags
+waymo
 
 # OS Generated #
 .DS_Store*

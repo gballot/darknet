@@ -160,6 +160,9 @@ results:
 setchmod:
 	chmod +x *.sh
 
+simple-test: $(EXEC)
+	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
+
 .PHONY: clean
 
 clean:

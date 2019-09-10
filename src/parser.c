@@ -34,6 +34,8 @@
 #include "scale_channels_layer.h"
 #include "sam_layer.h"
 #include "softmax_layer.h"
+#include "lstm_layer.h"
+#include "fspt_layer.h"
 #include "utils.h"
 #include "upsample_layer.h"
 #include "version.h"
@@ -85,6 +87,7 @@ LAYER_TYPE string_to_layer_type(char * type)
     if (strcmp(type, "[route]")==0) return ROUTE;
     if (strcmp(type, "[upsample]") == 0) return UPSAMPLE;
     if (strcmp(type, "[empty]") == 0) return EMPTY;
+    if (strcmp(type, "[fspt]")==0) return FSPT;
     return BLANK;
 }
 
@@ -721,6 +724,13 @@ route_layer parse_route(list *options, size_params params, network net)
     return layer;
 }
 
+//TODO GAB
+layer parse_fspt(list *options, size_params params)
+{
+  layer l;
+  return l;
+}
+
 learning_rate_policy get_policy(char *s)
 {
     if (strcmp(s, "random")==0) return RANDOM;
@@ -980,6 +990,8 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             l.output_gpu = net.layers[count - 1].output_gpu;
             l.delta_gpu = net.layers[count - 1].delta_gpu;
 #endif
+        }else if (lt == FSPT){
+          l = parse_fspt(options, params);
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
         }

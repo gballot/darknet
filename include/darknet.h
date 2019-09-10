@@ -156,7 +156,8 @@ typedef enum {
     LOGXENT,
     L2NORM,
     EMPTY,
-    BLANK
+    BLANK,
+    FSPT
 } LAYER_TYPE;
 
 // layer.h
