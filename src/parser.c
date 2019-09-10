@@ -725,12 +725,34 @@ route_layer parse_route(list *options, size_params params, network net)
 }
 
 //TODO GAB
-layer parse_fspt(list *options, size_params params)
+layer parse_fspt(list *options, size_params params, network *net)
 {
-    //int output = option_find_int(options, "output",1);
-    //layer l = make_fspt_layer(params.batch, params.inputs, output, activation, batch_normalize, params.net->adam);
-    layer l;
-    return l;
+    int classes = option_find_int(options, "classes",1);
+    int yolo_layer = option_find_int(options, "yolo_layer", -1);
+    if(yolo_layer < 0) yolo_layer = params.index + yolo_layer;
+    char *l = option_find(options, "feature_layers");
+    int len = strlen(l);
+    if(!l) error("Route Layer must specify input layers");
+    int n = 1;
+    int i;
+    for(i = 0; i < len; ++i){
+        if (l[i] == ',') ++n;
+    }
+
+    int *input_layers = calloc(n+1, sizeof(int));
+    int *sizes = calloc(n+1, sizeof(int));
+    for(i = 0; i < n; ++i){
+        int index = atoi(l);
+        l = strchr(l, ',')+1;
+        if(index < 0) index = params.index + index;
+        input_layers[i] = index;
+        sizes[i] = net->layers[index].outputs;
+    }
+    input_layers[n] = yolo_layer;
+    sizes[n] = net->layers[yolo_layer].outputs;
+    int batch = params.batch;
+    layer fspt_layer = make_fspt_layer(params.inputs, input_layers, n, classes, params.batch);
+    return fspt_layer;
 }
 
 learning_rate_policy get_policy(char *s)
@@ -993,7 +1015,7 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             l.delta_gpu = net.layers[count - 1].delta_gpu;
 #endif
         }else if (lt == FSPT){
-          l = parse_fspt(options, params);
+          l = parse_fspt(options, params, net);
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
         }
