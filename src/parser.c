@@ -727,8 +727,10 @@ route_layer parse_route(list *options, size_params params, network net)
 //TODO GAB
 layer parse_fspt(list *options, size_params params)
 {
-  layer l;
-  return l;
+    //int output = option_find_int(options, "output",1);
+    //layer l = make_fspt_layer(params.batch, params.inputs, output, activation, batch_normalize, params.net->adam);
+    layer l;
+    return l;
 }
 
 learning_rate_policy get_policy(char *s)
