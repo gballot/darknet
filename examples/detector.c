@@ -612,21 +612,22 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         layer big_yolo = net->layers[106];
         int i,j;                                                                    
 
-        for(i = 0; i < nboxes; ++i){                                                   
-          char labelstr[4096] = {0};                                              
-          int class = -1;                                                         
-          for(j = 0; j < big_yolo.classes; ++j){                                           
-            if (dets[i].prob[j] > thresh){                                      
-              if (class < 0) {                                                
-                strcat(labelstr, names[j]);                                 
-                class = j;                                                  
-              } else {                                                        
-                strcat(labelstr, ", ");                                     
-                strcat(labelstr, names[j]);                                 
-              }                                                               
+        printf("prediction medium yolo\n");
+        for(i = 0; i < nboxes; ++i){
+          char labelstr[4096] = {0};
+          int class = -1;
+          for(j = 0; j < medium_yolo.classes; ++j){
+            if (dets[i].prob[j] > thresh){
+              if (class < 0) {
+                strcat(labelstr, names[j]);
+                class = j;
+              } else {
+                strcat(labelstr, ", ");
+                strcat(labelstr, names[j]);
+              }
               printf("%s (class %d): %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", names[j], j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
-            }                                                                   
-          }                                        
+            }
+          }
         }
         //get_yolo_detection(big_yolo, 0, 0, net.w, net.h, thresh, 
         // END TODO
