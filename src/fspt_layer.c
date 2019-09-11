@@ -38,6 +38,8 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
 
   l.forward = forward_fspt_layer;
   l.backward = backward_fspt_layer;
+  l.forward_gpu = forward_fspt_layer_gpu;
+  l.backward_gpu = backward_fspt_layer_gpu;
 
   float scale = sqrt(2./inputs);
   for(i = 0; i < outputs*inputs; ++i){
