@@ -33,15 +33,11 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   l.output = calloc(batch*outputs, sizeof(float));
   l.delta = calloc(batch*outputs, sizeof(float));
 
-  l.weight_updates = calloc(inputs*outputs, sizeof(float));
-  l.bias_updates = calloc(outputs, sizeof(float));
-
   l.weights = calloc(outputs*inputs, sizeof(float));
   l.biases = calloc(outputs, sizeof(float));
 
   l.forward = forward_fspt_layer;
   l.backward = backward_fspt_layer;
-  l.update = update_fspt_layer;
 
   float scale = sqrt(2./inputs);
   for(i = 0; i < outputs*inputs; ++i){
