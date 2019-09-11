@@ -5,6 +5,7 @@
 *.png
 *.jpg
 *.pyc
+tags
 libdarknet.a
 libdarknet.so
 old/
