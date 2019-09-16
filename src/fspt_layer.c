@@ -57,21 +57,22 @@ void forward_fspt_layer(layer l, network net, int yolo_thresh)
   /* allocat detection boxes */
   detection *dets = calloc(nboxes, sizeof(detection));
   for(int i = 0; i < nboxes; ++i){
-    dets[i].prob = calloc(l.classes, sizeof(float));
+    dets[i].prob = calloc(yolo_layer.classes, sizeof(float));
     if(l.coords > 4){
-      dets[i].mask = calloc(l.coords-4, sizeof(float));
+      dets[i].mask = calloc(yolo_layer.coords-4, sizeof(float));
     }
   }
   /* fill detection boxes */
   for(int i = 0; i < nboxes; i++) {
-            int count = get_yolo_detections(l, w, h, net.w, net.h, thresh, map, relative, dets);
-            dets += count;
+    int count = get_yolo_detections(yolo_layer, /*w*/1, /*h*/1, net.w, net.h, yolo_thresh, /*map*/NULL, /*relative*/1, dets);
+    dets += count;
   }
+
   for(int i = 0; i < nboxes; ++i){
     char labelstr[4096] = {0};
     int class = -1;
-    for(j = 0; j < medium_yolo.classes; ++j){
-      if (dets[i].prob[j] > thresh){
+    for(int j = 0; j < yolo_layer.classes; ++j){
+      if (dets[i].prob[j] > yolo_thresh){
         if (class < 0) {
           strcat(labelstr, names[j]);
           class = j;
