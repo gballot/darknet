@@ -697,7 +697,22 @@ route_layer parse_route(list *options, size_params params, network net)
     int* layers = (int*)calloc(n, sizeof(int));
     int* sizes = (int*)calloc(n, sizeof(int));
     for(i = 0; i < n; ++i){
-        int index = atoi(l);
+        const char * delim = " ,";
+        char *tmp_ref = strtok(l, delim);
+        int index;
+        if(itoa(atoi(tmp_ref)) == tmp_ref) {
+            index = atoi(tmp_ref);
+        } else {
+            int found = 0;
+            for(int i = 0; i < net.n; i++) {
+                if(strcmp(net.layers[i].ref, tmp_ref)) {
+                    index = i;
+                    found = 1;
+                    break;
+                }
+            }
+            if(!found) error(strcat("label undefined : ", tmp_ref);
+        }  
         l = strchr(l, ',')+1;
         if(index < 0) index = params.index + index;
         layers[i] = index;

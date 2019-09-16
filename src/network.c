@@ -35,6 +35,7 @@
 #include "scale_channels_layer.h"
 #include "yolo_layer.h"
 #include "upsample_layer.h"
+#include "fspt_layer.h"
 #include "parser.h"
 
 load_args get_base_args(network *net)

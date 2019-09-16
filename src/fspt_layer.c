@@ -47,6 +47,10 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   return l;
 }
 
+void resize_fspt_layer(layer *l, int w, int h) {
+  return;
+}
+
 void forward_fspt_layer(layer l, network net)
 {
     int j;
