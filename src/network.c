@@ -29,6 +29,7 @@
 #include "route_layer.h"
 #include "upsample_layer.h"
 #include "shortcut_layer.h"
+#include "fspt_layer.h"
 #include "parser.h"
 #include "data.h"
 

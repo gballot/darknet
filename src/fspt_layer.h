@@ -8,3 +8,4 @@ void forward_fspt_layer_gpu(layer l, network net);
 void backward_fspt_layer_gpu(layer l, network net);
 void denormalize_fspt_layer(layer l);
 void statistics_fspt_layer(layer l);
+void resize_fspt_layer(layer *l, int w, int h);
