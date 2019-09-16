@@ -42,16 +42,6 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   l.forward_gpu = forward_fspt_layer_gpu;
   l.backward_gpu = backward_fspt_layer_gpu;
   #endif
-
-  float scale = sqrt(2./inputs);
-  for(i = 0; i < outputs*inputs; ++i){
-    l.weights[i] = scale*rand_uniform(-1, 1);
-  }
-
-  for(i = 0; i < outputs; ++i){
-    l.biases[i] = 0;
-  }
-
   l.activation = LINEAR;
   fprintf(stderr, "FSPT                                 %4d  ->  %4d\n", inputs, outputs);
   return l;

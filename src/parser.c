@@ -806,6 +806,16 @@ network *parse_network_cfg(char *filename)
         options = s->options;
         layer l = {0};
         LAYER_TYPE lt = string_to_layer_type(s->type);
+        char count_str[12];
+        itoa(count, count_str, 10);
+        char * tmp_ref = option_find_str_quiet(options, "ref", count_str);
+        //char * tmp_ref = option_find(options, "ref");
+        if tmp_ref {
+          strncpy(l.ref, tmp_ref, (size_t) 12);
+        } else {
+          snprintf(l.ref, 12, "%d", count);
+        }
+        if(~ref) ref =  
         if(lt == CONVOLUTIONAL){
             l = parse_convolutional(options, params);
         }else if(lt == DECONVOLUTIONAL){

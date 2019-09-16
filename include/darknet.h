@@ -179,6 +179,8 @@ struct layer{
     int *mask;
     int total;
 
+    char *ref;
+
     float alpha;
     float beta;
     float kappa;
