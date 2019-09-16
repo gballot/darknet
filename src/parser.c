@@ -621,8 +621,8 @@ route_layer parse_route(list *options, size_params params, network *net)
             index = atoi(tmp_ref);
         } else {
             int found = 0;
-            for(int i = 0; i < net.n; i++) {
-                if(strcmp(net.layers[i].ref, tmp_ref)) {
+            for(int i = 0; i < net->n; i++) {
+                if(strcmp(net->layers[i].ref, tmp_ref)) {
                     index = i;
                     found = 1;
                     break;
