@@ -4,6 +4,7 @@
 #include "batchnorm_layer.h"
 #include "cuda.h"
 #include "blas.h"
+#include "yolo_layer.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -49,26 +50,48 @@ void resize_fspt_layer(layer *l, int w, int h) {
   return;
 }
 
-void forward_fspt_layer(layer l, network net)
+void forward_fspt_layer(layer l, network net, int yolo_thresh)
 {
-    int j;
-    int offset = 0;
-    //get the output of the yolo network
-    int index = l.input_layers[l.n];
-    float *input = net.layers[index].output;
-    int input_size = l.input_sizes[l.n];
-    for(j = 0; j < l.batch; ++j){
-      copy_cpu(input_size, input + j*input_size, 1, l.output + offset + j*l.outputs, 1);
+  layer yolo_layer = net.layers[l.input_layers[l.n]];
+  int nboxes = yolo_num_detections(yolo_layer, yolo_thresh);
+  /* allocat detection boxes */
+  detection *dets = calloc(nboxes, sizeof(detection));
+  for(int i = 0; i < nboxes; ++i){
+    dets[i].prob = calloc(l.classes, sizeof(float));
+    if(l.coords > 4){
+      dets[i].mask = calloc(l.coords-4, sizeof(float));
     }
-    offset += input_size;
+  }
+  /* fill detection boxes */
+  for(int i = 0; i < nboxes; i++) {
+            int count = get_yolo_detections(l, w, h, net.w, net.h, thresh, map, relative, dets);
+            dets += count;
+  }
+  for(int i = 0; i < nboxes; ++i){
+    char labelstr[4096] = {0};
+    int class = -1;
+    for(j = 0; j < medium_yolo.classes; ++j){
+      if (dets[i].prob[j] > thresh){
+        if (class < 0) {
+          strcat(labelstr, names[j]);
+          class = j;
+        } else {
+          strcat(labelstr, ", ");
+          strcat(labelstr, names[j]);
+        }
+        printf("%s (class %d): %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", names[j], j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
+      }
+    }
+  }
+  //TODO : call fspt
 }
 
 void backward_fspt_layer(layer l, network net)
 {
-    int j;
-    int offset = 0;
-    //get the delta of the yolo network
-    int index = l.input_layers[l.n];
+  int j;
+  int offset = 0;
+  //get the delta of the yolo network
+  int index = l.input_layers[l.n];
     float *delta = net.layers[index].delta;
     int input_size = l.input_sizes[l.n];
     for(j = 0; j < l.batch; ++j){
@@ -78,7 +101,7 @@ void backward_fspt_layer(layer l, network net)
 }
 
 #ifdef GPU
-void forward_fspt_layer_gpu(const route_layer l, network net)
+void forward_fspt_layer_gpu(const layer l, network net)
 {
     int j;
     int offset = 0;
@@ -91,7 +114,7 @@ void forward_fspt_layer_gpu(const route_layer l, network net)
     offset += input_size;
 }
 
-void backward_fspt_layer_gpu(const route_layer l, network net)
+void backward_fspt_layer_gpu(const layer l, network net)
 {
   int j;
   int offset = 0;
