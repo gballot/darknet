@@ -265,6 +265,8 @@ struct layer {
 
     int t;
 
+    char *ref;
+
     float alpha;
     float beta;
     float kappa;

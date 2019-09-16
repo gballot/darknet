@@ -104,6 +104,7 @@ char *option_find(list *l, char *key)
     }
     return 0;
 }
+
 char *option_find_str(list *l, char *key, char *def)
 {
     char *v = option_find(l, key);
@@ -115,7 +116,7 @@ char *option_find_str(list *l, char *key, char *def)
 char *option_find_str_quiet(list *l, char *key, char *def)
 {
     char *v = option_find(l, key);
-    if (v) return v;
+    if(v) return v;
     return def;
 }
 

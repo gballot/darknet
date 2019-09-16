@@ -220,6 +220,8 @@ char *get_layer_string(LAYER_TYPE a)
             return "normalization";
         case BATCHNORM:
             return "batchnorm";
+        case FSPT:
+            return "fspt";
         default:
             break;
     }
@@ -542,6 +544,8 @@ int resize_network(network *net, int w, int h)
             resize_normalization_layer(&l, w, h);
         }else if(l.type == COST){
             resize_cost_layer(&l, inputs);
+        }else if(l.type == FSPT){
+            resize_fspt_layer(&l, w, h);
         }else{
             fprintf(stderr, "Resizing type %d \n", (int)l.type);
             error("Cannot resize this type of layer");
