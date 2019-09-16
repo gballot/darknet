@@ -16,9 +16,7 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   layer l = {0};
   l.type = FSPT;
 
-  int outputs = inputs;
   l.inputs = inputs;
-  l.outputs = outputs;
   l.input_layers = input_layers;
   l.batch=batch;
   l.batch_normalize = 1;
@@ -28,7 +26,7 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   l.c = inputs;
   l.out_h = 1;
   l.out_w = 1;
-  l.out_c = inputs;
+  l.out_c = 1;
 
   l.output = calloc(batch*outputs, sizeof(float));
   l.delta = calloc(batch*outputs, sizeof(float));

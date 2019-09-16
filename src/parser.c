@@ -44,6 +44,7 @@ typedef struct{
 }section;
 
 list *read_cfg(char *filename);
+char *itoa(int val, int base);
 
 LAYER_TYPE string_to_layer_type(char * type)
 {
@@ -616,19 +617,19 @@ route_layer parse_route(list *options, size_params params, network *net)
     for(i = 0; i < n; ++i){
         const char * delim = " ,";
         char *tmp_ref = strtok(l, delim);
-        int index;
-        if(itoa(atoi(tmp_ref)) == tmp_ref) {
+        int index = 0;
+        if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
             index = atoi(tmp_ref);
         } else {
             int found = 0;
             for(int i = 0; i < net->n; i++) {
-                if(strcmp(net->layers[i].ref, tmp_ref)) {
+                if(!strcmp(net->layers[i].ref, tmp_ref)) {
                     index = i;
                     found = 1;
                     break;
                 }
             }
-            if(!found) error(strcat("label undefined : ", tmp_ref);
+            if(!found) error(strcat("label undefined : ", tmp_ref));
         }  
         l = strchr(l, ',')+1;
         if(index < 0) index = params.index + index;
@@ -821,9 +822,7 @@ network *parse_network_cfg(char *filename)
         options = s->options;
         layer l = {0};
         LAYER_TYPE lt = string_to_layer_type(s->type);
-        char count_str[12];
-        itoa(count, count_str, 10);
-        char * tmp_ref = option_find_str_quiet(options, "ref", count_str);
+        char * tmp_ref = option_find_str_quiet(options, "ref", itoa(count, 10));
         l.ref = malloc(strlen(tmp_ref)*sizeof(char *));
         strcpy(l.ref, tmp_ref);
         if(lt == CONVOLUTIONAL){
@@ -1365,3 +1364,11 @@ void load_weights(network *net, char *filename)
     load_weights_upto(net, filename, 0, net->n);
 }
 
+char *itoa(int val, int base)
+{
+	static char buf[32] = {0};
+	int i = 30;
+	for(; val && i ; --i, val /= base)
+		buf[i] = "0123456789abcdef"[val % base];
+	return &buf[i+1];
+}
