@@ -54,6 +54,7 @@ void free_layer(layer l)
 #endif
         return;
     }
+<<<<<<< e321ee16325c0485c256cac6b88017e3e6f908f1
     if (l.mask)               free(l.mask);
     if (l.cweights)           free(l.cweights);
     if (l.indexes)            free(l.indexes);
@@ -128,6 +129,7 @@ void free_layer(layer l)
     if (l.stored_c_cpu)        free(l.stored_c_cpu);
     if (l.stored_h_cpu)        free(l.stored_h_cpu);
     if (l.cell_cpu)            free(l.cell_cpu);
+    if(l.ref)                free(l.ref);
 
 #ifdef GPU
     if (l.indexes_gpu)           cuda_free((float *)l.indexes_gpu);

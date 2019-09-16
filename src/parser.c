@@ -934,13 +934,8 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
         char count_str[12];
         itoa(count, count_str, 10);
         char * tmp_ref = option_find_str_quiet(options, "ref", count_str);
-        //char * tmp_ref = option_find(options, "ref");
-        if tmp_ref {
-          strncpy(l.ref, tmp_ref, (size_t) 12);
-        } else {
-          snprintf(l.ref, 12, "%d", count);
-        }
-        if(~ref) ref =  
+        l.ref = malloc(strlen(tmp_ref)*sizeof(char *));
+        strcpy(l.ref, tmp_ref);
         if(lt == CONVOLUTIONAL){
             l = parse_convolutional(options, params, net);
         }else if(lt == LOCAL){
