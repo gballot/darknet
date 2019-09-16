@@ -12,11 +12,11 @@
 
 layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int batch)
 {
-  int i;
   layer l = {0};
   l.type = FSPT;
 
   l.inputs = inputs;
+  l.outputs = 1;
   l.input_layers = input_layers;
   l.batch=batch;
   l.batch_normalize = 1;
@@ -28,11 +28,11 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   l.out_w = 1;
   l.out_c = 1;
 
-  l.output = calloc(batch*outputs, sizeof(float));
-  l.delta = calloc(batch*outputs, sizeof(float));
+  l.output = calloc(batch*l.outputs, sizeof(float));
+  l.delta = calloc(batch*l.outputs, sizeof(float));
 
-  l.weights = calloc(outputs*inputs, sizeof(float));
-  l.biases = calloc(outputs, sizeof(float));
+  l.weights = calloc(l.outputs*inputs, sizeof(float));
+  l.biases = calloc(l.outputs, sizeof(float));
 
   l.forward = forward_fspt_layer;
   l.backward = backward_fspt_layer;
@@ -41,7 +41,7 @@ layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int bat
   l.backward_gpu = backward_fspt_layer_gpu;
   #endif
   l.activation = LINEAR;
-  fprintf(stderr, "FSPT                                 %4d  ->  %4d\n", inputs, outputs);
+  fprintf(stderr, "FSPT                                 %4d  ->  %4d\n", inputs, l.outputs);
   return l;
 }
 
