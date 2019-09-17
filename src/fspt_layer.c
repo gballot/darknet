@@ -18,7 +18,7 @@ layer make_fspt_layer(int inputs, int *input_layers, int yolo_layer, float yolo_
 
   l.inputs = inputs;
   l.outputs = classes;
-  l.input_layers = input_layers;
+  l.input_layers = input_layers; 
   l.yolo_layer = yolo_layer;
   l.yolo_layer_thresh = yolo_layer_thresh;
   l.batch=batch;
@@ -43,7 +43,7 @@ layer make_fspt_layer(int inputs, int *input_layers, int yolo_layer, float yolo_
   l.backward_gpu = backward_fspt_layer_gpu;
   #endif
   l.activation = LINEAR;
-  fprintf(stderr, "FSPT                                 %4d  ->  %4d\n", inputs, l.outputs);
+  fprintf(stderr, "fspt      %d input layer(s)              yolo layer : %d      trees : %d\n", inputs, yolo_layer, classes);
   return l;
 }
 
@@ -53,7 +53,7 @@ void resize_fspt_layer(layer *l, int w, int h) {
 
 void forward_fspt_layer(layer l, network net)
 {
-  layer yolo_layer = net.layers[l.input_layers[l.n]];
+  layer yolo_layer = net.layers[l.yolo_layer];
   int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
   /* allocat detection boxes */
   detection *dets = calloc(nboxes, sizeof(detection));
