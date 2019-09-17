@@ -143,9 +143,12 @@ int option_find_int_from_label(list *l, char *key, int def)
       node *n = labels->front;
       while(n) {
         if(!strcmp(n->val, tmp_ref)) {
+          index = count;
           found = 1;
           break;
         }
+        n = n->next;
+        count++;
       }
       if(!found) error(strcat("label undefined : ", tmp_ref));
     }

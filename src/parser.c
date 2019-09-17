@@ -704,7 +704,6 @@ route_layer parse_route(list *options, size_params params, network net)
     int i = 0;
     while(tmp_ref != NULL) {
         int index = 0;
-        fprintf(stderr, "In route layer, tmp_ref = '%s'", tmp_ref);
         if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
             index = atoi(tmp_ref);
         } else {
@@ -729,35 +728,6 @@ route_layer parse_route(list *options, size_params params, network net)
         tmp_ref = strtok(NULL, " ,");
         i++;
     }
-    /*
-    for(i = 0; i < n; ++i){
-        char *tmp_ref = strtok(l, " ,");
-        int index = 0;
-        fprintf(stderr, "In route layer, tmp_ref = '%s'", tmp_ref);
-        if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
-            index = atoi(tmp_ref);
-        } else {
-            int found = 0;
-            for(int i = 0; i < net->n; i++) {
-                if(net->layers[i].ref && !strcmp(net->layers[i].ref, tmp_ref)) {
-                    index = i;
-                    found = 1;
-                    break;
-                }
-            }
-            if(!found) {
-              char *legend = "label undefined : ";
-              char *message = malloc(strlen(legend) + strlen(tmp_ref));
-              sprintf(message, "%s%s", legend, tmp_ref);
-              error(message);
-            }
-        }  
-        l = strchr(l, ',')+1;
-        if(index < 0) index = params.index + index;
-        layers[i] = index;
-        sizes[i] = net.layers[index].outputs;
-    }
-    */
     int batch = params.batch;
 
     route_layer layer = make_route_layer(batch, n, layers, sizes);
@@ -784,19 +754,48 @@ layer parse_fspt(list *options, size_params params, network *net)
 {
     int classes = option_find_int(options, "classes",1);
     int yolo_layer = option_find_int_from_label(options, "yolo_layer", -1);
-    float yolo_layer_thresh = option_find_float(options, "yolo_layer_thesh", 0.5);
+    float yolo_layer_thresh = option_find_float(options, "yolo_layer_thresh", 0.5);
     if(yolo_layer < 0) yolo_layer = params.index + yolo_layer;
     char *l = option_find(options, "feature_layers");
     int len = strlen(l);
     if(!l) error("FSPT Layer must specify input layers");
     int n = 1;
-    int i;
-    for(i = 0; i < len; ++i){
+    for(int i = 0; i < len; ++i){
         if (l[i] == ',') ++n;
     }
 
     int *input_layers = calloc(n, sizeof(int));
     int *sizes = calloc(n, sizeof(int));
+
+    char *tmp_ref = strtok(l, " ,");
+    int i = 0;
+    while(tmp_ref != NULL) {
+        int index = 0;
+        if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
+            index = atoi(tmp_ref);
+        } else {
+            int found = 0;
+            for(int i = 0; i < net->n; i++) {
+                if(net->layers[i].ref && !strcmp(net->layers[i].ref, tmp_ref)) {
+                    index = i;
+                    found = 1;
+                    break;
+                }
+            }
+            if(!found) {
+              char *legend = "label undefined : ";
+              char *message = malloc(strlen(legend) + strlen(tmp_ref));
+              sprintf(message, "%s%s", legend, tmp_ref);
+              error(message);
+            }
+        }  
+        if(index < 0) index = params.index + index;
+        input_layers[i] = index;
+        sizes[i] = net->layers[index].outputs;
+        tmp_ref = strtok(NULL, " ,");
+        i++;
+    }
+    /*
     for(i = 0; i < n; ++i){
         int index = atoi(l);
         l = strchr(l, ',')+1;
@@ -804,6 +803,7 @@ layer parse_fspt(list *options, size_params params, network *net)
         input_layers[i] = index;
         sizes[i] = net->layers[index].outputs;
     }
+    */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer, yolo_layer_thresh, classes, params.batch);
     return fspt_layer;
 }
@@ -1081,7 +1081,8 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
         strcpy(l.ref, tmp_ref);
         strcpy(list_ref, tmp_ref);
         list_insert(labels, (void *)list_ref);
-        fprintf(stderr, "ref='%s'", l.ref);
+        if(strcmp(l.ref, itoa(count, 10)))
+          fprintf(stderr, "      whith label='%s'\n", l.ref);
         /* end parse ref */
         l.onlyforward = option_find_int_quiet(options, "onlyforward", 0);
         l.stopbackward = option_find_int_quiet(options, "stopbackward", 0);
