@@ -71,16 +71,13 @@ void forward_fspt_layer(layer l, network net)
   }
   /* get corresponding row and classe */
   int class = -1;
-  for(int i = 0; i< nboxes; i++) {
-    detection det = dets[i];
-  }
-  for(i = 0; i < nboxes; ++i){
-    for(j = 0; j < yolo_layer.classes; ++j){
+  fprintf(stderr, "nboxes = %d", nboxes);
+  for(int i = 0; i < nboxes; ++i){
+    for(int j = 0; j < yolo_layer.classes; ++j){
       if (dets[i].prob[j] > l.yolo_layer_thresh){
         class = j;
       }
       printf("class %d: %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
-      }
     }
   }
   //TODO : call fspt

@@ -602,34 +602,6 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
         draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
-        //TODO GAB
-        printf("TODO GAB : GET THE INPUT FOR FSPT\n");
-        layer small_obj_layer = net->layers[81];
-        layer medium_obj_layer = net->layers[93];
-        layer big_obj_layer = net->layers[105];
-        layer small_yolo = net->layers[82];
-        layer medium_yolo = net->layers[94];
-        layer big_yolo = net->layers[106];
-        int i,j;                                                                    
-
-        for(i = 0; i < nboxes; ++i){
-          char labelstr[4096] = {0};
-          int class = -1;
-          for(j = 0; j < medium_yolo.classes; ++j){
-            if (dets[i].prob[j] > thresh){
-              if (class < 0) {
-                strcat(labelstr, names[j]);
-                class = j;
-              } else {
-                strcat(labelstr, ", ");
-                strcat(labelstr, names[j]);
-              }
-              printf("%s (class %d): %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", names[j], j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
-            }
-          }
-        }
-        //get_yolo_detection(big_yolo, 0, 0, net.w, net.h, thresh, 
-        // END TODO
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);
