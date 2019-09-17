@@ -18,6 +18,7 @@ old/
 tags
 libdarknet.a
 libdarknet.so
+makefile
 old/
 mnist/
 data/
