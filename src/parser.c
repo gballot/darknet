@@ -608,13 +608,43 @@ route_layer parse_route(list *options, size_params params, network *net)
     int len = strlen(l);
     if(!l) error("Route Layer must specify input layers");
     int n = 1;
-    int i;
-    for(i = 0; i < len; ++i){
+    for(int i = 0; i < len; ++i){
         if (l[i] == ',') ++n;
     }
 
     int *layers = calloc(n, sizeof(int));
     int *sizes = calloc(n, sizeof(int));
+
+    char *tmp_ref = strtok(l, " ,");
+    int i = 0;
+    while(tmp_ref != NULL) {
+        int index = 0;
+        fprintf(stderr, "In route layer, tmp_ref = '%s'", tmp_ref);
+        if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
+            index = atoi(tmp_ref);
+        } else {
+            int found = 0;
+            for(int i = 0; i < net->n; i++) {
+                if(net->layers[i].ref && !strcmp(net->layers[i].ref, tmp_ref)) {
+                    index = i;
+                    found = 1;
+                    break;
+                }
+            }
+            if(!found) {
+              char *legend = "label undefined : ";
+              char *message = malloc(strlen(legend) + strlen(tmp_ref));
+              sprintf(message, "%s%s", legend, tmp_ref);
+              error(message);
+            }
+        }  
+        if(index < 0) index = params.index + index;
+        layers[i] = index;
+        sizes[i] = net->layers[index].outputs;
+        tmp_ref = strtok(NULL, " ,");
+        i++;
+    }
+    /*
     for(i = 0; i < n; ++i){
         char *tmp_ref = strtok(l, " ,");
         int index = 0;
@@ -642,6 +672,7 @@ route_layer parse_route(list *options, size_params params, network *net)
         layers[i] = index;
         sizes[i] = net->layers[index].outputs;
     }
+    */
     int batch = params.batch;
 
     route_layer layer = make_route_layer(batch, n, layers, sizes);
