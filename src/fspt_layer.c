@@ -11,17 +11,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-layer make_fspt_layer(int inputs, int *input_layers, int n, int classes, int batch)
+layer make_fspt_layer(int inputs, int *input_layers, int yolo_layer, float yolo_layer_thresh, int classes, int batch)
 {
   layer l = {0};
   l.type = FSPT;
 
   l.inputs = inputs;
-  l.outputs = 1;
+  l.outputs = classes;
   l.input_layers = input_layers;
+  l.yolo_layer = yolo_layer;
+  l.yolo_layer_thresh = yolo_layer_thresh;
   l.batch=batch;
   l.batch_normalize = 1;
-  l.n = n;
   l.h = 1;
   l.w = 1;
   l.c = inputs;
@@ -50,10 +51,10 @@ void resize_fspt_layer(layer *l, int w, int h) {
   return;
 }
 
-void forward_fspt_layer(layer l, network net, int yolo_thresh)
+void forward_fspt_layer(layer l, network net)
 {
   layer yolo_layer = net.layers[l.input_layers[l.n]];
-  int nboxes = yolo_num_detections(yolo_layer, yolo_thresh);
+  int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
   /* allocat detection boxes */
   detection *dets = calloc(nboxes, sizeof(detection));
   for(int i = 0; i < nboxes; ++i){
@@ -64,25 +65,9 @@ void forward_fspt_layer(layer l, network net, int yolo_thresh)
   }
   /* fill detection boxes */
   for(int i = 0; i < nboxes; i++) {
-    int count = get_yolo_detections(yolo_layer, /*w*/1, /*h*/1, net.w, net.h, yolo_thresh, /*map*/NULL, /*relative*/1, dets);
+    //int count = get_yolo_detections(yolo_layer, /*w*/1, /*h*/1, net.w, net.h, yolo_thresh, /*map*/NULL, /*relative*/1, dets);
+    int count = get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, dets);
     dets += count;
-  }
-
-  for(int i = 0; i < nboxes; ++i){
-    char labelstr[4096] = {0};
-    int class = -1;
-    for(int j = 0; j < yolo_layer.classes; ++j){
-      if (dets[i].prob[j] > yolo_thresh){
-        if (class < 0) {
-          strcat(labelstr, names[j]);
-          class = j;
-        } else {
-          strcat(labelstr, ", ");
-          strcat(labelstr, names[j]);
-        }
-        printf("%s (class %d): %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", names[j], j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
-      }
-    }
   }
   //TODO : call fspt
 }

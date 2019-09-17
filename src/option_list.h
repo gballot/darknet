@@ -24,6 +24,7 @@ int option_find_int_quiet(list *l, char *key, int def);
 float option_find_float(list *l, char *key, float def);
 float option_find_float_quiet(list *l, char *key, float def);
 char *option_find_str_quiet(list *l, char *key, char *def);
+int option_find_int_from_label(list *l, char *key, int def);
 void option_unused(list *l);
 
 //typedef struct {

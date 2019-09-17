@@ -1,6 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 #include "network.h"
+#include "list.h"
+
+list *labels;
 
 #ifdef __cplusplus
 extern "C" {
