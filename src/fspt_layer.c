@@ -69,6 +69,20 @@ void forward_fspt_layer(layer l, network net)
     int count = get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, dets);
     dets += count;
   }
+  /* get corresponding row and classe */
+  int class = -1;
+  for(int i = 0; i< nboxes; i++) {
+    detection det = dets[i];
+  }
+  for(i = 0; i < nboxes; ++i){
+    for(j = 0; j < yolo_layer.classes; ++j){
+      if (dets[i].prob[j] > l.yolo_layer_thresh){
+        class = j;
+      }
+      printf("class %d: %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
+      }
+    }
+  }
   //TODO : call fspt
 }
 
@@ -78,7 +92,7 @@ void backward_fspt_layer(layer l, network net)
   int offset = 0;
   //get the delta of the yolo network
   int index = l.input_layers[l.n];
-    float *delta = net.layers[index].delta;
+  float *delta = net.layers[index].delta;
     int input_size = l.input_sizes[l.n];
     for(j = 0; j < l.batch; ++j){
       axpy_cpu(input_size, 1, l.delta + offset + j*l.outputs, 1, delta + j*input_size, 1);
