@@ -920,7 +920,20 @@ char *itoa(int val, int base)
 {
 	static char buf[32] = {0};
 	int i = 30;
+  int neg = 0;
+  if(val < 0) {
+    neg = 1;
+    val = -val;
+  }
+  if(val == 0) {
+    buf[i] = '0';
+    return &buf[i];
+  }
 	for(; val && i ; --i, val /= base)
 		buf[i] = "0123456789abcdef"[val % base];
+  if(neg) {
+    buf[i] = '-';
+    return &buf[i];
+  }
 	return &buf[i+1];
 }
