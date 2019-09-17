@@ -706,6 +706,7 @@ layer get_network_output_layer(network *net)
     int i;
     for(i = net->n - 1; i >= 0; --i){
         if(net->layers[i].type != COST) break;
+        if(net->layers[i].type != FSPT) break;
     }
     return net->layers[i];
 }
