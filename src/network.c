@@ -983,7 +983,17 @@ float *network_accuracies(network net, data d, int n)
     return acc;
 }
 
-float network_accuracy_multi(network net, data d, int n)
+layer get_network_output_layer(network *net)
+{
+    int i;
+    for(i = net->n - 1; i >= 0; --i){
+        if(net->layers[i].type != COST) break;
+        if(net->layers[i].type != FSPT) break;
+    }
+    return net->layers[i];
+}
+
+float network_accuracy_multi(network *net, data d, int n)
 {
     matrix guess = network_predict_data_multi(net, d, n);
     float acc = matrix_topk_accuracy(d.y, guess,1);
