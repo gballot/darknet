@@ -10,6 +10,8 @@ void forward_yolo_layer(const layer l, network net);
 void backward_yolo_layer(const layer l, network net);
 void resize_yolo_layer(layer *l, int w, int h);
 int yolo_num_detections(layer l, float thresh);
+int get_yolo_detections(layer l, int w, int h, int netw, int neth, float thresh, int *map, int relative, detection *dets);
+int get_yolo_detections_no_correction(layer l, int netw, int neth, float thresh, detection *dets);
 
 #ifdef GPU
 void forward_yolo_layer_gpu(const layer l, network net);

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <search.h>
 
 #include "activation_layer.h"
 #include "logistic_layer.h"
@@ -661,19 +662,20 @@ route_layer parse_route(list *options, size_params params, network *net)
 layer parse_fspt(list *options, size_params params, network *net)
 {
     int classes = option_find_int(options, "classes",1);
-    int yolo_layer = option_find_int(options, "yolo_layer", -1);
+    int yolo_layer = option_find_int_from_label(options, "yolo_layer", -1);
+    float yolo_layer_thresh = option_find_float(options, "yolo_layer_thesh", 0.5);
     if(yolo_layer < 0) yolo_layer = params.index + yolo_layer;
     char *l = option_find(options, "feature_layers");
     int len = strlen(l);
-    if(!l) error("Route Layer must specify input layers");
+    if(!l) error("FSPT Layer must specify input layers");
     int n = 1;
     int i;
     for(i = 0; i < len; ++i){
         if (l[i] == ',') ++n;
     }
 
-    int *input_layers = calloc(n+1, sizeof(int));
-    int *sizes = calloc(n+1, sizeof(int));
+    int *input_layers = calloc(n, sizeof(int));
+    int *sizes = calloc(n, sizeof(int));
     for(i = 0; i < n; ++i){
         int index = atoi(l);
         l = strchr(l, ',')+1;
@@ -681,10 +683,7 @@ layer parse_fspt(list *options, size_params params, network *net)
         input_layers[i] = index;
         sizes[i] = net->layers[index].outputs;
     }
-    input_layers[n] = yolo_layer;
-    sizes[n] = net->layers[yolo_layer].outputs;
-    int batch = params.batch;
-    layer fspt_layer = make_fspt_layer(params.inputs, input_layers, n, classes, params.batch);
+    layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer, yolo_layer_thresh, classes, params.batch);
     return fspt_layer;
 }
 
@@ -810,6 +809,8 @@ network *parse_network_cfg(char *filename)
     params.time_steps = net->time_steps;
     params.net = net;
 
+    labels = make_list();
+
     size_t workspace_size = 0;
     n = n->next;
     int count = 0;
@@ -822,9 +823,13 @@ network *parse_network_cfg(char *filename)
         options = s->options;
         layer l = {0};
         LAYER_TYPE lt = string_to_layer_type(s->type);
+        /* parse ref */
         char * tmp_ref = option_find_str_quiet(options, "ref", itoa(count, 10));
         l.ref = malloc(strlen(tmp_ref)*sizeof(char *));
+        char *list_ref = malloc(strlen(tmp_ref)*sizeof(char *));
         strcpy(l.ref, tmp_ref);
+        strcpy(list_ref, tmp_ref);
+        list_insert(labels, (void *)list_ref);
         if(lt == CONVOLUTIONAL){
             l = parse_convolutional(options, params);
         }else if(lt == DECONVOLUTIONAL){
@@ -915,6 +920,7 @@ network *parse_network_cfg(char *filename)
         }
     }
     free_list(sections);
+    free_list(labels);
     layer out = get_network_output_layer(net);
     net->outputs = out.outputs;
     net->truths = out.outputs;
@@ -1364,11 +1370,3 @@ void load_weights(network *net, char *filename)
     load_weights_upto(net, filename, 0, net->n);
 }
 
-char *itoa(int val, int base)
-{
-	static char buf[32] = {0};
-	int i = 30;
-	for(; val && i ; --i, val /= base)
-		buf[i] = "0123456789abcdef"[val % base];
-	return &buf[i+1];
-}

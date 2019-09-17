@@ -3,6 +3,7 @@
 #include <string.h>
 #include "option_list.h"
 #include "utils.h"
+#include "parser.h"
 
 list *read_data_cfg(char *filename)
 {
@@ -121,6 +122,31 @@ int option_find_int(list *l, char *key, int def)
 {
     char *v = option_find(l, key);
     if(v) return atoi(v);
+    fprintf(stderr, "%s: Using default '%d'\n", key, def);
+    return def;
+}
+
+int option_find_int_from_label(list *l, char *key, int def)
+{
+    char *v = option_find(l, key);
+    const char * delim = " ";
+    char *tmp_ref = strtok(v, delim);
+    int index = 0;
+    if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
+      index = atoi(tmp_ref);
+    } else {
+      int count = 0;
+      int found = 0;
+      node *n = labels->front;
+      while(n) {
+        if(!strcmp(n->val, tmp_ref)) {
+          found = 1;
+          break;
+        }
+      }
+      if(!found) error(strcat("label undefined : ", tmp_ref));
+    }
+    return index;
     fprintf(stderr, "%s: Using default '%d'\n", key, def);
     return def;
 }

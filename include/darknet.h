@@ -210,6 +210,9 @@ struct layer{
     float probability;
     float scale;
 
+    int yolo_layer;
+    float yolo_layer_thresh;
+
     char  * cweights;
     int   * indexes;
     int   * input_layers;
