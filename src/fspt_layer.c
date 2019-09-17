@@ -66,7 +66,7 @@ void forward_fspt_layer(layer l, network net)
   /* fill detection boxes */
   for(int i = 0; i < nboxes; i++) {
     //int count = get_yolo_detections(yolo_layer, /*w*/1, /*h*/1, net.w, net.h, yolo_thresh, /*map*/NULL, /*relative*/1, dets);
-    int count = get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, dets[i]);
+    int count = get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, &dets[i]);
   }
   /* get corresponding row and classe */
   int class = -1;
