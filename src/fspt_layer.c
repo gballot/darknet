@@ -11,30 +11,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-layer make_fspt_layer(int inputs, int *input_layers, int yolo_layer, float yolo_layer_thresh, int classes, int batch)
+layer make_fspt_layer(int inputs, int *input_layers,
+    int yolo_layer, int yolo_layer_n, int, yolo_layer_h, int yolo_layer_w, float yolo_layer_thresh,
+    int classes, int batch)
 {
   layer l = {0};
   l.type = FSPT;
 
   l.inputs = inputs;
-  l.outputs = classes;
   l.input_layers = input_layers; 
+
   l.yolo_layer = yolo_layer;
   l.yolo_layer_thresh = yolo_layer_thresh;
+
   l.batch=batch;
   l.batch_normalize = 1;
-  l.h = 1;
-  l.w = 1;
-  l.c = inputs;
-  l.out_h = 1;
-  l.out_w = 1;
-  l.out_c = 1;
+
+  l.n = yolo_layer_n;
+  l.h = yolo_layer_h;
+  l.w = yolo_layer_w;
+  l.c = l.n*(classes + 4 + 1);
+  l.out_w = l.w;
+  l.out_h = l.h;
+  l.out_c = l.n*classes;
+  l.outputs = l.h*l.w*l.n*l*classes;
 
   l.output = calloc(batch*l.outputs, sizeof(float));
-  l.delta = calloc(batch*l.outputs, sizeof(float));
-
-  l.weights = calloc(l.outputs*inputs, sizeof(float));
-  l.biases = calloc(l.outputs, sizeof(float));
 
   l.forward = forward_fspt_layer;
   l.backward = backward_fspt_layer;
