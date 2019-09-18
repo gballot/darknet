@@ -12,7 +12,7 @@
 #include <string.h>
 
 layer make_fspt_layer(int inputs, int *input_layers,
-    int yolo_layer, int yolo_layer_n, int, yolo_layer_h, int yolo_layer_w, float yolo_layer_thresh,
+    int yolo_layer, int yolo_layer_n, int yolo_layer_h, int yolo_layer_w, float yolo_layer_thresh,
     int classes, int batch)
 {
   layer l = {0};
@@ -34,7 +34,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
   l.out_w = l.w;
   l.out_h = l.h;
   l.out_c = l.n*classes;
-  l.outputs = l.h*l.w*l.n*l*classes;
+  l.outputs = l.h*l.w*l.n*classes;
 
   l.output = calloc(batch*l.outputs, sizeof(float));
 
@@ -61,6 +61,42 @@ void forward_fspt_layer(layer l, network net)
 {
   if(net.train) return;
   layer yolo_layer = net.layers[l.yolo_layer];
+
+
+    int i,j,n;
+    float *predictions = yolo_layer.output;
+    if (yolo_layer.batch == 2) avg_flipped_yolo(yolo_layer);
+    int count = 0;
+    for (i = 0; i < l.w*l.h; ++i){
+        int row = i / l.w;
+        int col = i % l.w;
+        for(n = 0; n < l.n; ++n){
+            int obj_index  = entry_index(yolo_layer, 0, n*l.w*l.h + i, 4);
+            float objectness = predictions[obj_index];
+            if(objectness <= l.yolo_layer_thresh) {
+              //fill with zeros
+              fill_cpu(l.n, 0, l.outputs, l.w*l.h);
+            }
+            int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
+            dets[count].bbox = get_yolo_box(predictions, l.biases, l.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
+            dets[count].objectness = objectness;
+            dets[count].classes = l.classes;
+            for(j = 0; j < l.classes; ++j){
+                int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
+                float prob = objectness*predictions[class_index];
+                if(prob > l.yolo_layer_thresh) {
+                  run_fspt(l, j, dets[count].bbox);
+                }
+                dets[count].prob[j] = (prob > thresh) ? prob : 0;
+            }
+            ++count;
+        }
+    }
+    return count;
+
+
+
+  // DEPRECATED
   int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
   /* allocat detection boxes */
   detection *dets = calloc(nboxes, sizeof(detection));
