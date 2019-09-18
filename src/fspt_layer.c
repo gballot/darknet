@@ -43,7 +43,11 @@ layer make_fspt_layer(int inputs, int *input_layers, int yolo_layer, float yolo_
   l.backward_gpu = backward_fspt_layer_gpu;
   #endif
   l.activation = LINEAR;
-  fprintf(stderr, "fspt      %d input layer(s)              yolo layer : %d      trees : %d\n", inputs, yolo_layer, classes);
+
+  fprintf(stderr, "fspt      %d input layer(s) : ", inputs);
+  for(int i = 0; i < inputs; i++) fprintf(stderr, "%d,", input_layers[i]);
+  fprintf(stderr, "    yolo layer : %d      trees : %d\n", yolo_layer, classes);
+
   return l;
 }
 
@@ -53,6 +57,7 @@ void resize_fspt_layer(layer *l, int w, int h) {
 
 void forward_fspt_layer(layer l, network net)
 {
+  if(net.train) return;
   layer yolo_layer = net.layers[l.yolo_layer];
   int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
   /* allocat detection boxes */
@@ -64,13 +69,10 @@ void forward_fspt_layer(layer l, network net)
     }
   }
   /* fill detection boxes */
-  for(int i = 0; i < nboxes; i++) {
-    //int count = get_yolo_detections(yolo_layer, /*w*/1, /*h*/1, net.w, net.h, yolo_thresh, /*map*/NULL, /*relative*/1, dets);
-    int count = get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, &dets[i]);
-  }
+  get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, dets);
   /* get corresponding row and classe */
   int class = -1;
-  fprintf(stderr, "nboxes = %d", nboxes);
+  debug_print("nboxes = %d\n", nboxes);
   for(int i = 0; i < nboxes; ++i){
     for(int j = 0; j < yolo_layer.classes; ++j){
       if (dets[i].prob[j] > l.yolo_layer_thresh){
