@@ -35,6 +35,8 @@ endif
 
 ifeq ($(DEBUG), 1) 
 OPTS=-O0 -g
+COMMON+= -DDEBUG
+CFLAGS+= -DDEBUG
 endif
 
 CFLAGS+=$(OPTS)

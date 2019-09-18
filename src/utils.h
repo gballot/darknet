@@ -14,6 +14,19 @@
 
 #define TWO_PI 6.2831853071795864769252866f
 
+#ifdef DEBUG
+#define DEBUG_TEST 1
+#else
+#define DEBUG_TEST 0
+#endif
+
+#define debug_print(fmt, ...) \
+  do { \
+    if(DEBUG_TEST) \
+      fprintf(stderr, "[%s:%d:%s()]  " fmt "\n", __FILE__, \
+          __LINE__, __func__, __VA_ARGS__); \
+  } while (0)
+
 double what_time_is_it_now();
 void shuffle(void *arr, size_t n, size_t size);
 void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);
