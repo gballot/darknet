@@ -933,7 +933,7 @@ network *parse_network_cfg(char *filename)
         strcpy(list_ref, tmp_ref);
         list_insert(labels, (void *)list_ref);
         if(strcmp(l.ref, itoa(count, 10)))
-          fprintf(stderr, "      whith label='%s'\n", l.ref);
+          debug_print("      whith label='%s'\n", l.ref);
         /* end parse ref */
         l.clip = net->clip;
         l.truth = option_find_int_quiet(options, "truth", 0);

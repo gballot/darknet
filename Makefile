@@ -27,7 +27,8 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
+# CFLAGS=-Wall -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
+CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
