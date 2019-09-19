@@ -298,7 +298,6 @@ struct layer {
     float scale;
 
     int yolo_layer;
-    float yolo_layer_thresh;
 
     char  * cweights;
     int   * indexes;
@@ -406,6 +405,8 @@ struct layer {
     float *binary_input;
     uint32_t *bin_re_packed_input;
     char *t_bit_input;
+
+    float * fspt_input;
 
     struct layer *input_layer;
     struct layer *self_layer;
@@ -643,6 +644,7 @@ typedef struct network {
     float *delta;
     float *workspace;
     int train;
+    int train_fspt;
     int index;
     float *cost;
     float clip;
