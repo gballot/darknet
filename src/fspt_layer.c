@@ -17,6 +17,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
 {
     layer l = {0};
     l.type = FSPT;
+    l.noloss = 1;
+    l.onlyforward = 1;
 
     l.inputs = inputs;
     l.input_layers = input_layers; 
@@ -34,16 +36,16 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.c = l.n*(classes + 4 + 1);
     l.out_w = l.w;
     l.out_h = l.h;
-    l.c = l.n*(classes + 4 + 1);
+    l.out_c = l.n*(classes + 4 + 1);
     l.outputs = l.h*l.w*l.c;
 
     l.output = calloc(batch*l.outputs, sizeof(float));
 
     l.forward = forward_fspt_layer;
-    l.backward = backward_fspt_layer;
+    //l.backward = backward_fspt_layer;
 #ifdef GPU
     l.forward_gpu = forward_fspt_layer_gpu;
-    l.backward_gpu = backward_fspt_layer_gpu;
+    //l.backward_gpu = backward_fspt_layer_gpu;
 #endif
     l.activation = LINEAR;
 
@@ -61,19 +63,11 @@ void resize_fspt_layer(layer *l, int w, int h) {
 void forward_fspt_layer(layer l, network net)
 {
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
-#ifndef GPU
-    for (int b = 0; b < l.batch; ++b){
-        for(int n = 0; n < l.n; ++n){
-            int index = entry_index(l, b, n*l.w*l.h, 0);
-            activate_array(l.output + index, 2*l.w*l.h, LOGISTIC);
-            index = entry_index(l, b, n*l.w*l.h, 4);
-            activate_array(l.output + index, (1+l.classes)*l.w*l.h, LOGISTIC);
-        }
-    }
-#endif
-
-    memset(l.delta, 0, l.outputs * l.batch * sizeof(float));
     if(net.train) return;
+    // TODO: build the tree
+
+
+
     /*
        if(net.train) return;
        layer yolo_layer = net.layers[l.yolo_layer];
@@ -145,45 +139,10 @@ void forward_fspt_layer(layer l, network net)
     //TODO : call fspt
 }
 
-void backward_fspt_layer(layer l, network net)
-{
-    int j;
-    int offset = 0;
-    //get the delta of the yolo network
-    int index = l.input_layers[l.n];
-    float *delta = net.layers[index].delta;
-    int input_size = l.input_sizes[l.n];
-    for(j = 0; j < l.batch; ++j){
-        axpy_cpu(input_size, 1, l.delta + offset + j*l.outputs, 1, delta + j*input_size, 1);
-    }
-    offset += input_size;
-}
-
 #ifdef GPU
 void forward_fspt_layer_gpu(const layer l, network net)
 {
-    int j;
-    int offset = 0;
-    int index = l.input_layers[l.n];
-    float *input = net.layers[index].output_gpu;
-    int input_size = l.input_sizes[l.n];
-    for(j = 0; j < l.batch; ++j){
-        copy_gpu(input_size, input + j*input_size, 1, l.output_gpu + offset + j*l.outputs, 1);
-    }
-    offset += input_size;
-}
-
-void backward_fspt_layer_gpu(const layer l, network net)
-{
-    int j;
-    int offset = 0;
-    int index = l.input_layers[l.n];
-    float *delta = net.layers[index].delta_gpu;
-    int input_size = l.input_sizes[l.n];
-    for(j = 0; j < l.batch; ++j){
-        axpy_gpu(input_size, 1, l.delta_gpu + offset + j*l.outputs, 1, delta + j*input_size, 1);
-    }
-    offset += input_size;
+    copy_gpu(l.batch*l.inputs, net.input_gpu, 1, l.output_gpu, 1);
 }
 #endif
 
