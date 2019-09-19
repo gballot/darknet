@@ -1082,7 +1082,7 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
         strcpy(list_ref, tmp_ref);
         list_insert(labels, (void *)list_ref);
         if(strcmp(l.ref, itoa(count, 10)))
-          fprintf(stderr, "      whith label='%s'\n", l.ref);
+          debug_print("      whith label='%s'\n", l.ref);
         /* end parse ref */
         l.onlyforward = option_find_int_quiet(options, "onlyforward", 0);
         l.stopbackward = option_find_int_quiet(options, "stopbackward", 0);
