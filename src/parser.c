@@ -754,9 +754,7 @@ layer parse_fspt(list *options, size_params params)
     network *net = params.net;
     int classes = option_find_int(options, "classes",1);
     int yolo_layer_idx = option_find_int_from_label(options, "yolo_layer", -1);
-    float yolo_layer_thresh = option_find_float(options, "yolo_layer_thresh", 0.5);
     if(yolo_layer_idx < 0) yolo_layer_idx = params.index + yolo_layer_idx;
-    layer yolo_layer = net->layers[yolo_layer_idx];
     char *l = option_find(options, "feature_layers");
     int len = strlen(l);
     if(!l) error("FSPT Layer must specify input layers");

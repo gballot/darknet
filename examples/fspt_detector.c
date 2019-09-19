@@ -1,6 +1,6 @@
 #include "darknet.h"
 
-void test_fspt_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
+void test_fspt_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile, int fullscreen)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -38,41 +38,12 @@ void test_fspt_detector(char *datacfg, char *cfgfile, char *weightfile, char *fi
         network_predict(net, X);
         printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
         int nboxes = 0;
-        detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
+        detection *dets = get_network_boxes(net, im.w, im.h, yolo_thresh, hier_thresh, 0, 1, &nboxes);
         //printf("%d\n", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
-        //TODO GAB
-        /*
-        printf("TODO GAB : GET THE INPUT FOR FSPT\n");
-        layer small_obj_layer = net->layers[81];
-        layer medium_obj_layer = net->layers[93];
-        layer big_obj_layer = net->layers[105];
-        layer small_yolo = net->layers[82];
-        layer medium_yolo = net->layers[94];
-        layer big_yolo = net->layers[106];
-        int i,j;                                                                    
-
-        for(i = 0; i < nboxes; ++i){
-          char labelstr[4096] = {0};
-          int class = -1;
-          for(j = 0; j < medium_yolo.classes; ++j){
-            if (dets[i].prob[j] > thresh){
-              if (class < 0) {
-                strcat(labelstr, names[j]);
-                class = j;
-              } else {
-                strcat(labelstr, ", ");
-                strcat(labelstr, names[j]);
-              }
-              printf("%s (class %d): %.0f%% - box(x,y,w,h) : %f,%f,%f,%f\n", names[j], j, dets[i].prob[j]*100, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.h, dets[i].bbox.h);          
-            }
-          }
-        }
-        //get_yolo_detection(big_yolo, 0, 0, net.w, net.h, thresh, 
-        */
-        // END TODO
+        draw_detections(im, dets, nboxes, yolo_thresh, names, alphabet, l.classes);
+        dets = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh, fspt_thresh, hier_thresh, 0, 1, &nboxes);
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);
