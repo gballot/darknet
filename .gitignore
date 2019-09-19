@@ -6,6 +6,7 @@
 *.jpg
 *.pyc
 .ale_config
+.lvimrc
 tags
 libdarknet.a
 libdarknet.so
