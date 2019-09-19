@@ -664,7 +664,6 @@ route_layer parse_route(list *options, size_params params, network *net)
     return layer;
 }
 
-//TODO GAB
 layer parse_fspt(list *options, size_params params)
 {
     network *net = params.net;
@@ -722,8 +721,7 @@ layer parse_fspt(list *options, size_params params)
     }
     */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-        yolo_layer.n, yolo_layer.h, yolo_layer.w, yolo_layer_thresh,
-        classes, params.batch);
+        net, classes, params.batch);
     return fspt_layer;
 }
 

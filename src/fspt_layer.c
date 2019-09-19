@@ -12,8 +12,7 @@
 #include <string.h>
 
 layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, int yolo_layer_n, int yolo_layer_h, int yolo_layer_w, float yolo_layer_thresh,
-        int classes, int batch)
+        int yolo_layer, network *net, int classes, int batch)
 {
     layer l = {0};
     l.type = FSPT;
@@ -25,21 +24,22 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.classes = classes;
 
     l.yolo_layer = yolo_layer;
-    l.yolo_layer_thresh = yolo_layer_thresh;
 
     l.batch=batch;
     l.batch_normalize = 1;
 
-    l.n = yolo_layer_n;
-    l.h = yolo_layer_h;
-    l.w = yolo_layer_w;
+    l.n = net->layers[yolo_layer].n;
+    l.h = net->layers[yolo_layer].h;
+    l.w = net->layers[yolo_layer].w;
     l.c = l.n*(classes + 4 + 1);
     l.out_w = l.w;
     l.out_h = l.h;
     l.out_c = l.n*(classes + 4 + 1);
     l.outputs = l.h*l.w*l.c;
+    for(int i=0; i<inputs; i++) l.total += net->layers[input_layers[i]].out_c;
 
     l.output = calloc(batch*l.outputs, sizeof(float));
+    l.fspt_input = calloc(l.total, sizeof(float));
 
     l.forward = forward_fspt_layer;
     //l.backward = backward_fspt_layer;
@@ -64,7 +64,9 @@ void forward_fspt_layer(layer l, network net)
 {
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train) return;
-    // TODO: build the tree
+    if(net.train_fspt) {
+        // TODO: build the tree
+    }
 
 
 
@@ -146,3 +148,67 @@ void forward_fspt_layer_gpu(const layer l, network net)
 }
 #endif
 
+/* potentialy useless should compute fspt only once */
+int fspt_num_detections(layer l, network *net, float thresh_yolo, float thresh_fspt) {
+    layer yolo_layer = net->layers[l.yolo_layer];
+    int count = 0;
+    for (int i = 0; i < l.w*l.h; ++i){
+        for(int n = 0; n < l.n; ++n){
+            int obj_index  = entry_index(l, 0, n*l.w*l.h + i, 4);
+            if(l.output[obj_index] > yolo_thresh){
+                if(1/*fspt (objet) == 1*/)
+                    ++count;
+            }
+        }
+    }
+    return count;
+}
+
+int get_fspt_detections(layer l, int w, int h, network *net,
+        float yolo_thresh, float fspt_thresh, int *map, int relative,
+        detection *dets) {
+    int i,j,n;
+    int netw = net->w;
+    int neth = net->h;
+    float *predictions = l.output;
+    //if (l.batch == 2) avg_flipped_yolo(l);
+    int count = 0;
+    for (i = 0; i < l.w*l.h; ++i){
+        int row = i / l.w;
+        int col = i % l.w;
+        for(n = 0; n < l.n; ++n){
+            int obj_index  = entry_index(l, 0, n*l.w*l.h + i, 4);
+            float objectness = predictions[obj_index];
+            if(objectness <= yolo_thresh) continue;
+            int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
+            box bbox = get_yolo_box(predictions, l.biases, l.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
+            dets[count].bbox = bbox;
+            dets[count].objectness = objectness;
+            dets[count].classes = l.classes;
+            for(j = 0; j < l.classes; ++j){
+                int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
+                float prob = objectness*predictions[class_index];
+                if(prob > yolo_thresh) {
+                    for(int input_layer_idx = 0; input_layer_idx < l.inputs; input_layer_idx++) {
+                        layer input_layer = net->layers[input_layer_idx];
+                        int input_w = floor(bbox.x * input_layer.out_w / l.w);
+                        int input_h = floor(bbox.y * input_layer.out_h / l.h);
+#ifdef GPU
+                        copy_gpu(input_layer.out_c, input_layer.output, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+#else
+                        copy_cpu(input_layer.out_c, input_layer.output, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+#endif
+                    }
+                    run_fspt(l, j);
+                    dets[count].prob[j] = prob;
+                } else {
+                    dets[count].prob[j] = 0;
+                }
+            }
+            ++count;
+        }
+    }
+    correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
+    return count;
+    return 0;
+}
