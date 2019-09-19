@@ -665,12 +665,14 @@ route_layer parse_route(list *options, size_params params, network *net)
 }
 
 //TODO GAB
-layer parse_fspt(list *options, size_params params, network *net)
+layer parse_fspt(list *options, size_params params)
 {
+    network *net = params.net;
     int classes = option_find_int(options, "classes",1);
-    int yolo_layer = option_find_int_from_label(options, "yolo_layer", -1);
+    int yolo_layer_idx = option_find_int_from_label(options, "yolo_layer", -1);
     float yolo_layer_thresh = option_find_float(options, "yolo_layer_thresh", 0.5);
-    if(yolo_layer < 0) yolo_layer = params.index + yolo_layer;
+    if(yolo_layer_idx < 0) yolo_layer_idx = params.index + yolo_layer_idx;
+    layer yolo_layer = net->layers[yolo_layer_idx];
     char *l = option_find(options, "feature_layers");
     int len = strlen(l);
     if(!l) error("FSPT Layer must specify input layers");
@@ -719,7 +721,9 @@ layer parse_fspt(list *options, size_params params, network *net)
         sizes[i] = net->layers[index].outputs;
     }
     */
-    layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer, yolo_layer_thresh, classes, params.batch);
+    layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
+        yolo_layer.n, yolo_layer.h, yolo_layer.w, yolo_layer_thresh,
+        classes, params.batch);
     return fspt_layer;
 }
 
@@ -921,7 +925,7 @@ network *parse_network_cfg(char *filename)
             l.delta_gpu = net->layers[count-1].delta_gpu;
 #endif
         }else if (lt == FSPT){
-          l = parse_fspt(options, params, net);
+          l = parse_fspt(options, params);
         }else{
             fprintf(stderr, "Type not recognized: %s\n", s->type);
         }

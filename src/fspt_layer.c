@@ -20,6 +20,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
 
   l.inputs = inputs;
   l.input_layers = input_layers; 
+  l.classes = classes;
 
   l.yolo_layer = yolo_layer;
   l.yolo_layer_thresh = yolo_layer_thresh;
@@ -61,6 +62,15 @@ void forward_fspt_layer(layer l, network net)
 {
   if(net.train) return;
   layer yolo_layer = net.layers[l.yolo_layer];
+  int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
+  /* allocat detection boxes */
+  detection *dets = calloc(nboxes, sizeof(detection));
+  for(int i = 0; i < nboxes; ++i){
+    dets[i].prob = calloc(yolo_layer.classes, sizeof(float));
+    if(l.coords > 4){
+      dets[i].mask = calloc(yolo_layer.coords-4, sizeof(float));
+    }
+  }
 
 
     int i,j,n;
@@ -75,7 +85,7 @@ void forward_fspt_layer(layer l, network net)
             float objectness = predictions[obj_index];
             if(objectness <= l.yolo_layer_thresh) {
               //fill with zeros
-              fill_cpu(l.n, 0, l.outputs, l.w*l.h);
+              fill_cpu(l.n, 0, l.output, l.w*l.h);
             }
             int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
             dets[count].bbox = get_yolo_box(predictions, l.biases, l.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
@@ -97,15 +107,6 @@ void forward_fspt_layer(layer l, network net)
 
 
   // DEPRECATED
-  int nboxes = yolo_num_detections(yolo_layer, l.yolo_layer_thresh);
-  /* allocat detection boxes */
-  detection *dets = calloc(nboxes, sizeof(detection));
-  for(int i = 0; i < nboxes; ++i){
-    dets[i].prob = calloc(yolo_layer.classes, sizeof(float));
-    if(l.coords > 4){
-      dets[i].mask = calloc(yolo_layer.coords-4, sizeof(float));
-    }
-  }
   /* fill detection boxes */
   get_yolo_detections_no_correction(yolo_layer, net.w, net.h, l.yolo_layer_thresh, dets);
   /* get corresponding row and classe */
