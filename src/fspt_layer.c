@@ -36,6 +36,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.out_h = l.h;
     l.out_c = l.n*(classes + 4 + 1);
     l.outputs = l.h*l.w*l.c;
+    l.coords = 4;
     for(int i=0; i<inputs; i++) l.total += net->layers[input_layers[i]].out_c;
 
     l.output = calloc(batch*l.outputs, sizeof(float));
@@ -148,8 +149,16 @@ void forward_fspt_layer_gpu(const layer l, network net)
 }
 #endif
 
+static int entry_index(layer l, int batch, int location, int entry)
+{
+    int n =   location / (l.w*l.h);
+    int loc = location % (l.w*l.h);
+    return batch*l.outputs + n*l.w*l.h*(4+l.classes+1) + entry*l.w*l.h + loc;
+}
+
+
 /* potentialy useless should compute fspt only once */
-int fspt_num_detections(layer l, network *net, float thresh_yolo, float thresh_fspt) {
+int fspt_num_detections(layer l, network *net, float yolo_thresh, float fspt_thresh) {
     layer yolo_layer = net->layers[l.yolo_layer];
     int count = 0;
     for (int i = 0; i < l.w*l.h; ++i){
@@ -170,6 +179,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
     int i,j,n;
     int netw = net->w;
     int neth = net->h;
+    layer yolo_layer = net->layers[l.yolo_layer];
     float *predictions = l.output;
     //if (l.batch == 2) avg_flipped_yolo(l);
     int count = 0;
@@ -181,7 +191,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
             float objectness = predictions[obj_index];
             if(objectness <= yolo_thresh) continue;
             int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
-            box bbox = get_yolo_box(predictions, l.biases, l.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
+            box bbox = get_yolo_box(predictions, yolo_layer.biases, yolo_layer.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
             dets[count].bbox = bbox;
             dets[count].objectness = objectness;
             dets[count].classes = l.classes;
@@ -199,8 +209,10 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                         copy_cpu(input_layer.out_c, input_layer.output, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #endif
                     }
-                    run_fspt(l, j);
-                    dets[count].prob[j] = prob;
+                    if(fspt_validate(l, j, fspt_thresh))
+                        dets[count].prob[j] = prob;
+                    else
+                        dets[count].prob[j] = -1.;
                 } else {
                     dets[count].prob[j] = 0;
                 }
@@ -208,7 +220,14 @@ int get_fspt_detections(layer l, int w, int h, network *net,
             ++count;
         }
     }
-    correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
+    //correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
     return count;
+    return 0;
+}
+
+int fspt_validate(layer l, int classe, float fspt_thresh) {
+    //TODO
+    debug_print("layer %s : fspt_validate(classe %d) with l.total=%d, l.fspt_input=%p", l.ref, classe, l.total, l.fspt_input);
+    debug_print("         l.fspt_input : %f,%f,%f,%f,%f,%f,%f,%f...", l.fspt_input[0], l.fspt_input[1], l.fspt_input[2], l.fspt_input[3], l.fspt_input[4], l.fspt_input[5], l.fspt_input[6], l.fspt_input[7]) ;
     return 0;
 }
