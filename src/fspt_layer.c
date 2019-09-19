@@ -206,7 +206,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
 #ifdef GPU
                         copy_gpu(input_layer.out_c, input_layer.output + input_h + l.h*input_w, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #else
-                        copy_cpu(input_layer.out_c, input_layer.output, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+                        copy_cpu(input_layer.out_c, input_layer.output + input_h + l.h*input_w, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #endif
                     }
                     if(fspt_validate(l, j, fspt_thresh))
