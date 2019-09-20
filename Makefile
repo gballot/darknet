@@ -157,7 +157,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	gdb ./darknet -ex "run fspt_test cfg/fspt.cfg weights/yolov3.weights data/dog.jpg"
+	gdb ./darknet -ex "run fspt_test cfg/fspt-tiny.cfg weights/yolov3-tiny.weights data/dog.jpg"
 
 tag:
 	ctags -R --exclude=*.py .

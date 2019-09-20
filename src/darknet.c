@@ -480,8 +480,8 @@ int main(int argc, char **argv)
         char *filename = (argc > 4) ? argv[4]: 0;
         test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, 0.5, 0, ext_output, 0, NULL, 0);
     } else if (0 == strcmp(argv[1], "fspt_test")){
-        float yolo_thresh = find_float_arg(argc, argv, "-yolothresh", .5);
-        float fspt_thresh = find_float_arg(argc, argv, "-fsptthresh", .5);
+        float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
+        float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
         char *filename = (argc > 4) ? argv[4]: 0;
         char *outfile = find_char_arg(argc, argv, "-out", 0);
         int fullscreen = find_arg(argc, argv, "-fullscreen");
