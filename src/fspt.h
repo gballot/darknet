@@ -1,10 +1,12 @@
 #ifndef FSPT_H
 #define FSPT_H
 
-enum fspt_node_type {LEAF, INNER};
+typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
+
+struct fspt_node;
 
 typedef struct fspt_node {
-    fspt_node_type type;  // LEAF or INNER
+    FSTP_NODE_TYPE type;  // LEAF or INNER
     int id;               // id in the FSPT
     int n_features;
     float *feature_limit; // size 2*n_feature: feature_limit[2*i] = min feature(i)
@@ -12,8 +14,8 @@ typedef struct fspt_node {
     float thresh_left;    // go to left child if feature[i] <= thresh_left
     float thresh_right;   // go to right child if feature[i] >= thresh_right
 
-    fspt_node *right;   // right child
-    fspt_node *left;    // left child
+    struct fspt_node *right;   // right child
+    struct fspt_node *left;    // left child
 
     int n_samples;
     float *samples;     // training samples
