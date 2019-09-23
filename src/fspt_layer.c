@@ -203,6 +203,8 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
                         int input_w = floor(bbox.x * input_layer.out_w);
                         int input_h = floor(bbox.y * input_layer.out_h);
+                        debug_print("input_w, input_h : (%d,%d)", input_w, input_h);
+                        debug_print("input_layer.output + input_w + l.w *input_h = %p", input_layer.output + input_w + l.w*input_h);
 #ifdef GPU
                         copy_gpu(input_layer.out_c, input_layer.output + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #else
