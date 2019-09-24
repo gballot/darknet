@@ -1,8 +1,15 @@
 #include "fspt.h"
 
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
+/**
+ * Computes the volume of a fspt_node
+ * Volume = Prod_i(max feature[i] - min feature[i])
+ * \param n_features The number of features.
+ * \param feature_limit values at index i and i+1 are respectively
+ *                      the min and max of feature i.
+ */
 static float volume(int n_features, const float *feature_limit)
 {
     float vol = 0;
@@ -18,7 +25,7 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     if (!feature_importance) {
         feature_importance = malloc(n_features * sizeof(float));
         float *ptr = feature_importance;
-        while (*ptr < feature_importance + n_features) {
+        while (ptr < feature_importance + n_features) {
             *ptr = 1.;
             ptr++;
         }
@@ -38,15 +45,6 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     return fspt;
 }
 
-/**
- * Gives the nodes containing each input X. The input parameter nodes
- * needs to be freed by the caller. But not the nodes themselves.
- * \param n The number of test samples in X.
- * \param fspt The feature space partitioning tree.
- * \param X Size (n * fspt->n_features), containing the inputs to test.
- * \param nodes Output parameter that will be filled by the n nodes.
- *              Needs to be freed by the caller.
- */ 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
                         fspt_node **nodes)
 {
@@ -88,17 +86,19 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
     free(nodes);
 }
 
-void fspt_fit(int n, const float *X, float max_feature, float max_try,
-              fspt_t *fspt)
+void fspt_fit(int n_samples, const float *X,
+              float max_feature, float max_try, fspt_t *fspt)
 {
     assert(fspt->max_depth >= 1);
-    fspt->n_features = n;
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->id = 0;
     root->type = LEAF;
-    root->n_features = n;
+    root->n_features = fspt->n_features;
     root->feature_limit = fspt->feature_limit;
-    root->n_samples = n;
+    root->n_samples = n_samples;
+    root->n_empty = n_samples; // We arbitray initialize such that Density=.5
     root->samples = X;
+    root->depth = 1;
+    root->vol = volume(n_features, fspt_feature_limit);
     fspt->root = root;
 }

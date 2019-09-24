@@ -1,15 +1,16 @@
 #include "fspt_layer.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "gemm.h"
 #include "utils.h"
 #include "batchnorm_layer.h"
 #include "cuda.h"
 #include "blas.h"
 #include "yolo_layer.h"
-
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, int classes, int batch)
@@ -52,7 +53,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
 
     fprintf(stderr, "fspt      %d input layer(s) : ", inputs);
     for(int i = 0; i < inputs; i++) fprintf(stderr, "%d,", input_layers[i]);
-    fprintf(stderr, "    yolo layer : %d      trees : %d\n", yolo_layer, classes);
+    fprintf(stderr, "    yolo layer : %d      trees : %d\n", yolo_layer,
+            classes);
 
     return l;
 }
@@ -191,7 +193,9 @@ int get_fspt_detections(layer l, int w, int h, network *net,
             float objectness = predictions[obj_index];
             if(objectness <= yolo_thresh) continue;
             int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
-            box bbox = get_yolo_box(predictions, yolo_layer.biases, yolo_layer.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
+            box bbox = get_yolo_box(predictions, yolo_layer.biases,
+                                    yolo_layer.mask[n], box_index, col, row,
+                                    l.w, l.h, netw, neth, l.w*l.h);
             dets[count].bbox = bbox;
             dets[count].objectness = objectness;
             dets[count].classes = l.classes;
@@ -199,11 +203,13 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                 int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
                 float prob = objectness*predictions[class_index];
                 if(prob > yolo_thresh) {
-                    for(int input_layer_idx = 0; input_layer_idx < l.inputs; input_layer_idx++) {
+                    for(int input_layer_idx = 0; input_layer_idx < l.inputs;
+                            input_layer_idx++) {
                         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
                         int input_w = floor(bbox.x * input_layer.out_w);
                         int input_h = floor(bbox.y * input_layer.out_h);
-                        debug_print("input_w, input_h : (%d,%d)", input_w, input_h);
+                        debug_print("input_w, input_h : (%d,%d)",
+                                input_w, input_h);
                         debug_print("input_layer.output + input_w + l.w *input_h = %p", input_layer.output + input_w + l.w*input_h);
 #ifdef GPU
                         copy_gpu(input_layer.out_c, input_layer.output + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
