@@ -16,16 +16,13 @@ typedef struct list{
 #ifdef __cplusplus
 extern "C" {
 #endif
-list *make_list();
-int list_find(list *l, void *val);
-
-void list_insert(list *, void *);
-
-void **list_to_array(list *l);
-
-void free_list(list *l);
-void free_list_contents(list *l);
-void free_list_contents_kvp(list *l);
+extern list *make_list();
+extern int list_find(list *l, void *val);
+extern void list_insert(list *, void *);
+extern void **list_to_array(list *l);
+extern void free_list(list *l);
+extern void free_list_contents(list *l);
+extern void free_list_contents_kvp(list *l);
 
 #ifdef __cplusplus
 }
