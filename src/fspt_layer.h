@@ -1,3 +1,6 @@
+#ifndef FSPT_LAYER_H
+#define FSPT_LAYER_H
+
 #include "darknet.h"
 
 extern layer make_fspt_layer(int inputs, int *input_layers,
@@ -14,3 +17,5 @@ extern int fspt_validate(layer l, int classe, float fspt_thresh);
 extern int get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
         detection *dets);
+
+#endif /* FSPT_LAYER_H */
