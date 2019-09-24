@@ -14,6 +14,9 @@ typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 
 struct fspt_node;
 
+/**
+ * Node of the FSPT.
+ */
 typedef struct fspt_node {
     FSTP_NODE_TYPE type;  // LEAF or INNER
     int id;               // id in the FSPT
@@ -36,6 +39,9 @@ typedef struct fspt_node {
     int count;          // keeps the successive violation of gain threshold
 } fspt_node;
 
+/**
+ * Feature Space Partitioning Tree.
+ */
 typedef struct fspt_t {
     int n_features;      // number of features
     float *feature_limit;// size 2*n_feature:
@@ -52,6 +58,7 @@ typedef struct fspt_t {
     void *criterion;     // spliting criterion
     float vol;           // volume of the tree
     int max_depth;
+    int min_samples;
 } fspt_t;
 
 

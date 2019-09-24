@@ -2,12 +2,11 @@
 #define LIST_H
 #include "darknet.h"
 
-list *make_list();
-int list_find(list *l, void *val);
+extern list *make_list();
 
-void list_insert(list *, void *);
-
-
-void free_list_contents(list *l);
+extern int list_find(list *l, void *val);
+extern void *list_pop(list *l);
+extern void list_insert(list *, void *);
+extern void free_list_contents(list *l);
 
 #endif
