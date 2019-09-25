@@ -64,6 +64,7 @@ typedef struct fspt_t {
 
 /**
  * Builds an empty feature space partitioning tree.
+ * 
  * \param n_features The number of features.
  * \param feature_limit values at index i and i+1 are respectively
  *                      the min and max of feature i.
@@ -88,6 +89,7 @@ extern fspt_t *make_fspt(
 /**
  * Gives the nodes containing each input X. The output parameter nodes
  * needs to be freed by the caller. But not the nodes themselves.
+ *
  * \param n The number of test samples in X.
  * \param fspt The feature space partitioning tree.
  * \param X Size (n * fspt->n_features), containing the inputs to test.
@@ -100,6 +102,7 @@ extern void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
 /**
  * Gives the score for each input X. The output parameter Y
  * needs to be freed by the caller.
+ *
  * \param n The number of test samples in X.
  * \param fspt The feature space partitioning tree.
  * \param X Size (n * fspt->n_features), containing the inputs to test.
@@ -110,6 +113,7 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
 
 /**
  * Fits the feature space partitioning tree to the data X.
+ *
  * \param n_samples The number of samples in X.
  * \param X the samples to fit.
  * \param max_feature The maximum number feature to be visited (TODO).

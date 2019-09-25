@@ -5,9 +5,12 @@
 
 #include "list.h"
 
+#define EPS 0.000001
+
 /**
- * Computes the volume of a fspt_node
+ * Computes the volume of a feature space.
  * Volume = Prod_i(max feature[i] - min feature[i])
+ *
  * \param n_features The number of features.
  * \param feature_limit values at index i and i+1 are respectively
  *                      the min and max of feature i.
@@ -25,6 +28,82 @@ static float fspt_score(const fspt_t *fspt, fspt_node *node) {
     return 0.5;
 }
 
+/**
+ * Creates an hitogram of X.
+ * Uses macro EPS.
+ *
+ * \param n The number of floats in X.
+ * \param step The step to acces X : X[i*step].
+ * \param X The float array. Is assumed sorted.
+ * \param lower_bond Lower bond of X.
+ * \param n_bins Output paramerter. the number of bins for the bins and cdf
+ *               arrays.
+ * \param cdf Output parameter. cdf[i] contains the cumulative number of
+ *            elements <= bins[i].
+ * \param bins Output parameter. Contains the elements in X and them minus EPS.
+ */
+static void hist(size_t n, size_t step, const float *X, float lower_bond,
+                 size_t *n_bins, size_t *cdf, float *bins) {
+    if (cdf)
+        realloc(cdf, 2 * n * sizeof(float));
+    else
+        cdf = malloc(2 * n * sizeof(float));
+    if (bins)
+        realloc(bins, 2 * n * sizeof(float));
+    else
+        bins = malloc(2 * n * sizeof(float));
+    *n_bins = 0;
+    size_t last_cdf = 0;
+    /* Special case for X[0] */
+    float x_0 = X[0];
+    if (x_0 > lower_bond) {
+        float eps = EPS;
+        while(x_0 - eps < lower_bond) {
+            eps /= 2;
+        }
+        if (eps > 0) {
+            bins[0] = x_0 - eps;
+            cdf[0] = ++last_cdf;
+            bins[1] = x_0;
+            cdf[1] = ++last_cdf;
+            *n_bins = 2;
+        } else {
+            bins[0] = x_0;
+            cdf[0] = ++last_cdf;
+            *n_bins = 1;
+        }
+    } else {
+        bins[0] = x_0;
+        cdf[0] = ++last_cdf;
+        *n_bins = 1;
+    }
+    /* build histogram */
+    float last_x = x_0;
+    for (size_t i = 0; i < n ; ++i) {
+        float x = X[i*step];
+        assert(x >= last_x);
+        if (x > last_x) {
+            float eps = EPS;
+            while(x - eps < last_x) {
+                eps /= 2;
+            }
+            if (eps > 0) {
+                bins[*n_bins] = x - eps;
+                cdf[(*n_bins)++] = ++last_cdf;
+                bins[*n_bins] = x;
+                cdf[(*n_bins)++] = ++last_cdf;
+            } else {
+                cdf[*n_bins - 1] = ++last_cdf;
+            }
+        } else {
+            cdf[*n_bins - 1] = ++last_cdf;
+        }
+        last_x = x;
+    }
+    bins = realloc(bins, *n_bins);
+    cdf = realloc(cdf, *n_bins);
+}
+
 static void best_spliter(const fspt_t *fspt, int *index, float *s,
                          float *gain) {
     //TODO
@@ -33,6 +112,7 @@ static void best_spliter(const fspt_t *fspt, int *index, float *s,
 /**
  * Helper funciton for the Quick Sort algorithm.
  * Puts smaller values before a choosen pivot and greater values after.
+ *
  * \param index The index of the feature to apply QSort. 0 <= index < size.
  * \param n The number of vectors in the array.
  * \param size The number of feature of each vectors.
@@ -63,6 +143,7 @@ static int partition(size_t index, size_t n, size_t size, float *base) {
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of
  * size (n*size) according to the feature index. Ascending order.
+ *
  * \param index The index of the feature to apply QSort. 0 <= index < size.
  * \param n The number of vectors in the array.
  * \param size The number of feature of each vectors.
@@ -86,10 +167,11 @@ static void qsort_float_on_index(size_t index, size_t n, size_t size,
 }
 
 /**
- * \brief Make a new split in the FSPT.
+ * Make a new split in the FSPT.
  * This function modifies the input/output parameter fspt, and the ouput
  * parameters right and left according to the split on feature `index`
  * on value `s`.
+ *
  * \param fspt The FSPT build so far. His depth an n_nodes are modified.
  * \param node The current leaf node that will be splited. Is modified.
  * \param index The index of the feature that we split on.
