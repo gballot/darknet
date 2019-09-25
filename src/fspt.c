@@ -30,8 +30,20 @@ static void best_spliter(const fspt_t *fspt, int *index, float *s,
     //TODO
 }
 
+/**
+ * Helper funciton for the Quick Sort algorithm.
+ * Puts smaller values before a choosen pivot and greater values after.
+ * \param index The index of the feature to apply QSort. 0 <= index < size.
+ * \param n The number of vectors in the array.
+ * \param size The number of feature of each vectors.
+ * \param base Output paramter. Pointer to the array of size (n_size).
+ * \return the index of the pivot in the output parameter base.
+ */
 static int partition(size_t index, size_t n, size_t size, float *base) {
-    float *pivot = base + n/2;
+    float *pivot = malloc(size * sizeof(float));
+    for (int i = 0; i < size; ++i) {
+        pivot[i] = base[(n/2) * n + i];
+    }
     int i = -1;
     int j = n;
     while(1) {
@@ -39,28 +51,37 @@ static int partition(size_t index, size_t n, size_t size, float *base) {
         do { --j; } while (base[j*size + index] > pivot[index]);
         if (i >= j) return j;
         /* Swap i and j. */
-        for (int k = 0; k < size; ++k) {
+        for (size_t k = 0; k < size; ++k) {
             float swap = base[i*size + k];
             base[i*size + k] = base[j*size + k];
             base[j*size + k] = swap;
         }
     }
+    free(pivot);
 }
 
+/**
+ * Implementation of the Quick Sort algorithm on bidimensional arrays of
+ * size (n*size) according to the feature index. Ascending order.
+ * \param index The index of the feature to apply QSort. 0 <= index < size.
+ * \param n The number of vectors in the array.
+ * \param size The number of feature of each vectors.
+ * \param base Output paramter. Pointer to the array of size (n_size).
+ */
 static void qsort_float_on_index(size_t index, size_t n, size_t size,
                                  float *base) {
     if (n == 2) {
         if (base[index] > base[size + index]) {
-            for (int i = 0; i < size; ++i) {
+            for (size_t i = 0; i < size; ++i) {
                 float swap = base[i];
                 base[i] = base[size + i];
                 base[size + i] = swap;
             }
         }
     } else if (n > 2) {
-        int pivot = partition(index, n, size, base);
-        qsort_on_index(index, j, size, base);
-        qsort_on_index(index, n - j, size, base + j);
+        int p = partition(index, n, size, base);
+        qsort_float_on_index(index, p, size, base);
+        qsort_float_on_index(index, n - p, size, base + p);
     }
 }
 
