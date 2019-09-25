@@ -30,9 +30,93 @@ static void best_spliter(const fspt_t *fspt, int *index, float *s,
     //TODO
 }
 
-static void fspt_split(const fspt_t *fspt, fspt_node *node, int index, float s,
+static int partition(size_t index, size_t n, size_t size, float *base) {
+    float *pivot = base + n/2;
+    int i = -1;
+    int j = n;
+    while(1) {
+        do { ++i; } while (base[i*size + index] < pivot[index]);
+        do { --j; } while (base[j*size + index] > pivot[index]);
+        if (i >= j) return j;
+        /* Swap i and j. */
+        for (int k = 0; k < size; ++k) {
+            float swap = base[i*size + k];
+            base[i*size + k] = base[j*size + k];
+            base[j*size + k] = swap;
+        }
+    }
+}
+
+static void qsort_float_on_index(size_t index, size_t n, size_t size,
+                                 float *base) {
+    if (n == 2) {
+        if (base[index] > base[size + index]) {
+            for (int i = 0; i < size; ++i) {
+                float swap = base[i];
+                base[i] = base[size + i];
+                base[size + i] = swap;
+            }
+        }
+    } else if (n > 2) {
+        int pivot = partition(index, n, size, base);
+        qsort_on_index(index, j, size, base);
+        qsort_on_index(index, n - j, size, base + j);
+    }
+}
+
+/**
+ * \brief Make a new split in the FSPT.
+ * This function modifies the input/output parameter fspt, and the ouput
+ * parameters right and left according to the split on feature `index`
+ * on value `s`.
+ * \param fspt The FSPT build so far. His depth an n_nodes are modified.
+ * \param node The current leaf node that will be splited. Is modified.
+ * \param index The index of the feature that we split on.
+ * \param s The value on features[index] that we split on.
+ * \param right Output parameter. Filled according to the split.
+ * \param left Output parameter. Filled according to the split.
+ */
+static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
                        fspt_node *right, fspt_node *left) {
-    //TODO
+    float *X = node->samples;
+    int n_features = node->n_features;
+    qsort_float_on_index(index, node->n_samples, n_features, X);
+    int split_index = 0;
+    while (X[split_index*n_features + index] < s)
+        ++split_index;
+    /* fill right node */
+    right->type = LEAF;
+    right->id = ++fspt->n_nodes;
+    right->n_features = n_features;
+    right->feature_limit = node->feature_limit;
+    right->n_samples = node->n_samples - split_index;
+    right->samples = X + split_index;
+    right->n_empty = node->n_empty * (node->feature_limit[2*index + 1] - s)
+        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    right->depth = node->depth + 1;
+    right->vol = node->vol * (node->feature_limit[2*index + 1] - s)
+        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    right->density = right->n_samples / (right->n_samples + right->n_empty);
+    /* fill left node */
+    left->type = LEAF;
+    left->id = ++fspt->n_nodes;
+    left->n_features = n_features;
+    left->feature_limit = node->feature_limit;
+    left->n_samples = split_index;
+    left->samples = X;
+    left->n_empty = node->n_empty * (s - node->feature_limit[2*index])
+        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    left->depth = node->depth + 1;
+    left->vol = node->vol * (s - node->feature_limit[2*index])
+        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    left->density = left->n_samples / (left->n_samples + left->n_empty);
+    /* fill parent node */
+    node->type = INNER;
+    node->thresh_left = s;
+    node->thresh_right = s;
+    node->right = right;
+    node->left = left;
+    node->split_feature = index;
 }
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
