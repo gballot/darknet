@@ -24,7 +24,7 @@ typedef struct fspt_node {
     float *feature_limit; // size 2*n_feature:
                           // feature_limit[2*i] = min feature(i)
                           // feature_limite[2*i+1] = max feature(i)
-    float thresh_left;    // go to left child if feature[i] <= thresh_left
+    float thresh_left;    // go to left child if feature[i] < thresh_left
     float thresh_right;   // go to right child if feature[i] >= thresh_right
     struct fspt_node *right;   // right child
     struct fspt_node *left;    // left child
