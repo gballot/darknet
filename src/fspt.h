@@ -14,44 +14,35 @@
 
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 
-typedef struct criterion_args {
-    fspt_t *fspt;
-    fspt_node *node;
-    int feature_index;
-    float spliting_point;
-    float max_try_p;
-    float max_feature_p;
-    float thresh;
-    int *best_index;
-    float *best_split;
-    float *gain;
-} criterion_args;
 
 struct fspt_node;
+struct fspt_t;
+struct criterion_args;
+typedef float (*criterion_func) (struct criterion_args *args);
+typedef float (*score_func) (const struct fspt_t *fspt,
+        const struct fspt_node *node);
 
 /**
  * Node of the FSPT.
  */
 typedef struct fspt_node {
     FSTP_NODE_TYPE type;  // LEAF or INNER
-    int id;               // id in the FSPT
     int n_features;
     const float *feature_limit; // size 2*n_feature:
                           // feature_limit[2*i] = min feature(i)
                           // feature_limite[2*i+1] = max feature(i)
-    float thresh_left;    // go to left child if feature[i] < thresh_left
-    float thresh_right;   // go to right child if feature[i] >= thresh_right
-    struct fspt_node *right;   // right child
-    struct fspt_node *left;    // left child
+    int n_empty;        // number of empty points
     int n_samples;
     float *samples;     // training samples
-    int n_empty;        // number of empty points
+    int split_feature;  // splits on feature SPLIT_FEATURE
+    float split_value;   // go to right child if feature[i] >= split_value
+                         // to the left chil otherwise.
+    struct fspt_node *right;   // right child
+    struct fspt_node *left;    // left child
     int depth;
     float vol;          // volume of the node (=prod length of each dimension)
     float density;      // density = n_samples/(n_samples + n_empty)
     float score;
-    int split_feature;  // splits on feature SPLIT_FEATURE
-    int *potential_split_set; // ??
     int count;          // keeps the successive violation of gain threshold
 } fspt_node;
 
@@ -66,20 +57,26 @@ typedef struct fspt_t {
     float *feature_importance; // feature_importance of size n_feature
     int n_nodes;         // number of nodes
     int n_samples;       // number of training samples
-    int *feature_split;  // feature_split[i] = split index for node i
-    float *thresh_left;  // thresh_left[i] = split threshold for node i <=sL
-    float *thresh_right; // thresh_right[i] = split threshold for node i>= sL
-    fspt_node *child_left;  // child_letf[i] = left child of node [i]
-    fspt_node *child_right; // child_right[i] = right child of node [i]
     fspt_node *root;
-    float (*criterion) (fspt_t *fspt, fspt_node *node, int feature_index,
-            float s); // spliting criterion
-    float (*score) (fspt_t *fspt, fspt_node *node);     // score_function
+    criterion_func criterion; // spliting criterion
+    score_func score;    // score_function
     float vol;           // volume of the tree
+    int depth;
     int max_depth;
     int min_samples;
 } fspt_t;
 
+
+typedef struct criterion_args {
+    fspt_t *fspt;
+    fspt_node *node;
+    float max_try_p;
+    float max_feature_p;
+    float thresh;
+    int best_index;
+    float best_split;
+    float gain;
+} criterion_args;
 
 /**
  * Builds an empty feature space partitioning tree.
@@ -89,10 +86,10 @@ typedef struct fspt_t {
  *                      the min and max of feature i.
  * \param feature_importance The static feature importance. Initialized at 1.
  *                           if NULL.
- * \param criterion The evaluation function.
- * \param min_samples_leaf Lower bound of samples per leaf.
+ * \param criterion The criterion to optimize.
+ * \param score The score function for the leaves.
+ * \param min_samples Lower bound of samples per leaf.
  * \param max_depth Upper bound of the depth of the tree.
- * \param gain_thresh ???
  * \return A pointer to the fspt_tree. Must be freed by the caller with
  *         a call to fspt_free(fspt_tree fspt).
  */
@@ -100,10 +97,10 @@ extern fspt_t *make_fspt(
         int n_features,
         const float *feature_limit,
         float *feature_importance,
-        void (*criterion),
-        int min_samples_leaf,
-        int max_depth,
-        float gain_thresh);
+        criterion_func criterion,
+        score_func score,
+        int min_samples,
+        int max_depth);
 
 /**
  * Gives the nodes containing each input X. The output parameter nodes
