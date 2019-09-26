@@ -27,7 +27,7 @@ static float volume(int n_features, const float *feature_limit)
 }
 
 static float gini_criterion(void *arg_ptr) {
-    gini_criterion_arg arg = *(gini_criterion_arg *) arg_ptr;
+    //gini_criterion_arg arg = *(gini_criterion_arg *) arg_ptr;
 
 }
 
@@ -299,9 +299,11 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
         ++split_index;
     /* fill right node */
     right->type = LEAF;
-    right->id = ++fspt->n_nodes;
     right->n_features = n_features;
-    right->feature_limit = node->feature_limit;
+    float * right_feature_limit = malloc(2*n_features);
+    memcpy(right_feature_limit, node->feature_limit, 2*n_features);
+    right_feature_limit[2*index] = s;
+    right->feature_limit = right_feature_limit;
     right->n_samples = node->n_samples - split_index;
     right->samples = X + split_index;
     right->n_empty = node->n_empty * (node->feature_limit[2*index + 1] - s)
@@ -310,11 +312,14 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->vol = node->vol * (node->feature_limit[2*index + 1] - s)
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
     right->density = right->n_samples / (right->n_samples + right->n_empty);
+    right->score = fspt->score(fspt, right);
     /* fill left node */
     left->type = LEAF;
-    left->id = ++fspt->n_nodes;
     left->n_features = n_features;
-    left->feature_limit = node->feature_limit;
+    float * left_feature_limit = malloc(2*n_features);
+    memcpy(left_feature_limit, node->feature_limit, 2*n_features);
+    left_feature_limit[2*index + 1] = s;
+    left->feature_limit = left_feature_limit;
     left->n_samples = split_index;
     left->samples = X;
     left->n_empty = node->n_empty * (s - node->feature_limit[2*index])
@@ -323,18 +328,22 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->vol = node->vol * (s - node->feature_limit[2*index])
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
     left->density = left->n_samples / (left->n_samples + left->n_empty);
+    left->score = fspt->score(fspt, left);
     /* fill parent node */
     node->type = INNER;
-    node->thresh_left = s;
-    node->thresh_right = s;
+    node->split_value = s;
     node->right = right;
     node->left = left;
     node->split_feature = index;
+    /* update fspt */
+    fspt->n_nodes += 2;
+    if (right->depth > fspt->depth)
+        fspt->depth = right->depth;
 }
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
-                  float *feature_importance, void (*criterion),
-                  int min_samples_leaf, int max_depth, float gain_thresh)
+                  float *feature_importance, criterion_func criterion,
+                  score_func score, int min_samples, int max_depth)
 {
     if (!feature_importance) {
         feature_importance = malloc(n_features * sizeof(float));
@@ -349,7 +358,10 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     fspt->feature_limit = feature_limit;
     fspt->feature_importance = feature_importance;
     fspt->criterion = criterion;
+    fspt->score = score;
     fspt->vol = volume(n_features, feature_limit);
+    fspt->max_depth = max_depth;
+    fspt->min_samples = min_samples;
     return fspt;
 }
 
@@ -362,9 +374,9 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
         fspt_node *tmp_node = fspt->root;
         while (tmp_node->type != LEAF) {
             int split_feature = tmp_node->split_feature;
-            if (x[split_feature] <= tmp_node->thresh_left) {
+            if (x[split_feature] <= tmp_node->split_value) {
                 tmp_node = tmp_node->left;
-            } else if (x[split_feature] >= tmp_node->thresh_right) {
+            } else if (x[split_feature] >= tmp_node->split_value) {
                 tmp_node = tmp_node->right;
             } else {
                 nodes[i] = NULL;
@@ -386,20 +398,18 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
         if (nodes[i] == NULL) {
             Y[i] = 0.;
         } else {
-            //TODO(Gab)
-            Y[i] = fspt->score((void *) nodes[i]);
+            Y[i] = fspt->score(fspt, nodes[i]);
         }
     }
     free(nodes);
 }
 
-void fspt_fit(int n_samples, float *X,
-              float max_feature, float max_try, fspt_t *fspt)
+void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
 {
     assert(fspt->max_depth >= 1);
+    args->fspt = fspt;
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
-    root->id = 0;
     root->type = LEAF;
     root->n_features = fspt->n_features;
     root->feature_limit = fspt->feature_limit;
@@ -407,32 +417,41 @@ void fspt_fit(int n_samples, float *X,
     root->n_empty = n_samples; // We arbitray initialize such that Density=0.5
     root->samples = X;
     root->depth = 1;
-    root->vol = volume(fspt->n_features, fspt->feature_limit);
+    root->vol = volume(root->n_features, root->feature_limit);
+    /* Update fspt */
+    fspt->n_nodes = 1;
+    fspt->n_samples = n_samples;
     fspt->root = root;
+    fspt->depth = 1;
 
     list *heap = make_list(); // Heap of the nodes to examine
     list_insert(heap, (void *)root);
     while (heap->size > 0) {
         fspt_node *current_node = (fspt_node *) list_pop(heap);
-        int index;
-        float s, gain;
-        best_spliter(fspt, current_node, 1., 1., 0.05, &index, &gain, &s);
-        if (index == FAIL_TO_FIND) {
+        int *index;
+        float *s, *gain;
+        args->node = current_node;
+        index = &args->best_index;
+        s = &args->best_split;
+        gain = &args->gain;
+        //best_spliter(fspt, current_node, 1., 1., 0.05, &index, &gain, &s);
+        fspt->criterion(args);
+        if (*index_ptr == FAIL_TO_FIND) {
             //TODO
         } else {
             fspt_node *left, *right;
-            fspt_split(fspt, current_node, index, s, left, right);
+            fspt_split(fspt, current_node, *index, *s, left, right);
             /* Should I examine right ? */
             if (right->depth > fspt->max_depth
                     || right->n_samples < fspt->min_samples) {
-                right->score = fspt->score((void *) right);
+                right->score = fspt->score(fspt, right);
             } else {
                 list_insert(heap, right);
             }
             /* Should I examine left ? */
             if (left->depth > fspt->max_depth
                     || left->n_samples < fspt->min_samples) {
-                left->score = fspt->score((void *) left);
+                left->score = fspt->score(fspt, left);
             } else {
                 list_insert(heap, left);
             }
