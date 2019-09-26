@@ -10,7 +10,19 @@
 #ifndef FSPT_H
 #define FSPT_H
 
+#include <stddef.h>
+
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
+
+typedef struct gini_criterion_arg {
+    float min;
+    float max;
+    float bin;
+    size_t n_left;
+    size_t n_right;
+    int n_empty;
+    int min_samples;
+} gini_criterion_arg;
 
 struct fspt_node;
 
@@ -49,13 +61,14 @@ typedef struct fspt_t {
                          // feature_limite[2*i+1] = max feature(i)
     float *feature_importance; // feature_importance of size n_feature
     int n_nodes;         // number of nodes
+    int n_samples;       // number of training samples
     int *feature_split;  // feature_split[i] = split index for node i
     float *thresh_left;  // thresh_left[i] = split threshold for node i <=sL
     float *thresh_right; // thresh_right[i] = split threshold for node i>= sL
     fspt_node *child_left;  // child_letf[i] = left child of node [i]
     fspt_node *child_right; // child_right[i] = right child of node [i]
     fspt_node *root;
-    void *criterion;     // spliting criterion
+    float (*criterion) (void *); // spliting criterion
     float vol;           // volume of the tree
     int max_depth;
     int min_samples;
