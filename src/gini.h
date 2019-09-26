@@ -5,6 +5,6 @@
 
 #include "fspt.h"
 
-extern float gini_criterion(criterion_args *args);
+extern void gini_criterion(criterion_args *args);
 
 #endif /* GINI_H */

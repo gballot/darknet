@@ -38,6 +38,12 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
             || n_empty_right + n_right < min_samples)
         return FLT_MAX;
     //TODO
+    float gini_left = gini(n_empty_left, n_left);
+    float gini_right = gini(n_empty_right, n_right);
+    int total_left = n_left + n_empty_left;
+    int total_right = n_right + n_empty_right;
+    int total = total_right + total_left;
+    return gini_left * total_left / total + gini_right * total_right / total;
 }
 
 /**
@@ -60,14 +66,6 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
  */
 static void hist(size_t n, size_t step, const float *X, float lower_bond,
                  size_t *n_bins, size_t *cdf, float *bins) {
-    if (cdf)
-        cdf = realloc(cdf, 2 * n * sizeof(float));
-    else
-        cdf = malloc(2 * n * sizeof(float));
-    if (bins)
-        bins = realloc(bins, 2 * n * sizeof(float));
-    else
-        bins = malloc(2 * n * sizeof(float));
     *n_bins = 0;
     size_t last_cdf = 0;
     /* Special case for X[0] */
@@ -116,11 +114,9 @@ static void hist(size_t n, size_t step, const float *X, float lower_bond,
         }
         last_x = x;
     }
-    bins = realloc(bins, *n_bins);
-    cdf = realloc(cdf, *n_bins);
 }
 
-float gini_criterion(criterion_args *args) {
+void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
     float *best_gains = malloc(fspt->n_features * sizeof(float));
@@ -134,14 +130,16 @@ float gini_criterion(criterion_args *args) {
         int feat = random_features[i];
         float node_min = node->feature_limit[2*feat];
         float node_max = node->feature_limit[2*feat + 1];
-        float *bins;
-        size_t *cdf;
-        size_t n_bins;
+        size_t *cdf = malloc(2 * fspt->n_features * sizeof(float));
+        float *bins = malloc(2 * fspt->n_features * sizeof(float));
+        size_t n_bins = 0;
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
+        bins = realloc(bins, n_bins);
+        cdf = realloc(cdf, n_bins);
         if (n_bins < 1) continue;
-        size_t best_gain_index = 0;
-        float best_gain = 0.;
+        size_t local_best_gain_index = 0;
+        float local_best_gain = 0.;
 
         //TODO: could add max_try policy.
         //Add an argument 0<max_try_p<1
@@ -155,9 +153,9 @@ float gini_criterion(criterion_args *args) {
             float score = gini_after_split(node_min, node_max, bin, n_left,
                     n_right, node->n_empty, fspt->min_samples);
             float tmp_gain = current_score - score;
-            if (tmp_gain > *best_gain) {
-                *best_gain = tmp_gain;
-                *best_gain_index = j;
+            if (tmp_gain > local_best_gain) {
+                local_best_gain = tmp_gain;
+                local_best_gain_index = j;
             }
         }
 
@@ -166,10 +164,13 @@ float gini_criterion(criterion_args *args) {
         float fspt_min = fspt->feature_limit[2*feat];
         float fspt_max = fspt->feature_limit[2*feat + 1];
         float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
-        best_gains[feat] = best_gain * fspt->feature_importance[feat]
+        best_gains[feat] = local_best_gain * fspt->feature_importance[feat]
             * relative_length;
-        best_splits[feat] = bins[best_gain_index];
+        best_splits[feat] = bins[local_best_gain_index];
     }
+    int *best_feature_index = &args->best_index;
+    float *best_gain = &args->gain;
+    float *best_split = &args->best_split;
     *best_feature_index = max_index(best_gains, fspt->n_features);
     *best_gain = best_gains[*best_feature_index];
     *best_split = best_splits[*best_feature_index];
@@ -177,11 +178,11 @@ float gini_criterion(criterion_args *args) {
         *best_feature_index = FAIL_TO_FIND;
         debug_print("fail to find any split point ad depth %d and n_samples %d",
                 node->depth, node->n_samples);
-    } else if (*best_gain < thresh) {
+    } else if (*best_gain < args->thresh) {
         debug_print("fail to find any split point ad depth %d and count %d",
                 node->depth, node->count);
         node->count += 1;
-        int v = 10 > fspt->n_samples / 500 ? v : fspt->n_samples / 500;
+        int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
         if (node->count >= v) {
             *best_feature_index = FAIL_TO_FIND;
         }
@@ -191,3 +192,5 @@ float gini_criterion(criterion_args *args) {
 
     free(random_features);
 }
+
+#undef EPS
