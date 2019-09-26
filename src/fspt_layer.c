@@ -159,22 +159,6 @@ static int entry_index(layer l, int batch, int location, int entry)
 }
 
 
-/* potentialy useless should compute fspt only once */
-int fspt_num_detections(layer l, network *net, float yolo_thresh, float fspt_thresh) {
-    layer yolo_layer = net->layers[l.yolo_layer];
-    int count = 0;
-    for (int i = 0; i < l.w*l.h; ++i){
-        for(int n = 0; n < l.n; ++n){
-            int obj_index  = entry_index(l, 0, n*l.w*l.h + i, 4);
-            if(l.output[obj_index] > yolo_thresh){
-                if(1/*fspt (objet) == 1*/)
-                    ++count;
-            }
-        }
-    }
-    return count;
-}
-
 int get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
         detection *dets) {
