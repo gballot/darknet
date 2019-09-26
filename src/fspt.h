@@ -12,17 +12,17 @@
 
 #include <stddef.h>
 
+#define FAIL_TO_FIND -1
+
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 
 
 struct fspt_node;
 struct fspt_t;
 struct criterion_args;
-typedef float (*criterion_func) (struct criterion_args *args);
+typedef void (*criterion_func) (struct criterion_args *args);
 typedef float (*score_func) (const struct fspt_t *fspt,
         const struct fspt_node *node);
-
-const int FAIL_TO_FIND = -1;
 
 /**
  * Node of the FSPT.

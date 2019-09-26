@@ -8,7 +8,6 @@
 #include "utils.h"
 
 
-
 /**
  * Computes the volume of a feature space.
  * Volume = Prod_i(max feature[i] - min feature[i])
@@ -25,111 +24,6 @@ static float volume(int n_features, const float *feature_limit)
     return vol;
 }
 
-
-static void compute_best_gain(size_t n_bins, const float *bins,
-        const size_t *cdf, int n_samples, int n_empty,
-        float current_score, float node_min, float node_max,
-        int min_samples, float (*criterion) (void *),
-        float *best_gain, size_t *best_gain_index) {
-    //TODO: could add max_try policy.
-    //Add an argument 0<max_try_p<1
-    //and take a subsample of bins of size floor(max(1,n_bins*max_try_p))
-    for (int j = 0; j < n_bins; ++j) {
-        assert(n_empty == n_samples);
-        float bin = bins[j];
-        size_t n_left = cdf[j];
-        size_t n_right = n_samples - cdf[j];
-        gini_criterion_arg arg = {
-            node_min,
-            node_max,
-            bin,
-            n_left,
-            n_right,
-            n_empty,
-            min_samples
-        };
-        float score = score((void *) &arg);
-        float tmp_gain = current_score - score;
-        if (tmp_gain > *best_gain) {
-            *best_gain = tmp_gain;
-            *best_gain_index = j;
-        }
-    }
-}
-
-/**
- * Finds the best_feature_index and the best_split that maximize the spliting
- * criterion.
- *
- * \param fspt The feature space partitioning tree.
- * \param node The node we will split.
- * \param max_try_p The percentage of sliting points among the potential split
- *                  value set that we want to try.
- * \param max_feature_p The percentage of random feature we want to try.
- * \param thresh The minimum gain we want to achieve.
- * \param best_feature_index Output parameter. Will be filled with the index
- *                           of the best feature to split on.
- * \param best_gain Output parameter. Will be filled with the best gain
- *                  achieved.
- * \param best_split Output parameter. Will be filled sith the best split
- *                   value.
- */
-/*
-static void best_spliter(const fspt_t *fspt, fspt_node *node,
-                         float max_try_p, float max_feature_p, float thresh,
-                         int *best_feature_index, float *best_gain,
-                         float *best_split) {
-    float *best_gains = malloc(fspt->n_features * sizeof(float));
-    float *best_splits = malloc(fspt->n_features * sizeof(float));
-    int *random_features = random_index_order(0, fspt->n_features - 1);
-    float *X = node->samples;
-    float current_score = 0.5; // Max of Gini index.
-    //TODO don't go to n_features but floor(n_features*max_features_p)
-    //int max_features = floor(fspt->n_features * max_features_p);
-    for (int i = 0; i < fspt->n_features; ++i) {
-        int feat = random_features[i];
-        float node_min = node->feature_limit[2*feat];
-        float node_max = node->feature_limit[2*feat + 1];
-        float *bins;
-        size_t *cdf;
-        size_t n_bins;
-        hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
-                cdf, bins);
-        if (n_bins < 1) continue;
-        size_t best_gain_index = 0;
-        float best_gain = 0.;
-        compute_best_gain(n_bins, bins, cdf, node->n_samples, node->n_empty,
-                current_score, node_min, node_max, fspt->min_samples,
-                fspt->criterion, &best_gain, &best_gain_index);
-        float fspt_min = fspt->feature_limit[2*feat];
-        float fspt_max = fspt->feature_limit[2*feat + 1];
-        float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
-        best_gains[feat] = best_gain * fspt->feature_importance[feat]
-            * relative_length;
-        best_splits[feat] = bins[best_gain_index];
-    }
-    *best_feature_index = max_index(best_gains, fspt->n_features);
-    *best_gain = best_gains[*best_feature_index];
-    *best_split = best_splits[*best_feature_index];
-    if (*best_gain < 0) {
-        *best_feature_index = FAIL_TO_FIND;
-        debug_print("fail to find any split point ad depth %d and n_samples %d",
-                node->depth, node->n_samples);
-    } else if (*best_gain < thresh) {
-        debug_print("fail to find any split point ad depth %d and count %d",
-                node->depth, node->count);
-        node->count += 1;
-        int v = 10 > fspt->n_samples / 500 ? v : fspt->n_samples / 500;
-        if (node->count >= v) {
-            *best_feature_index = FAIL_TO_FIND;
-        }
-    } else {
-        node->count = 0;
-    }
-
-    free(random_features);
-}
-*/
 
 /**
  * Helper funciton for the Quick Sort algorithm.
@@ -346,14 +240,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         index = &args->best_index;
         s = &args->best_split;
         gain = &args->gain;
-        //best_spliter(fspt, current_node, 1., 1., 0.05, &index, &gain, &s);
         /* fills the values of *args */
         fspt->criterion(args);
         debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
         if (*index == FAIL_TO_FIND) {
             //TODO
         } else {
-            fspt_node *left, *right;
+            fspt_node *left = calloc(1, sizeof(fspt_node));
+            fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);
             /* Should I examine right ? */
             if (right->depth > fspt->max_depth
