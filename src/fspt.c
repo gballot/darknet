@@ -1,14 +1,13 @@
 #include "fspt.h"
 
 #include <assert.h>
+#include <float.h>
 #include <stdlib.h>
 
 #include "list.h"
 #include "utils.h"
 
-#define EPS 0.000001
 
-static const int FAIL_TO_FIND = -1;
 
 /**
  * Computes the volume of a feature space.
@@ -26,95 +25,6 @@ static float volume(int n_features, const float *feature_limit)
     return vol;
 }
 
-static float gini_criterion(void *arg_ptr) {
-    //gini_criterion_arg arg = *(gini_criterion_arg *) arg_ptr;
-
-}
-
-static float gini_score(fspt_t *fspt, fspt_node *node) {
-    //TODO
-    return 0.5;
-}
-
-/**
- * Creates an hitogram of X with regards to the potential split points
- * depicted in the paper Toward Safe Machine Learning. That is to say,
- * {max(lower_bond, X[0]-EPS), X[0], X[step]-EPS, X[step],...,
- *  X[(n-1)*step]-EPS, X[(n-1)*step]}.
- *
- * Uses macro EPS.
- *
- * \param n The number of floats in X.
- * \param step The step to acces X : X[i*step].
- * \param X The float array. Is assumed sorted.
- * \param lower_bond Lower bond of X.
- * \param n_bins Output paramerter. the number of bins for the bins and cdf
- *               arrays.
- * \param cdf Output parameter. cdf[i] contains the cumulative number of
- *            elements <= bins[i].
- * \param bins Output parameter. Contains the elements in X and them minus EPS.
- */
-static void hist(size_t n, size_t step, const float *X, float lower_bond,
-                 size_t *n_bins, size_t *cdf, float *bins) {
-    if (cdf)
-        realloc(cdf, 2 * n * sizeof(float));
-    else
-        cdf = malloc(2 * n * sizeof(float));
-    if (bins)
-        realloc(bins, 2 * n * sizeof(float));
-    else
-        bins = malloc(2 * n * sizeof(float));
-    *n_bins = 0;
-    size_t last_cdf = 0;
-    /* Special case for X[0] */
-    float x_0 = X[0];
-    if (x_0 > lower_bond) {
-        float eps = EPS;
-        while(x_0 - eps < lower_bond) {
-            eps /= 2;
-        }
-        if (eps > 0) {
-            bins[0] = x_0 - eps;
-            cdf[0] = ++last_cdf;
-            bins[1] = x_0;
-            cdf[1] = ++last_cdf;
-            *n_bins = 2;
-        } else {
-            bins[0] = x_0;
-            cdf[0] = ++last_cdf;
-            *n_bins = 1;
-        }
-    } else {
-        bins[0] = x_0;
-        cdf[0] = ++last_cdf;
-        *n_bins = 1;
-    }
-    /* build histogram */
-    float last_x = x_0;
-    for (size_t i = 0; i < n ; ++i) {
-        float x = X[i*step];
-        assert(x >= last_x);
-        if (x > last_x) {
-            float eps = EPS;
-            while(x - eps < last_x) {
-                eps /= 2;
-            }
-            if (eps > 0) {
-                bins[*n_bins] = x - eps;
-                cdf[(*n_bins)++] = ++last_cdf;
-                bins[*n_bins] = x;
-                cdf[(*n_bins)++] = ++last_cdf;
-            } else {
-                cdf[*n_bins - 1] = ++last_cdf;
-            }
-        } else {
-            cdf[*n_bins - 1] = ++last_cdf;
-        }
-        last_x = x;
-    }
-    bins = realloc(bins, *n_bins);
-    cdf = realloc(cdf, *n_bins);
-}
 
 static void compute_best_gain(size_t n_bins, const float *bins,
         const size_t *cdf, int n_samples, int n_empty,
@@ -164,6 +74,7 @@ static void compute_best_gain(size_t n_bins, const float *bins,
  * \param best_split Output parameter. Will be filled sith the best split
  *                   value.
  */
+/*
 static void best_spliter(const fspt_t *fspt, fspt_node *node,
                          float max_try_p, float max_feature_p, float thresh,
                          int *best_feature_index, float *best_gain,
@@ -218,6 +129,7 @@ static void best_spliter(const fspt_t *fspt, fspt_node *node,
 
     free(random_features);
 }
+*/
 
 /**
  * Helper funciton for the Quick Sort algorithm.
@@ -398,7 +310,7 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
         if (nodes[i] == NULL) {
             Y[i] = 0.;
         } else {
-            Y[i] = fspt->score(fspt, nodes[i]);
+            Y[i] = nodes[i]->score;
         }
     }
     free(nodes);
@@ -435,8 +347,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         s = &args->best_split;
         gain = &args->gain;
         //best_spliter(fspt, current_node, 1., 1., 0.05, &index, &gain, &s);
+        /* fills the values of *args */
         fspt->criterion(args);
-        if (*index_ptr == FAIL_TO_FIND) {
+        debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
+        if (*index == FAIL_TO_FIND) {
             //TODO
         } else {
             fspt_node *left, *right;

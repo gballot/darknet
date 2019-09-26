@@ -22,6 +22,8 @@ typedef float (*criterion_func) (struct criterion_args *args);
 typedef float (*score_func) (const struct fspt_t *fspt,
         const struct fspt_node *node);
 
+const int FAIL_TO_FIND = -1;
+
 /**
  * Node of the FSPT.
  */
@@ -132,10 +134,10 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
  *
  * \param n_samples The number of samples in X.
  * \param X the samples to fit.
- * \param max_feature The maximum number feature to be visited (TODO).
- * \param max_try Maximum number of split ???.
+ * \param args Pointer to the criterion args.
+ * \param fspt The feature space partitioning tree.
  */
-extern void fspt_fit(int n_samples, float *X,
-              float max_feature, float max_try, fspt_t *fspt);
+extern void fspt_fit(int n_samples, float *X, criterion_args *args,
+        fspt_t *fspt);
 
 #endif /* FSPT_H */
