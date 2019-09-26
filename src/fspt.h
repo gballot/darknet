@@ -14,15 +14,18 @@
 
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 
-typedef struct gini_criterion_arg {
-    float min;
-    float max;
-    float bin;
-    size_t n_left;
-    size_t n_right;
-    int n_empty;
-    int min_samples;
-} gini_criterion_arg;
+typedef struct criterion_args {
+    fspt_t *fspt;
+    fspt_node *node;
+    int feature_index;
+    float spliting_point;
+    float max_try_p;
+    float max_feature_p;
+    float thresh;
+    int *best_index;
+    float *best_split;
+    float *gain;
+} criterion_args;
 
 struct fspt_node;
 
@@ -33,7 +36,7 @@ typedef struct fspt_node {
     FSTP_NODE_TYPE type;  // LEAF or INNER
     int id;               // id in the FSPT
     int n_features;
-    float *feature_limit; // size 2*n_feature:
+    const float *feature_limit; // size 2*n_feature:
                           // feature_limit[2*i] = min feature(i)
                           // feature_limite[2*i+1] = max feature(i)
     float thresh_left;    // go to left child if feature[i] < thresh_left
@@ -46,6 +49,7 @@ typedef struct fspt_node {
     int depth;
     float vol;          // volume of the node (=prod length of each dimension)
     float density;      // density = n_samples/(n_samples + n_empty)
+    float score;
     int split_feature;  // splits on feature SPLIT_FEATURE
     int *potential_split_set; // ??
     int count;          // keeps the successive violation of gain threshold
@@ -56,7 +60,7 @@ typedef struct fspt_node {
  */
 typedef struct fspt_t {
     int n_features;      // number of features
-    float *feature_limit;// size 2*n_feature:
+    const float *feature_limit;// size 2*n_feature:
                          //feature_limit[2*i] = min feature(i)
                          // feature_limite[2*i+1] = max feature(i)
     float *feature_importance; // feature_importance of size n_feature
@@ -68,7 +72,9 @@ typedef struct fspt_t {
     fspt_node *child_left;  // child_letf[i] = left child of node [i]
     fspt_node *child_right; // child_right[i] = right child of node [i]
     fspt_node *root;
-    float (*criterion) (void *); // spliting criterion
+    float (*criterion) (fspt_t *fspt, fspt_node *node, int feature_index,
+            float s); // spliting criterion
+    float (*score) (fspt_t *fspt, fspt_node *node);     // score_function
     float vol;           // volume of the tree
     int max_depth;
     int min_samples;
@@ -132,7 +138,7 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
  * \param max_feature The maximum number feature to be visited (TODO).
  * \param max_try Maximum number of split ???.
  */
-extern void fspt_fit(int n_samples, const float *X,
+extern void fspt_fit(int n_samples, float *X,
               float max_feature, float max_try, fspt_t *fspt);
 
 #endif /* FSPT_H */

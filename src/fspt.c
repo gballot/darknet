@@ -4,8 +4,11 @@
 #include <stdlib.h>
 
 #include "list.h"
+#include "utils.h"
 
 #define EPS 0.000001
+
+static const int FAIL_TO_FIND = -1;
 
 /**
  * Computes the volume of a feature space.
@@ -23,7 +26,12 @@ static float volume(int n_features, const float *feature_limit)
     return vol;
 }
 
-static float fspt_score(const fspt_t *fspt, fspt_node *node) {
+static float gini_criterion(void *arg_ptr) {
+    gini_criterion_arg arg = *(gini_criterion_arg *) arg_ptr;
+
+}
+
+static float gini_score(fspt_t *fspt, fspt_node *node) {
     //TODO
     return 0.5;
 }
@@ -130,7 +138,7 @@ static void compute_best_gain(size_t n_bins, const float *bins,
             n_empty,
             min_samples
         };
-        float score = criterion((void *) &arg);
+        float score = score((void *) &arg);
         float tmp_gain = current_score - score;
         if (tmp_gain > *best_gain) {
             *best_gain = tmp_gain;
@@ -139,6 +147,23 @@ static void compute_best_gain(size_t n_bins, const float *bins,
     }
 }
 
+/**
+ * Finds the best_feature_index and the best_split that maximize the spliting
+ * criterion.
+ *
+ * \param fspt The feature space partitioning tree.
+ * \param node The node we will split.
+ * \param max_try_p The percentage of sliting points among the potential split
+ *                  value set that we want to try.
+ * \param max_feature_p The percentage of random feature we want to try.
+ * \param thresh The minimum gain we want to achieve.
+ * \param best_feature_index Output parameter. Will be filled with the index
+ *                           of the best feature to split on.
+ * \param best_gain Output parameter. Will be filled with the best gain
+ *                  achieved.
+ * \param best_split Output parameter. Will be filled sith the best split
+ *                   value.
+ */
 static void best_spliter(const fspt_t *fspt, fspt_node *node,
                          float max_try_p, float max_feature_p, float thresh,
                          int *best_feature_index, float *best_gain,
@@ -149,6 +174,7 @@ static void best_spliter(const fspt_t *fspt, fspt_node *node,
     float *X = node->samples;
     float current_score = 0.5; // Max of Gini index.
     //TODO don't go to n_features but floor(n_features*max_features_p)
+    //int max_features = floor(fspt->n_features * max_features_p);
     for (int i = 0; i < fspt->n_features; ++i) {
         int feat = random_features[i];
         float node_min = node->feature_limit[2*feat];
@@ -175,16 +201,16 @@ static void best_spliter(const fspt_t *fspt, fspt_node *node,
     *best_gain = best_gains[*best_feature_index];
     *best_split = best_splits[*best_feature_index];
     if (*best_gain < 0) {
-        *best_feature_index = -1;
+        *best_feature_index = FAIL_TO_FIND;
         debug_print("fail to find any split point ad depth %d and n_samples %d",
                 node->depth, node->n_samples);
     } else if (*best_gain < thresh) {
         debug_print("fail to find any split point ad depth %d and count %d",
                 node->depth, node->count);
         node->count += 1;
-        int v = min(10, fspt->n_samples / 500);
+        int v = 10 > fspt->n_samples / 500 ? v : fspt->n_samples / 500;
         if (node->count >= v) {
-            *best_feature_index = -1;
+            *best_feature_index = FAIL_TO_FIND;
         }
     } else {
         node->count = 0;
@@ -334,7 +360,6 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
     for (int i = 0; i < n; i++) {
         const float *x = X + i * n_features;
         fspt_node *tmp_node = fspt->root;
-        int not_found = 0;
         while (tmp_node->type != LEAF) {
             int split_feature = tmp_node->split_feature;
             if (x[split_feature] <= tmp_node->thresh_left) {
@@ -362,13 +387,13 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
             Y[i] = 0.;
         } else {
             //TODO(Gab)
-            Y[i] = score(nodes[i]);
+            Y[i] = fspt->score((void *) nodes[i]);
         }
     }
     free(nodes);
 }
 
-void fspt_fit(int n_samples, const float *X,
+void fspt_fit(int n_samples, float *X,
               float max_feature, float max_try, fspt_t *fspt)
 {
     assert(fspt->max_depth >= 1);
@@ -391,7 +416,7 @@ void fspt_fit(int n_samples, const float *X,
         fspt_node *current_node = (fspt_node *) list_pop(heap);
         int index;
         float s, gain;
-        best_spliter(fspt, &index, &s, &gain);
+        best_spliter(fspt, current_node, 1., 1., 0.05, &index, &gain, &s);
         if (index == FAIL_TO_FIND) {
             //TODO
         } else {
@@ -399,15 +424,15 @@ void fspt_fit(int n_samples, const float *X,
             fspt_split(fspt, current_node, index, s, left, right);
             /* Should I examine right ? */
             if (right->depth > fspt->max_depth
-                    || right->n_samples < fspt->min_sample) {
-                right->score = fspt_score(right);
+                    || right->n_samples < fspt->min_samples) {
+                right->score = fspt->score((void *) right);
             } else {
                 list_insert(heap, right);
             }
             /* Should I examine left ? */
             if (left->depth > fspt->max_depth
-                    || left->n_samples < fspt->min_sample) {
-                left->score = fspt_score(left);
+                    || left->n_samples < fspt->min_samples) {
+                left->score = fspt->score((void *) left);
             } else {
                 list_insert(heap, left);
             }
