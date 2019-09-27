@@ -27,41 +27,41 @@
           __LINE__, __func__, __VA_ARGS__); \
   } while (0)
 
-double what_time_is_it_now();
-void shuffle(void *arr, size_t n, size_t size);
-void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);
-void free_ptrs(void **ptrs, int n);
-int alphanum_to_int(char c);
-char int_to_alphanum(int i);
-int read_int(int fd);
-void write_int(int fd, int n);
-void read_all(int fd, char *buffer, size_t bytes);
-void write_all(int fd, char *buffer, size_t bytes);
-int read_all_fail(int fd, char *buffer, size_t bytes);
-int write_all_fail(int fd, char *buffer, size_t bytes);
-void find_replace(char *str, char *orig, char *rep, char *output);
-void malloc_error();
-void file_error(char *s);
-void strip(char *s);
-void strip_char(char *s, char bad);
-list *split_str(char *s, char delim);
-char *fgetl(FILE *fp);
-list *parse_csv_line(char *line);
-char *copy_string(char *s);
-int count_fields(char *line);
-float *parse_fields(char *line, int n);
-void translate_array(float *a, int n, float s);
-float constrain(float min, float max, float a);
-int constrain_int(int a, int min, int max);
-float rand_scale(float s);
-int rand_int(int min, int max);
-void mean_arrays(float **a, int n, int els, float *avg);
-float dist_array(float *a, float *b, int n, int sub);
-float **one_hot_encode(float *a, int n, int k);
-float sec(clock_t clocks);
-void print_statistics(float *a, int n);
-int int_index(int *a, int val, int n);
-char *itoa(int val, int base);
+extern double what_time_is_it_now();
+extern void shuffle(void *arr, size_t n, size_t size);
+extern void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);
+extern void free_ptrs(void **ptrs, int n);
+extern int alphanum_to_int(char c);
+extern char int_to_alphanum(int i);
+extern int read_int(int fd);
+extern void write_int(int fd, int n);
+extern void read_all(int fd, char *buffer, size_t bytes);
+extern void write_all(int fd, char *buffer, size_t bytes);
+extern int read_all_fail(int fd, char *buffer, size_t bytes);
+extern int write_all_fail(int fd, char *buffer, size_t bytes);
+extern void find_replace(char *str, char *orig, char *rep, char *output);
+extern void malloc_error();
+extern void file_error(char *s);
+extern void strip(char *s);
+extern void strip_char(char *s, char bad);
+extern list *split_str(char *s, char delim);
+extern char *fgetl(FILE *fp);
+extern list *parse_csv_line(char *line);
+extern char *copy_string(char *s);
+extern int count_fields(char *line);
+extern float *parse_fields(char *line, int n);
+extern void translate_array(float *a, int n, float s);
+extern float constrain(float min, float max, float a);
+extern int constrain_int(int a, int min, int max);
+extern float rand_scale(float s);
+extern int rand_int(int min, int max);
+extern void mean_arrays(float **a, int n, int els, float *avg);
+extern float dist_array(float *a, float *b, int n, int sub);
+extern float **one_hot_encode(float *a, int n, int k);
+extern float sec(clock_t clocks);
+extern void print_statistics(float *a, int n);
+extern int int_index(int *a, int val, int n);
+extern char *itoa(int val, int base);
 
 #endif
 

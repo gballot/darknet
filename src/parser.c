@@ -37,6 +37,9 @@
 #include "softmax_layer.h"
 #include "lstm_layer.h"
 #include "fspt_layer.h"
+#include "fspt.h"
+#include "fspt_score.h"
+#include "fspt_criterion.h"
 #include "utils.h"
 
 typedef struct{
@@ -45,7 +48,6 @@ typedef struct{
 }section;
 
 list *read_cfg(char *filename);
-char *itoa(int val, int base);
 
 LAYER_TYPE string_to_layer_type(char * type)
 {
@@ -666,10 +668,14 @@ route_layer parse_route(list *options, size_params params, network *net)
 
 layer parse_fspt(list *options, size_params params)
 {
+    /* net */
     network *net = params.net;
+    /* classes */
     int classes = option_find_int(options, "classes",1);
+    /* yolo_layer */
     int yolo_layer_idx = option_find_int_from_label(options, "yolo_layer", -1);
     if(yolo_layer_idx < 0) yolo_layer_idx = params.index + yolo_layer_idx;
+    /* input_layers */
     char *l = option_find(options, "feature_layers");
     int len = strlen(l);
     if(!l) error("FSPT Layer must specify input layers");
@@ -683,7 +689,7 @@ layer parse_fspt(list *options, size_params params)
 
     char *tmp_ref = strtok(l, " ,");
     int i = 0;
-    while(tmp_ref != NULL) {
+    while(tmp_ref) {
         int index = 0;
         if(!strcmp(itoa(atoi(tmp_ref), 10), tmp_ref)) {
             index = atoi(tmp_ref);
@@ -709,17 +715,80 @@ layer parse_fspt(list *options, size_params params)
         tmp_ref = strtok(NULL, " ,");
         i++;
     }
-    /*
-    for(i = 0; i < n; ++i){
-        int index = atoi(l);
-        l = strchr(l, ',')+1;
-        if(index < 0) index = params.index + index;
-        input_layers[i] = index;
-        sizes[i] = net->layers[index].outputs;
+    /* min_samples */
+    int min_samples = option_find_int(options, "min_samples",1);
+    /* max_depth */
+    int max_depth = option_find_int(options, "max_depth",10);
+    /* n_features */
+    int n_features = 0;
+    for(int i = 0; i < n; i++)
+        n_features += net->layers[input_layers[i]].out_c;
+    /* feature_limit */
+    char *limit_string = option_find(options, "feature_limit");
+    if(!limit_string) error("FSPT Layer must specify feature_limit");
+    len = strlen(limit_string);
+    int m = 1;
+    for(int i = 0; i < len; ++i){
+        if (limit_string[i] == ',') ++m;
     }
-    */
+    float *feature_limit = calloc(2*n_features, sizeof(int));
+    if (m == 2) // If m == 2 the bonds are the same for all the features.
+    {
+        char *tmp_lim = strtok(limit_string, " ,");
+        float min = atof(tmp_lim);
+        tmp_lim = strtok(NULL, " ,");
+        float max = atof(tmp_lim);
+        for (int j = 0; j < n_features; ++j) {
+            feature_limit[2*j] = min;
+            feature_limit[2*j + 1] = max;
+        }
+    } else {
+        assert(m == 2*n_features);
+        char *tmp_lim = strtok(limit_string, " ,");
+        for (int j = 0; j < n_features; ++j) {
+            float min = atof(tmp_lim);
+            tmp_lim = strtok(NULL, " ,");
+            float max = atof(tmp_lim);
+            tmp_lim = strtok(NULL, " ,");
+            feature_limit[2*j] = min;
+            feature_limit[2*j + 1] = max;
+        }
+    }
+    /* feature_importance */
+    float *feature_importance = calloc(n_features, sizeof(int));
+    char *importance_string = option_find(options, "feature_importance");
+    if(importance_string) {
+        len = strlen(importance_string);
+        int k = 1;
+        for(int i = 0; i < len; ++i){
+            if (importance_string[i] == ',') ++k;
+        }
+        if (k == 1) // If k == 1 all the features have the same importance
+        {
+            float importance = atof(importance_string);
+            for (int j = 0; j < n_features; ++j) {
+                feature_importance[j] = importance;
+            }
+        } else {
+            assert(k == n_features);
+            char *tmp_imp = strtok(importance_string, " ,");
+            for (int j = 0; j < n_features; ++j) {
+                feature_importance[j] = atof(tmp_imp);
+                tmp_imp = strtok(NULL, " ,");
+            }
+        }
+    }
+    /* criterion */
+    char *criterion_string = option_find(options, "criterion");
+    criterion_func criterion = string_to_fspt_criterion(criterion_string);
+    /* score */
+    char *score_string = option_find(options, "score");
+    score_func score = string_to_fspt_score(score_string);
+    
+    /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-        net, classes, params.batch);
+        net, classes, feature_limit, feature_importance, criterion,
+        score, min_samples, max_depth, params.batch);
     return fspt_layer;
 }
 

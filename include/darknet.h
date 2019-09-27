@@ -5,6 +5,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "fspt.h"
+
 #ifdef GPU
     #define BLOCK 512
 
@@ -294,6 +296,7 @@ struct layer{
     float * binary_input;
 
     float * fspt_input;
+    fspt_t *fspts;
 
     struct layer *input_layer;
     struct layer *self_layer;

@@ -5,15 +5,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "batchnorm_layer.h"
+#include "blas.h"
+#include "cuda.h"
+#include "fspt.h"
 #include "gemm.h"
 #include "utils.h"
-#include "batchnorm_layer.h"
-#include "cuda.h"
-#include "blas.h"
 #include "yolo_layer.h"
 
 layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, int classes, int batch)
+        int yolo_layer, network *net, int classes,
+        float *feature_limit, float *feature_importance,
+        criterion_func criterion, score_func score, int min_samples,
+        int max_depth, int batch)
 {
     layer l = {0};
     l.type = FSPT;
@@ -23,6 +27,9 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.inputs = inputs;
     l.input_layers = input_layers; 
     l.classes = classes;
+    l.fspts = calloc(classes, sizeof(fspt_t));
+
+    //TODO: init fspts
 
     l.yolo_layer = yolo_layer;
 
