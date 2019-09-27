@@ -61,3 +61,22 @@ void test_fspt_detector(char *datacfg, char *cfgfile, char *weightfile, char *fi
         if (filename) break;
     }
 }
+
+void run_fspt(int argc, char **argv)
+{
+    float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
+    float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
+    if(argc < 4){
+        fprintf(stderr, "usage: %s %s [train_yolo/train_fspt/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
+        return;
+    }
+
+    int avg = find_int_arg(argc, argv, "-avg", 1);
+    char *cfg = argv[3];
+    char *weights = (argc > 4) ? argv[4] : 0;
+    char *filename = (argc > 5) ? argv[5]: 0;
+    if(0==strcmp(argv[2], "test")) test_fspt(cfg, weights, filename, thresh);
+    else if(0==strcmp(argv[2], "train_yolo")) train_yolo(cfg, weights);
+    else if(0==strcmp(argv[2], "train_fspt")) train_fspt(cfg, weights);
+    else if(0==strcmp(argv[2], "valid")) validate_fspt(cfg, weights);
+}
