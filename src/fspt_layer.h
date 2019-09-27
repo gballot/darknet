@@ -4,7 +4,10 @@
 #include "darknet.h"
 
 extern layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, int classes, int batch);
+        int yolo_layer, network *net, int classes,
+        float *feature_limit, float *feature_importance,
+        criterion_func criterion, score_func score, int min_samples,
+        int max_depth, int batch);
 extern void update_fspt_layer(layer l, update_args a);
 extern void forward_fspt_layer(layer l, network net);
 extern void backward_fspt_layer(layer l, network net);

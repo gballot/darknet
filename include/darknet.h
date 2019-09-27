@@ -34,6 +34,8 @@
 
 #define SECRET_NUM -1234
 
+#include "fspt.h"
+
 #ifdef GPU
 
 #include <cuda_runtime.h>
@@ -407,6 +409,7 @@ struct layer {
     char *t_bit_input;
 
     float * fspt_input;
+    fspt_t *fspts;
 
     struct layer *input_layer;
     struct layer *self_layer;
