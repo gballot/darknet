@@ -295,7 +295,8 @@ struct layer{
 
     float * binary_input;
 
-    float * fspt_input;
+    float yolo_thresh;
+    float *fspt_input;
     fspt_t **fspts;
     float **fspt_training_data;
     int *fspt_n_training_data;
@@ -434,7 +435,7 @@ struct layer{
 #endif
 };
 
-void free_layer(layer);
+extern void free_layer(layer);
 
 typedef enum {
     CONSTANT, STEP, EXP, POLY, STEPS, SIG, RANDOM

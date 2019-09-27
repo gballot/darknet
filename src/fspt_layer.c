@@ -1,5 +1,6 @@
 #include "fspt_layer.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +15,7 @@
 #include "yolo_layer.h"
 
 layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, int classes,
+        int yolo_layer, network *net, int classes, float yolo_thresh,
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int min_samples,
         int max_depth, int batch) {
@@ -27,6 +28,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.input_layers = input_layers; 
     l.classes = classes;
     l.yolo_layer = yolo_layer;
+    l.yolo_thresh = yolo_thresh;
 
     l.batch=batch;
     l.batch_normalize = 1;
@@ -134,7 +136,7 @@ static float fspt_get_score(layer l, int classe) {
  * \param x The relative width position of the raw we want to extract. 0<=x<=1.
  * \param y The relative height position of the raw we want to extract. 0<=y<=1.
  */
-static void update_fspt_input(layer l, network * net, float x, float y) {
+static void update_fspt_input(layer l, network *net, float x, float y) {
     for(int input_layer_idx = 0; input_layer_idx < l.inputs;
             input_layer_idx++) {
         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
@@ -192,7 +194,7 @@ static void add_fspt_data(layer l, network net, float yolo_thresh) {
                 int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
                 float prob = objectness*predictions[class_index];
                 if(prob > yolo_thresh) {
-                    update_fspt_input(l, net, bbox.x, bbox.y);
+                    update_fspt_input(l, &net, bbox.x, bbox.y);
                     copy_fspt_input_to_data(l, j);
                 }
             }
@@ -255,7 +257,7 @@ void forward_fspt_layer(layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train) return;
     if(net.train_fspt) {
-        add_fspt_data(l, net);
+        add_fspt_data(l, net, l.yolo_thresh);
     }
 }
 
