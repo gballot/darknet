@@ -409,7 +409,9 @@ struct layer {
     char *t_bit_input;
 
     float * fspt_input;
-    fspt_t *fspts;
+    fspt_t **fspts;
+    float **fspt_training_data;
+    int *fspt_n_training_data;
 
     struct layer *input_layer;
     struct layer *self_layer;

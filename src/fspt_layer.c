@@ -27,10 +27,6 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.inputs = inputs;
     l.input_layers = input_layers; 
     l.classes = classes;
-    l.fspts = calloc(classes, sizeof(fspt_t));
-
-    //TODO: init fspts
-
     l.yolo_layer = yolo_layer;
 
     l.batch=batch;
@@ -50,6 +46,15 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.output = calloc(batch*l.outputs, sizeof(float));
     l.fspt_input = calloc(l.total, sizeof(float));
 
+    l.fspts = calloc(classes, sizeof(fspt_t *));
+    l.fspt_n_training_data = calloc(classes, sizeof(int));
+    l.fspt_training_data = calloc(classes, sizeof(float *));
+
+    for (int i = 0; i < classes; ++i) {
+        l.fspts[i] = make_fspt(l.total, feature_limit, feature_importance,
+                criterion, score, min_samples, max_depth);
+    }
+
     l.forward = forward_fspt_layer;
     //l.backward = backward_fspt_layer;
 #ifdef GPU
@@ -66,6 +71,11 @@ layer make_fspt_layer(int inputs, int *input_layers,
     return l;
 }
 
+static void realloc_fspt_data(layer *l, int classe, size_t num) {
+    if (num == 0) num = 1000;
+    l->fspts[classe] = realloc(l->fspts[classe], num);
+}
+
 void resize_fspt_layer(layer *l, int w, int h) {
     return;
 }
@@ -75,7 +85,7 @@ void forward_fspt_layer(layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train) return;
     if(net.train_fspt) {
-        // TODO: build the tree
+        //TODO
     }
 
 
@@ -228,5 +238,8 @@ int fspt_validate(layer l, int classe, float fspt_thresh) {
     //TODO
     debug_print("layer %s : fspt_validate(classe %d) with l.total=%d, l.fspt_input=%p", l.ref, classe, l.total, l.fspt_input);
     debug_print("         l.fspt_input : %f,%f,%f,%f,%f,%f,%f,%f...", l.fspt_input[0], l.fspt_input[1], l.fspt_input[2], l.fspt_input[3], l.fspt_input[4], l.fspt_input[5], l.fspt_input[6], l.fspt_input[7]) ;
-    return 0;
+    float score = 0;
+    fspt_predict(1, l.fspts[classe], l.fspt_input, &score);
+    if (score > fspt_thresh) return 1;
+    else return 0;
 }
