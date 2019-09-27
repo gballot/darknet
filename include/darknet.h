@@ -412,6 +412,7 @@ struct layer {
     fspt_t **fspts;
     float **fspt_training_data;
     int *fspt_n_training_data;
+    int *fspt_n_max_training_data;
 
     struct layer *input_layer;
     struct layer *self_layer;
