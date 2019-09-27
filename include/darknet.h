@@ -408,7 +408,8 @@ struct layer {
     uint32_t *bin_re_packed_input;
     char *t_bit_input;
 
-    float * fspt_input;
+    float yolo_thresh;
+    float *fspt_input;
     fspt_t **fspts;
     float **fspt_training_data;
     int *fspt_n_training_data;

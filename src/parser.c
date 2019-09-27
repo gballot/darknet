@@ -804,6 +804,8 @@ layer parse_fspt(list *options, size_params params)
     int min_samples = option_find_int(options, "min_samples",1);
     /* max_depth */
     int max_depth = option_find_int(options, "max_depth",10);
+    /* yolo_thresh */
+    float yolo_thresh = option_find_float(options, "yolo_thresh", 0.7);
     /* n_features */
     int n_features = 0;
     for(int i = 0; i < n; i++)
@@ -872,8 +874,8 @@ layer parse_fspt(list *options, size_params params)
     
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-        net, classes, feature_limit, feature_importance, criterion,
-        score, min_samples, max_depth, params.batch);
+        net, classes, yolo_thresh, feature_limit, feature_importance,
+        criterion, score, min_samples, max_depth, params.batch);
     return fspt_layer;
 }
 
