@@ -59,6 +59,7 @@ typedef struct fspt_t {
     float *feature_importance; // feature_importance of size n_feature
     int n_nodes;         // number of nodes
     int n_samples;       // number of training samples
+    float *samples;     // training samples
     fspt_node *root;
     criterion_func criterion; // spliting criterion
     score_func score;    // score_function
