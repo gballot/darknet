@@ -227,6 +227,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     /* Update fspt */
     fspt->n_nodes = 1;
     fspt->n_samples = n_samples;
+    fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
 
