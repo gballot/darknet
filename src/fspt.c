@@ -7,7 +7,6 @@
 #include "list.h"
 #include "utils.h"
 
-
 /**
  * Computes the volume of a feature space.
  * Volume = Prod_i(max feature[i] - min feature[i])
@@ -267,3 +266,60 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         }
     }
 }
+
+void post_order_node_save(FILE *fp, fspt_node node, int *succ) {
+    if (node.left) post_order_node_save(fp, *node.left, succ);
+    if (node.right) post_order_node_save(fp, *node.right, succ);
+    /* save node */
+    node.feature_limit = NULL;
+    node.samples = NULL;
+    *succ &= fwrite(&node, sizeof(fspt_node), 1, fp);
+    /* save feature_limit */
+    size_t lim_size = 2 * node.n_features;
+    *succ &=
+        (fwrite(node.feature_limit, sizeof(float), lim_size, fp) == lim_size);
+}
+
+void fspt_save(char *filename, fspt_t fspt, int *succ) {
+    *succ = 1;
+    fprintf(stderr, "Saving fspt to %s\n", filename);
+    FILE *fp = fopen(filename, "wb");
+    if(!fp) file_error(filename);
+    *succ &= fwrite(&fspt.n_nodes, sizeof(int), 1, fp);
+    *succ &= fwrite(&fspt.n_samples, sizeof(int), 1, fp);
+    *succ &= fwrite(&fspt.depth, sizeof(int), 1, fp);
+    if (fspt.root)
+        post_order_node_save(fp, *fspt.root, succ);
+    fclose(fp);
+}
+
+fspt_node * post_order_node_load(FILE *fp, int *succ) {
+    /* load node */
+    fspt_node *node = malloc(sizeof(fspt_node));
+    *succ &= fread(node, sizeof(fspt_node), 1, fp);
+    if (!*succ) return NULL;
+    /* load feature_limit */
+    size_t lim_size = 2 * node->feature_limit;
+    float *feature_limit = malloc(lim_size * sizeof(float));
+    *succ &=
+        (fread(feature_limit, sizeof(float), lim_size, fp) != lim_size);
+    /* load children */
+    if (node->left) node->left = post_order_node_load(fp, succ);
+    if (node->right) node->right = post_order_node_load(fp, succ);
+    return node;
+}
+
+void fspt_load(char *filename, fspt_t *fspt, int *succ) {
+    fprintf(stderr, "Loading fspt from %s\n", filename);
+    *succ = 1;
+    FILE *fp = fopen(filename, "wb");
+    if(!fp) file_error(filename);
+    *succ &= fread(&fspt->n_nodes, sizeof(int), 1, fp);
+    *succ &= fread(&fspt->n_samples, sizeof(int), 1, fp);
+    *succ &= fread(&fspt->depth, sizeof(float), 1, fp);
+    fspt->root = post_order_node_load(fp, succ);
+    fspt->vol = volume(fspt->n_features, fspt->feature_limit);
+    fclose(fp);
+}
+
+
