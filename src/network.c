@@ -397,6 +397,20 @@ float train_network_waitkey(network net, data d, int wait_key)
     return (float)sum/(n*batch);
 }
 
+void train_network_fspt(network *net, data d)
+{
+    assert(net->batch == 1);
+    int batch = 1;
+    int n = d.X.rows;
+
+    int i;
+    for(i = 0; i < n; ++i){
+        get_next_batch(d, batch, i*batch, net->input, net->truth);
+        *net->seen += net->batch;
+        net->train_fspt = 1;
+        forward_network(net);
+    }
+}
 
 float train_network_batch(network net, data d, int n)
 {
