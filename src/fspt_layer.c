@@ -173,6 +173,7 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     l.fspt_n_training_data[classe] += 1;
 }
 
+/* useless : creates fspt from predicted data */
 static void add_fspt_data(layer l, network net, float yolo_thresh) {
     int netw = net.w;
     int neth = net.h;
@@ -255,9 +256,16 @@ void resize_fspt_layer(layer *l, int w, int h) {
 void forward_fspt_layer(layer l, network net)
 {
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
-    if(net.train) return;
     if(net.train_fspt) {
-        add_fspt_data(l, net, l.yolo_thresh);
+        for (int b = 0; b < l.batch; ++b) {
+            for(int t = 0; t < l.max_boxes; ++t){
+                box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
+                if(!truth.x) break;
+                int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
+                update_fspt_input(l, &net, truth.x, truth.y);
+                copy_fspt_input_to_data(l, class);
+            }
+        }
     }
 }
 

@@ -330,6 +330,21 @@ float train_network(network *net, data d)
     return (float)sum/(n*batch);
 }
 
+void train_network_fspt(network *net, data d)
+{
+    assert(net->batch == 1);
+    int batch = 1;
+    int n = d.X.rows;
+
+    int i;
+    for(i = 0; i < n; ++i){
+        get_next_batch(d, batch, i*batch, net->input, net->truth);
+        *net->seen += net->batch;
+        net->train_fspt = 1;
+        forward_network(net);
+    }
+}
+
 void set_temp_network(network *net, float t)
 {
     int i;
