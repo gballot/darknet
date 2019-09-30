@@ -141,4 +141,27 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
 extern void fspt_fit(int n_samples, float *X, criterion_args *args,
         fspt_t *fspt);
 
+
+/**
+ * Save the fspt to a file.
+ *
+ * \param filename The path of the file to save.
+ * \param fspt The feature space partitioning tree.
+ * \param succ Output parameter. True if succes, false otherwise.
+ */
+extern void fspt_save(char *filename, fspt_t fspt, int *succ);
+
+
+/**
+ * Load the fspt from a file.
+ * You must have created the fspt with @see make_fspt(), because
+ * some fields of the fspt are assumed to be already filled.
+ * This function fills n_nodes, n_samples, depth, vol and root.
+ *
+ * \param filename The path of the file to save.
+ * \param fspt The feature space partitioning tree parsed from config file.
+ * \param succ Output parameter. True if succes, false otherwise.
+ */
+extern void fspt_load(char *filename, fspt_t *fspt, int *succ);
+
 #endif /* FSPT_H */
