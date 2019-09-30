@@ -141,6 +141,7 @@ void train_fspt(char *cfg, char *weights) {
 
 void test_fspt(char *cfg, char *weights, char *filename, float yolo_thresh,
         float fspt_thresh) {
+  /*
     network *net = load_network(cfgfile, weightfile, 0);
     set_batch_network(net, 1);
     srand(2222222);
@@ -194,7 +195,9 @@ void test_fspt(char *cfg, char *weights, char *filename, float yolo_thresh,
         free_image(sized);
         if (filename) break;
     }
+    */
 }
+void validate_fspt(char *cfg, char *weights) { }
 
 void run_fspt(int argc, char **argv)
 {
@@ -209,8 +212,8 @@ void run_fspt(int argc, char **argv)
     char *cfg = argv[3];
     char *weights = (argc > 4) ? argv[4] : 0;
     char *filename = (argc > 5) ? argv[5]: 0;
-    if(0==strcmp(argv[2], "test")) test_fspt(cfg, weights, filename, thresh);
-    else if(0==strcmp(argv[2], "train_yolo")) train_yolo(cfg, weights);
+    /*if(0==strcmp(argv[2], "test")) test_fspt(cfg, weights, filename, yolo_thresh);
+    else */if(0==strcmp(argv[2], "train_yolo")) train_yolo(cfg, weights);
     else if(0==strcmp(argv[2], "train_fspt")) train_fspt(cfg, weights);
     else if(0==strcmp(argv[2], "valid")) validate_fspt(cfg, weights);
 }
