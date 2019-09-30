@@ -267,7 +267,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     }
 }
 
-void post_order_node_save(FILE *fp, fspt_node node, int *succ) {
+static void post_order_node_save(FILE *fp, fspt_node node, int *succ) {
     if (node.left) post_order_node_save(fp, *node.left, succ);
     if (node.right) post_order_node_save(fp, *node.right, succ);
     /* save node */
@@ -293,13 +293,13 @@ void fspt_save(char *filename, fspt_t fspt, int *succ) {
     fclose(fp);
 }
 
-fspt_node * post_order_node_load(FILE *fp, int *succ) {
+static fspt_node * post_order_node_load(FILE *fp, int *succ) {
     /* load node */
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
     if (!*succ) return NULL;
     /* load feature_limit */
-    size_t lim_size = 2 * node->feature_limit;
+    size_t lim_size = 2 * node->n_features;
     float *feature_limit = malloc(lim_size * sizeof(float));
     *succ &=
         (fread(feature_limit, sizeof(float), lim_size, fp) != lim_size);
