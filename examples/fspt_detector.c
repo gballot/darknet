@@ -69,7 +69,7 @@ void test_fspt_detector(char *datacfg, char *cfgfile, char *weightfile, char *fi
 }
 
 void train_fspt(char *cfg, char *weights) {
-    char *train_images = "data/voc/train.txt";
+    char *train_images = "VOCdevkit/auto_generated/train.txt";
     char *backup_directory = "backup/";
     srand(time(0));
     char *base = basecfg(cfg);
