@@ -158,7 +158,7 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
             ptr++;
         }
     }
-    fspt_t *fspt = calloc(1, sizeof(fspt));
+    fspt_t *fspt = calloc(1, sizeof(fspt_t));
     fspt->n_features = n_features;
     fspt->feature_limit = feature_limit;
     fspt->feature_importance = feature_importance;
