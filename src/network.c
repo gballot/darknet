@@ -417,7 +417,7 @@ void train_network_fspt(network *net, data d)
                 fspt_t *fspt = l.fspts[class];
                 int n = l.fspt_n_training_data[class];
                 float *X = l.fspt_training_data[class];
-                criterion_args *args = {0}; 
+                criterion_args *args = calloc(1, sizeof(criterion_args)); 
                 /*TODO: Theses values can be passed from up frame */
                 args->max_try_p = 1.;
                 args->max_feature_p = 1.;
