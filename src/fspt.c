@@ -17,7 +17,7 @@
  */
 static float volume(int n_features, const float *feature_limit)
 {
-    float vol = 0;
+    float vol = 1;
     for (int i = 0; i < 2*n_features; i++)
         vol *= feature_limit[i+1] - feature_limit[i];
     return vol;

@@ -258,12 +258,16 @@ void forward_fspt_layer(layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
-            for(int t = 0; t < l.max_boxes; ++t){
+            //for(int t = 0; t < l.max_boxes; ++t){
+            /* while there are truth boxes*/
+            int t = 0;
+            while(1) {
                 box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
                 if(!truth.x) break;
                 int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
                 update_fspt_input(l, &net, truth.x, truth.y);
                 copy_fspt_input_to_data(l, class);
+                ++t;
             }
         }
     }

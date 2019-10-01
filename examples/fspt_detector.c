@@ -237,7 +237,7 @@ void run_fspt(int argc, char **argv)
         ngpus = 1;
     }
 
-    int clear = find_arg(argc, argv, "-clear");
+    int clear = find_int_arg(argc, argv, "-clear", 1);
     int fullscreen = find_arg(argc, argv, "-fullscreen");
     int width = find_int_arg(argc, argv, "-w", 0);
     int height = find_int_arg(argc, argv, "-h", 0);

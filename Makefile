@@ -105,7 +105,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	gdb ./darknet -ex "b fspt_fit" -ex "run fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	gdb ./darknet -ex "b forward_fspt_layer" -ex "run fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .
