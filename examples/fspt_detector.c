@@ -75,14 +75,15 @@ void train_fspt(char *cfg, char *weights) {
     char *base = basecfg(cfg);
     printf("%s\n", base);
     float avg_loss = -1;
-    network *net = load_network(cfg, weights, 0);
+    network *net = load_network(cfg, weights, 1); //sets net->seen to 0.
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
     int imgs = net->batch*net->subdivisions;
     int i = *net->seen/imgs;
     data train, buffer;
 
 
-    layer l = net->layers[net->n - 1];
+    //TODO should find fspt layer instead...
+    layer l = net->layers[net->n - 2];
 
     int side = l.side;
     int classes = l.classes;
@@ -122,11 +123,8 @@ void train_fspt(char *cfg, char *weights) {
         printf("Loaded: %lf seconds\n", sec(clock()-time));
 
         time=clock();
-        float loss = train_network(net, train);
-        if (avg_loss < 0) avg_loss = loss;
-        avg_loss = avg_loss*.9 + loss*.1;
+        train_network_fspt(net, train);
 
-        printf("%d: %f, %f avg, %f rate, %lf seconds, %d images\n", i, loss, avg_loss, get_current_rate(net), sec(clock()-time), i*imgs);
         if(i%1000==0 || (i < 1000 && i%100 == 0)){
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
