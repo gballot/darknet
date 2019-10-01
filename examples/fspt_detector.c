@@ -182,6 +182,22 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
         }
         free_data(train);
     }
+    for (int i = 0; i < net->n; ++i) {
+        layer l = net->layers[i];
+        if (l.type == FSPT) {
+            for (int class = 0; class < l.classes; ++class) {
+                fspt_t *fspt = l.fspts[class];
+                int n = l.fspt_n_training_data[class];
+                float *X = l.fspt_training_data[class];
+                criterion_args *args = calloc(1, sizeof(criterion_args)); 
+                /*TODO: Theses values can be passed from up frame */
+                args->max_try_p = 1.;
+                args->max_feature_p = 1.;
+                args->thresh = 0.01;
+                fspt_fit(n, X, args, fspt);
+            }
+        }
+    }
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
