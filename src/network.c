@@ -336,12 +336,28 @@ void train_network_fspt(network *net, data d)
     int batch = 1;
     int n = d.X.rows;
 
-    int i;
-    for(i = 0; i < n; ++i){
+    for(int i = 0; i < n; ++i){
         get_next_batch(d, batch, i*batch, net->input, net->truth);
         *net->seen += net->batch;
         net->train_fspt = 1;
         forward_network(net);
+        net->train_fspt = 0;
+    }
+    for (int i = 0; i < net->n; ++i) {
+        layer l = net->layers[i];
+        if (l.type == FSPT) {
+            for (int class = 0; class < l.classes; ++class) {
+                fspt_t *fspt = l.fspts[class];
+                int n = l.fspt_n_training_data[class];
+                float *X = l.fspt_training_data[class];
+                criterion_args *args = {0}; 
+                /*TODO: Theses values can be passed from up frame */
+                args->max_try_p = 1.;
+                args->max_feature_p = 1.;
+                args->thresh = 0.01;
+                fspt_fit(n, X, args, fspt);
+            }
+        }
     }
 }
 
