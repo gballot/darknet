@@ -89,7 +89,7 @@ endif # OS
 DARKNET_GPU_OP= -i 0
 FSPT_GPU_OP= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -p PV100q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:1
 else # GPU == 0
 DARKNET_GPU_OP= -nogpu
 GDB=gdb
@@ -106,7 +106,6 @@ else
 CFLAGS+= -DCUDNN -I/usr/local/cudnn/include
 LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
-endif
 
 ifeq ($(CUDNN_HALF), 1)
 COMMON+= -DCUDNN_HALF
@@ -114,7 +113,6 @@ CFLAGS+= -DCUDNN_HALF
 ARCH+= -gencode arch=compute_70,code=[sm_70,compute_70]
 endif
 
-<<<<<<< 2e97f4a6de7b2a06a20d4f769780d1d5c919f7ff
 ifeq ($(ZED_CAMERA), 1)
 CFLAGS+= -DZED_STEREO -I/usr/local/zed/include
 LDFLAGS+= -L/usr/local/zed/lib -lsl_core -lsl_input -lsl_zed
