@@ -259,7 +259,7 @@ void forward_fspt_layer(layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
-            //for(int t = 0; t < l.max_boxes; ++t){
+            //for(int t = 0; t < l.max_boxes; ++t)
             /* while there are truth boxes*/
             int t = 0;
             while(1) {
@@ -279,7 +279,7 @@ void forward_fspt_layer_gpu(const layer l, network net) {
     copy_gpu(l.batch*l.outputs, net.input_gpu, 1, l.output_gpu, 1);
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
-            //for(int t = 0; t < l.max_boxes; ++t){
+            //for(int t = 0; t < l.max_boxes; ++t)
             /* while there are truth boxes*/
             int t = 0;
             while(1) {
@@ -291,8 +291,8 @@ void forward_fspt_layer_gpu(const layer l, network net) {
                 ++t;
             }
         }
-        }
-        cuda_pull_array(l.output_gpu, l.output, 1);//l.batch*l.outputs);
     }
+    cuda_pull_array(l.output_gpu, l.output, l.batch*l.outputs);
+}
 #endif
 
