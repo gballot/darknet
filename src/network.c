@@ -1199,6 +1199,7 @@ void train_networks_fspt(network **nets, int n, data d, int interval)
     if (get_current_batch(nets[0]) % interval == 0) {
         printf("Syncing... ");
         fflush(stdout);
+        //TODO: synchronisation for fspt
         sync_nets(nets, n, interval);
         printf("Done!\n");
     }
