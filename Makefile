@@ -1,5 +1,5 @@
-GPU=0
-CUDNN=0
+GPU=1
+CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
@@ -50,9 +50,14 @@ COMMON+= `pkg-config --cflags opencv`
 endif
 
 ifeq ($(GPU), 1) 
-COMMON+= -DGPU -I/usr/local/cuda/include/
+COMMON+= -DGPU -I${CUDA_PATH}
 CFLAGS+= -DGPU
-LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
+LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
+DARKNET_GPU_OP= -i 3
+SRUN= srun -p K20q -n 1 --gres=gpu:4
+else
+DARKNET_GPU_OP= -nogpu
+SRUN=
 endif
 
 ifeq ($(CUDNN), 1) 
@@ -105,7 +110,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	gdb ./darknet -ex "b forward_fspt_layer" -ex "run fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) gdb $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+
+run: $(EXEC)
+	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .
