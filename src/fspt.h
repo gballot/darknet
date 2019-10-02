@@ -33,7 +33,7 @@ typedef struct fspt_node {
     const float *feature_limit; // size 2*n_feature:
                           // feature_limit[2*i] = min feature(i)
                           // feature_limite[2*i+1] = max feature(i)
-    int n_empty;        // number of empty points
+    float n_empty;        // number of empty points (is a float)
     int n_samples;
     float *samples;     // training samples
     int split_feature;  // splits on feature SPLIT_FEATURE
