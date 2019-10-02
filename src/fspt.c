@@ -163,7 +163,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     root->n_features = fspt->n_features;
     root->feature_limit = fspt->feature_limit;
     root->n_samples = n_samples;
-    root->n_empty = n_samples; // We arbitray initialize such that Density=0.5
+    root->n_empty = (float)n_samples; // We arbitray initialize such that Density=0.5
     root->samples = X;
     root->depth = 1;
     root->vol = volume(root->n_features, root->feature_limit);

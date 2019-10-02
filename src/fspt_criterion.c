@@ -28,7 +28,7 @@ static float gini(float x, float y)
  * with the notations from Toward Safe Machine Learning.
  */
 static float gini_after_split(float min, float max, float s, size_t n_left,
-        size_t n_right, int n_empty, int min_samples) {
+        size_t n_right, float n_empty, int min_samples) {
     float l = max - min;
     if (l == 0.)
         return FLT_MAX;
@@ -147,7 +147,7 @@ void gini_criterion(criterion_args *args) {
         //and take a subsample of bins of size floor(max(1,n_bins*max_try_p))
         for (size_t j = 0; j < n_bins; ++j) {
             // why ??
-            assert(node->n_empty == node->n_samples);
+            //assert(node->n_empty == node->n_samples);
             float bin = bins[j];
             size_t n_left = cdf[j];
             size_t n_right = node->n_samples - cdf[j];
