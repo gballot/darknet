@@ -1331,6 +1331,33 @@ float train_networks_fspt(network **nets, int n, data d, int interval)
     return (float)sum/(n);
 }
 
+void train_networks_fspt(network **nets, int n, data d, int interval)
+{
+    int i;
+    int batch = nets[0]->batch;
+    int subdivisions = nets[0]->subdivisions;
+    assert(batch * subdivisions * n == d.X.rows);
+    pthread_t *threads = (pthread_t *) calloc(n, sizeof(pthread_t));
+
+    for(i = 0; i < n; ++i){
+        data p = get_data_part(d, i, n);
+        threads[i] = train_network_in_thread_fspt(nets[i], p);
+    }
+    for(i = 0; i < n; ++i){
+        pthread_join(threads[i], 0);
+    }
+    //cudaDeviceSynchronize();
+    if (get_current_batch(nets[0]) % interval == 0) {
+        printf("Syncing... ");
+        fflush(stdout);
+        //TODO: synchronisation for fspt
+        sync_nets(nets, n, interval);
+        printf("Done!\n");
+    }
+    //cudaDeviceSynchronize();
+    free(threads);
+}
+
 void pull_network_output(network *net)
 {
     layer l = get_network_output_layer(net);

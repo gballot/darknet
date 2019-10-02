@@ -86,10 +86,12 @@ LDFLAGS+= -L/usr/local/cuda/lib -lcuda -lcudart -lcublas -lcurand
 else # OS != Darwin
 LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
 endif # OS
-DARKNET_GPU_OP= -i 3
-SRUN= srun -p K20q -n 1 --gres=gpu:4
+DARKNET_GPU_OP= -i 0
+FSPT_GPU_OP= -gpus 0
+SRUN= srun -p PV100q -n 1 -c 4 --gres=gpu:1
 else # GPU == 0
 DARKNET_GPU_OP= -nogpu
+FSPT_GPU_OP=
 SRUN=
 endif #GPU
 
@@ -163,10 +165,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) gdb $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) gdb $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 run: $(EXEC)
-	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
+	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .
