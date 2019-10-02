@@ -135,8 +135,9 @@ static float fspt_get_score(layer l, int classe) {
  * \param net The network containing l.
  * \param x The relative width position of the raw we want to extract. 0<=x<=1.
  * \param y The relative height position of the raw we want to extract. 0<=y<=1.
+ * \param b The element of the batch which is examined.
  */
-static void update_fspt_input(layer l, network *net, float x, float y) {
+static void update_fspt_input(layer l, network *net, float x, float y, int b) {
     for(int input_layer_idx = 0; input_layer_idx < l.inputs;
             input_layer_idx++) {
         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
@@ -146,9 +147,11 @@ static void update_fspt_input(layer l, network *net, float x, float y) {
                 input_w, input_h);
         debug_print("input_layer.output + input_w + l.w *input_h = %p", input_layer.output + input_w + l.w*input_h);
 #ifdef GPU
-        copy_gpu(input_layer.out_c, input_layer.output_gpu + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
+        float *entry = input_layer.output_gpu + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
 #else
-        copy_cpu(input_layer.out_c, input_layer.output + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+        float *entry = input_layer.output + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #endif
     }
 }
@@ -286,7 +289,7 @@ void forward_fspt_layer_gpu(const layer l, network net) {
                 box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
                 if(!truth.x) break;
                 int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
-                update_fspt_input(l, &net, truth.x, truth.y);
+                update_fspt_input(l, &net, truth.x, truth.y, b);
                 copy_fspt_input_to_data(l, class);
                 ++t;
             }
