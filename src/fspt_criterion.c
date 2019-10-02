@@ -133,6 +133,7 @@ void gini_criterion(criterion_args *args) {
         size_t *cdf = malloc(2 * fspt->n_features * sizeof(float));
         float *bins = malloc(2 * fspt->n_features * sizeof(float));
         size_t n_bins = 0;
+        qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
         bins = realloc(bins, n_bins);

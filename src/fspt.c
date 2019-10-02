@@ -25,63 +25,6 @@ static float volume(int n_features, const float *feature_limit)
 
 
 /**
- * Helper funciton for the Quick Sort algorithm.
- * Puts smaller values before a choosen pivot and greater values after.
- *
- * \param index The index of the feature to apply QSort. 0 <= index < size.
- * \param n The number of vectors in the array.
- * \param size The number of feature of each vectors.
- * \param base Output paramter. Pointer to the array of size (n_size).
- * \return the index of the pivot in the output parameter base.
- */
-static int partition(size_t index, size_t n, size_t size, float *base) {
-    float *pivot = malloc(size * sizeof(float));
-    for (int i = 0; i < size; ++i) {
-        pivot[i] = base[(n/2) * n + i];
-    }
-    int i = -1;
-    int j = n;
-    while(1) {
-        do { ++i; } while (base[i*size + index] < pivot[index]);
-        do { --j; } while (base[j*size + index] > pivot[index]);
-        if (i >= j) return j;
-        /* Swap i and j. */
-        for (size_t k = 0; k < size; ++k) {
-            float swap = base[i*size + k];
-            base[i*size + k] = base[j*size + k];
-            base[j*size + k] = swap;
-        }
-    }
-    free(pivot);
-}
-
-/**
- * Implementation of the Quick Sort algorithm on bidimensional arrays of
- * size (n*size) according to the feature index. Ascending order.
- *
- * \param index The index of the feature to apply QSort. 0 <= index < size.
- * \param n The number of vectors in the array.
- * \param size The number of feature of each vectors.
- * \param base Output paramter. Pointer to the array of size (n_size).
- */
-static void qsort_float_on_index(size_t index, size_t n, size_t size,
-                                 float *base) {
-    if (n == 2) {
-        if (base[index] > base[size + index]) {
-            for (size_t i = 0; i < size; ++i) {
-                float swap = base[i];
-                base[i] = base[size + i];
-                base[size + i] = swap;
-            }
-        }
-    } else if (n > 2) {
-        int p = partition(index, n, size, base);
-        qsort_float_on_index(index, p, size, base);
-        qsort_float_on_index(index, n - p, size, base + p);
-    }
-}
-
-/**
  * Make a new split in the FSPT.
  * This function modifies the input/output parameter fspt, and the ouput
  * parameters right and left according to the split on feature `index`
@@ -211,6 +154,7 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
 
 void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
 {
+    if (!n_samples) return;
     assert(fspt->max_depth >= 1);
     args->fspt = fspt;
     /* Builds the root */

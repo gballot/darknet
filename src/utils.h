@@ -63,5 +63,17 @@ extern void print_statistics(float *a, int n);
 extern int int_index(int *a, int val, int n);
 extern char *itoa(int val, int base);
 
+/**
+ * Implementation of the Quick Sort algorithm on bidimensional arrays of
+ * size (n*size) according to the feature index. Ascending order.
+ *
+ * \param index The index of the feature to apply QSort. 0 <= index < size.
+ * \param n The number of vectors in the array.
+ * \param size The number of feature of each vectors.
+ * \param base Output paramter. Pointer to the array of size (n_size).
+ */
+extern void qsort_float_on_index(size_t index, size_t n, size_t size,
+        float *base);
+
 #endif
 
