@@ -56,6 +56,16 @@ load_args get_base_args(network *net)
     return args;
 }
 
+network *load_network(char *cfg, char *weights, int clear)
+{
+    network *net = parse_network_cfg(cfg);
+    if(weights && weights[0] != 0){
+        load_weights(net, weights);
+    }
+    if(clear) (*net->seen) = 0;
+    return net;
+}
+
 int get_current_batch(network net)
 {
     int batch_num = (*net.seen)/(net.batch*net.subdivisions);

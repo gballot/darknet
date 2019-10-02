@@ -58,10 +58,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
     }
 
     l.forward = forward_fspt_layer;
-    //l.backward = backward_fspt_layer;
 #ifdef GPU
     l.forward_gpu = forward_fspt_layer_gpu;
-    //l.backward_gpu = backward_fspt_layer_gpu;
 #endif
     l.activation = LINEAR;
 
@@ -277,6 +275,21 @@ void forward_fspt_layer(layer l, network net)
 void forward_fspt_layer_gpu(const layer l, network net)
 {
     copy_gpu(l.batch*l.inputs, net.input_gpu, 1, l.output_gpu, 1);
+    if(net.train_fspt) {
+        for (int b = 0; b < l.batch; ++b) {
+            //for(int t = 0; t < l.max_boxes; ++t){
+            /* while there are truth boxes*/
+            int t = 0;
+            while(1) {
+                box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
+                if(!truth.x) break;
+                int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
+                update_fspt_input(l, &net, truth.x, truth.y);
+                copy_fspt_input_to_data(l, class);
+                ++t;
+            }
+        }
+    }
 }
 #endif
 

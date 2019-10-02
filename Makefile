@@ -78,15 +78,20 @@ CFLAGS+= -fopenmp
 LDFLAGS+= -lgomp
 endif
 
-ifeq ($(GPU), 1)
-COMMON+= -DGPU -I/usr/local/cuda/include/
+ifeq ($(GPU), 1) 
+COMMON+= -DGPU -I${CUDA_PATH}
 CFLAGS+= -DGPU
 ifeq ($(OS),Darwin) #MAC
 LDFLAGS+= -L/usr/local/cuda/lib -lcuda -lcudart -lcublas -lcurand
-else
-LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
-endif
-endif
+else # OS != Darwin
+LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
+endif # OS
+DARKNET_GPU_OP= -i 3
+SRUN= srun -p K20q -n 1 --gres=gpu:4
+else # GPU == 0
+DARKNET_GPU_OP= -nogpu
+SRUN=
+endif #GPU
 
 ifeq ($(CUDNN), 1)
 COMMON+= -DCUDNN
@@ -158,7 +163,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	gdb ./darknet -ex "b forward_fspt_layer" -ex "run fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) gdb $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+
+run: $(EXEC)
+	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .
