@@ -409,9 +409,9 @@ float train_network_waitkey(network net, data d, int wait_key)
 
 void train_network_fspt(network *net, data d)
 {
-    assert(net->batch == 1);
-    int batch = 1;
-    int n = d.X.rows;
+    assert(d.X.rows % net->batch == 0);
+    int batch = net->batch;
+    int n = d.X.rows / batch;
 
     for(int i = 0; i < n; ++i){
         get_next_batch(d, batch, i*batch, net->input, net->truth);
@@ -1272,6 +1272,13 @@ void randomize_network_recurrent_state(network net)
     }
 }
 
+void train_networks_fspt(network **nets, int n, data d, int interval)
+{
+    int i;
+    int batch = nets[0]->batch;
+    int subdivisions = nets[0]->subdivisions;
+    assert(batch * subdivisions * n == d.X.rows);
+    pthread_t *threads = (pthread_t *) calloc(n, sizeof(pthread_t));
 
 void remember_network_recurrent_state(network net)
 {
@@ -1290,3 +1297,43 @@ void restore_network_recurrent_state(network net)
         if (net.layers[k].type == CRNN) free_state_crnn(net.layers[k]);
     }
 }
+
+#ifdef GPU
+float train_networks_fspt(network **nets, int n, data d, int interval)
+{
+    int i;
+    int batch = nets[0]->batch;
+    int subdivisions = nets[0]->subdivisions;
+    assert(batch * subdivisions * n == d.X.rows);
+    pthread_t *threads = (pthread_t *) calloc(n, sizeof(pthread_t));
+    float *errors = (float *) calloc(n, sizeof(float));
+
+    float sum = 0;
+    for(i = 0; i < n; ++i){
+        data p = get_data_part(d, i, n);
+        threads[i] = train_network_in_thread(nets[i], p, errors + i);
+    }
+    for(i = 0; i < n; ++i){
+        pthread_join(threads[i], 0);
+        //printf("%f\n", errors[i]);
+        sum += errors[i];
+    }
+    //cudaDeviceSynchronize();
+    if (get_current_batch(nets[0]) % interval == 0) {
+        printf("Syncing... ");
+        fflush(stdout);
+        sync_nets(nets, n, interval);
+        printf("Done!\n");
+    }
+    //cudaDeviceSynchronize();
+    free(threads);
+    free(errors);
+    return (float)sum/(n);
+}
+
+void pull_network_output(network *net)
+{
+    layer l = get_network_output_layer(net);
+    cuda_pull_array(l.output_gpu, l.output, l.outputs*l.batch);
+}
+#endif /* GPU */

@@ -156,8 +156,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
         if(ngpus == 1){
             train_network_fspt(net, train);
         } else {
-            //TODO
-            //train_networks_fspt(nets, ngpus, train, 4);
+            train_networks_fspt(nets, ngpus, train, 4);
         }
 #else
         train_network_fspt(net, train);
