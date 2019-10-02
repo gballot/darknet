@@ -332,9 +332,9 @@ float train_network(network *net, data d)
 
 void train_network_fspt(network *net, data d)
 {
-    assert(net->batch == 1);
-    int batch = 1;
-    int n = d.X.rows;
+    assert(d.X.rows % net->batch == 0);
+    int batch = net->batch;
+    int n = d.X.rows / batch;
 
     for(int i = 0; i < n; ++i){
         get_next_batch(d, batch, i*batch, net->input, net->truth);
@@ -909,7 +909,7 @@ void *train_thread_fspt(void *ptr)
     train_args args = *(train_args*)ptr;
     free(ptr);
     cuda_set_device(args.net->gpu_index);
-    *args.err = train_network_fspt(args.net, args.d);
+    train_network_fspt(args.net, args.d);
     return 0;
 }
 
@@ -924,13 +924,12 @@ pthread_t train_network_in_thread(network *net, data d, float *err)
     return thread;
 }
 
-pthread_t train_network_in_thread_fspt(network *net, data d, float *err)
+pthread_t train_network_in_thread_fspt(network *net, data d)
 {
     pthread_t thread;
     train_args *ptr = (train_args *)calloc(1, sizeof(train_args));
     ptr->net = net;
     ptr->d = d;
-    ptr->err = err;
     if(pthread_create(&thread, 0, train_thread_fspt, ptr)) error("Thread creation failed");
     return thread;
 }
@@ -1181,24 +1180,20 @@ float train_networks(network **nets, int n, data d, int interval)
     return (float)sum/(n);
 }
 
-float train_networks_fspt(network **nets, int n, data d, int interval)
+void train_networks_fspt(network **nets, int n, data d, int interval)
 {
     int i;
     int batch = nets[0]->batch;
     int subdivisions = nets[0]->subdivisions;
     assert(batch * subdivisions * n == d.X.rows);
     pthread_t *threads = (pthread_t *) calloc(n, sizeof(pthread_t));
-    float *errors = (float *) calloc(n, sizeof(float));
 
-    float sum = 0;
     for(i = 0; i < n; ++i){
         data p = get_data_part(d, i, n);
-        threads[i] = train_network_in_thread(nets[i], p, errors + i);
+        threads[i] = train_network_in_thread_fspt(nets[i], p);
     }
     for(i = 0; i < n; ++i){
         pthread_join(threads[i], 0);
-        //printf("%f\n", errors[i]);
-        sum += errors[i];
     }
     //cudaDeviceSynchronize();
     if (get_current_batch(nets[0]) % interval == 0) {
@@ -1209,8 +1204,6 @@ float train_networks_fspt(network **nets, int n, data d, int interval)
     }
     //cudaDeviceSynchronize();
     free(threads);
-    free(errors);
-    return (float)sum/(n);
 }
 
 void pull_network_output(network *net)
