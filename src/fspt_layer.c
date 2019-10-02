@@ -36,10 +36,10 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.n = net->layers[yolo_layer].n;
     l.h = net->layers[yolo_layer].h;
     l.w = net->layers[yolo_layer].w;
-    l.c = l.n*(classes + 4 + 1);
+    l.c = net->layers[yolo_layer].c;
     l.out_w = l.w;
     l.out_h = l.h;
-    l.out_c = l.n*(classes + 4 + 1);
+    l.out_c = l.c;
     l.outputs = l.h*l.w*l.c;
     l.coords = 4;
     for(int i=0; i<inputs; i++) l.total += net->layers[input_layers[i]].out_c;
@@ -60,6 +60,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.forward = forward_fspt_layer;
 #ifdef GPU
     l.forward_gpu = forward_fspt_layer_gpu;
+    l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
+    l.fspt_input_gpu = cuda_make_array(l.fspt_input, l.total);
 #endif
     l.activation = LINEAR;
 
@@ -144,7 +146,7 @@ static void update_fspt_input(layer l, network *net, float x, float y) {
                 input_w, input_h);
         debug_print("input_layer.output + input_w + l.w *input_h = %p", input_layer.output + input_w + l.w*input_h);
 #ifdef GPU
-        copy_gpu(input_layer.out_c, input_layer.output + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+        copy_gpu(input_layer.out_c, input_layer.output_gpu + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
 #else
         copy_cpu(input_layer.out_c, input_layer.output + input_w + l.w*input_h, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #endif
@@ -164,7 +166,8 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     size_t n_max = l.fspt_n_max_training_data[classe];
     if (n_max == n) realloc_fspt_data(l, classe, 0, 1);
 #ifdef GPU
-    copy_gpu(l.total, l.fspt_input, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
+    //TODO: Should I use cuda_pull_array ?
+    copy_gpu(l.total, l.fspt_input_gpu, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
 #else
     copy_cpu(l.total, l.fspt_input, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
 #endif
@@ -220,8 +223,8 @@ int get_fspt_detections(layer l, int w, int h, network *net,
             if(objectness <= yolo_thresh) continue;
             int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
             box bbox = get_yolo_box(predictions, yolo_layer.biases,
-                                    yolo_layer.mask[n], box_index, col, row,
-                                    l.w, l.h, netw, neth, l.w*l.h);
+                    yolo_layer.mask[n], box_index, col, row,
+                    l.w, l.h, netw, neth, l.w*l.h);
             dets[count].bbox = bbox;
             dets[count].objectness = objectness;
             dets[count].classes = l.classes;
@@ -272,9 +275,8 @@ void forward_fspt_layer(layer l, network net)
 }
 
 #ifdef GPU
-void forward_fspt_layer_gpu(const layer l, network net)
-{
-    copy_gpu(l.batch*l.inputs, net.input_gpu, 1, l.output_gpu, 1);
+void forward_fspt_layer_gpu(const layer l, network net) {
+    copy_gpu(l.batch*l.outputs, net.input_gpu, 1, l.output_gpu, 1);
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
             //for(int t = 0; t < l.max_boxes; ++t){
@@ -289,7 +291,8 @@ void forward_fspt_layer_gpu(const layer l, network net)
                 ++t;
             }
         }
+        }
+        cuda_pull_array(l.output_gpu, l.output, 1);//l.batch*l.outputs);
     }
-}
 #endif
 

@@ -297,6 +297,7 @@ struct layer{
 
     float yolo_thresh;
     float *fspt_input;
+    float *fspt_input_gpu;
     fspt_t **fspts;
     float **fspt_training_data;
     int *fspt_n_training_data;

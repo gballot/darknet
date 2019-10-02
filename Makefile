@@ -12,6 +12,7 @@ ARCH= -gencode arch=compute_30,code=sm_30 \
 
 # This is what I use, uncomment if you know your arch and want to specify
 # ARCH= -gencode arch=compute_52,code=compute_52
+ARCH= -gencode arch=compute_70,code=sm_70 # TESLA V100
 
 VPATH=./src/:./examples
 SLIB=libdarknet.so
@@ -55,9 +56,11 @@ CFLAGS+= -DGPU
 LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
 DARKNET_GPU_OP= -i 0
 FSPT_GPU_OP= -gpus 0
+GDB=cuda-gdb
 SRUN= srun -p PV100q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
+GDB=gdb
 FSPT_GPU_OP=
 SRUN=
 endif
@@ -112,7 +115,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) gdb $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) $(GDB) $(EXEC) -ex "b train_fspt" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 run: $(EXEC)
 	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
