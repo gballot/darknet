@@ -165,16 +165,17 @@ void gini_criterion(criterion_args *args) {
         float fspt_min = fspt->feature_limit[2*feat];
         float fspt_max = fspt->feature_limit[2*feat + 1];
         float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
-        best_gains[feat] = local_best_gain * fspt->feature_importance[feat]
+        best_gains[i] = local_best_gain * fspt->feature_importance[feat]
             * relative_length;
-        best_splits[feat] = bins[local_best_gain_index];
+        best_splits[i] = bins[local_best_gain_index];
     }
     int *best_feature_index = &args->best_index;
     float *best_gain = &args->gain;
     float *best_split = &args->best_split;
-    *best_feature_index = max_index(best_gains, fspt->n_features);
-    *best_gain = best_gains[*best_feature_index];
-    *best_split = best_splits[*best_feature_index];
+    int rand_idx = max_index(best_gains, fspt->n_features);
+    *best_feature_index = random_features[rand_idx];
+    *best_gain = best_gains[rand_idx];
+    *best_split = best_splits[rand_idx];
     if (*best_gain < 0) {
         *best_feature_index = FAIL_TO_FIND;
         debug_print("fail to find any split point ad depth %d and n_samples %d",

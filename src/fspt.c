@@ -173,6 +173,11 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
+    if (root->depth > fspt->max_depth
+            || root->n_samples < fspt->min_samples) {
+        root->score = fspt->score(fspt, root);
+        return;
+    }
 
     list *heap = make_list(); // Heap of the nodes to examine
     list_insert(heap, (void *)root);
