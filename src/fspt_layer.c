@@ -145,12 +145,13 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         int input_h = floor(y * input_layer.out_h);
         debug_print("input_w, input_h : (%d,%d)",
                 input_w, input_h);
-        debug_print("input_layer.output + input_w + l.w *input_h = %p", input_layer.output + input_w + l.w*input_h);
 #ifdef GPU
         float *entry = input_layer.output_gpu + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        debug_print("entry = %p", entry);
         copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
 #else
         float *entry = input_layer.output + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        debug_print("entry = %p", entry);
         copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
 #endif
     }
@@ -199,7 +200,7 @@ static void add_fspt_data(layer l, network net, float yolo_thresh) {
                 int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
                 float prob = objectness*predictions[class_index];
                 if(prob > yolo_thresh) {
-                    update_fspt_input(l, &net, bbox.x, bbox.y);
+                    update_fspt_input(l, &net, bbox.x, bbox.y, /*batch=*/0);
                     copy_fspt_input_to_data(l, j);
                 }
             }
@@ -217,35 +218,37 @@ int get_fspt_detections(layer l, int w, int h, network *net,
     float *predictions = l.output;
     //if (l.batch == 2) avg_flipped_yolo(l);
     int count = 0;
-    for (i = 0; i < l.w*l.h; ++i){
-        int row = i / l.w;
-        int col = i % l.w;
-        for(n = 0; n < l.n; ++n){
-            int obj_index  = entry_index(l, 0, n*l.w*l.h + i, 4);
-            float objectness = predictions[obj_index];
-            if(objectness <= yolo_thresh) continue;
-            int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
-            box bbox = get_yolo_box(predictions, yolo_layer.biases,
-                    yolo_layer.mask[n], box_index, col, row,
-                    l.w, l.h, netw, neth, l.w*l.h);
-            dets[count].bbox = bbox;
-            dets[count].objectness = objectness;
-            dets[count].classes = l.classes;
-            for(j = 0; j < l.classes; ++j){
-                int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
-                float prob = objectness*predictions[class_index];
-                if(prob > yolo_thresh) {
-                    update_fspt_input(l, net, bbox.x, bbox.y);
-                    float score = fspt_get_score(l, j);
-                    if(score > fspt_thresh)
-                        dets[count].prob[j] = prob;
-                    else
-                        dets[count].prob[j] = -1.;
-                } else {
-                    dets[count].prob[j] = 0;
+    for (int b = 0; b < l.batch; ++b) {
+        for (i = 0; i < l.w*l.h; ++i){
+            int row = i / l.w;
+            int col = i % l.w;
+            for(n = 0; n < l.n; ++n){
+                int obj_index  = entry_index(l, b, n*l.w*l.h + i, 4);
+                float objectness = predictions[obj_index];
+                if(objectness <= yolo_thresh) continue;
+                int box_index  = entry_index(l, b, n*l.w*l.h + i, 0);
+                box bbox = get_yolo_box(predictions, yolo_layer.biases,
+                        yolo_layer.mask[n], box_index, col, row,
+                        l.w, l.h, netw, neth, l.w*l.h);
+                dets[count].bbox = bbox;
+                dets[count].objectness = objectness;
+                dets[count].classes = l.classes;
+                for(j = 0; j < l.classes; ++j){
+                    int class_index = entry_index(l, b, n*l.w*l.h + i, 4 + 1 + j);
+                    float prob = objectness*predictions[class_index];
+                    if(prob > yolo_thresh) {
+                        update_fspt_input(l, net, bbox.x, bbox.y, b);
+                        float score = fspt_get_score(l, j);
+                        if(score > fspt_thresh)
+                            dets[count].prob[j] = prob;
+                        else
+                            dets[count].prob[j] = -1.;
+                    } else {
+                        dets[count].prob[j] = 0;
+                    }
                 }
+                ++count;
             }
-            ++count;
         }
     }
     //correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
@@ -269,7 +272,7 @@ void forward_fspt_layer(layer l, network net)
                 box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
                 if(!truth.x) break;
                 int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
-                update_fspt_input(l, &net, truth.x, truth.y);
+                update_fspt_input(l, &net, truth.x, truth.y, b);
                 copy_fspt_input_to_data(l, class);
                 ++t;
             }

@@ -36,7 +36,7 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
     float n_empty_right = n_empty * (max -s) / l;
     if (n_empty_left + n_left < min_samples
             || n_empty_right + n_right < min_samples)
-        return FLT_MAX;
+        return 1.; // The higher gini score is 0.5 so 1 is like infinity.
     //TODO
     float gini_left = gini(n_empty_left, n_left);
     float gini_right = gini(n_empty_right, n_right);
@@ -93,7 +93,7 @@ static void hist(size_t n, size_t step, const float *X, float lower_bond,
     }
     /* build histogram */
     float last_x = x_0;
-    for (size_t i = 0; i < n ; ++i) {
+    for (size_t i = 1; i < n ; ++i) {
         float x = X[i*step];
         assert(x >= last_x);
         if (x > last_x) {
