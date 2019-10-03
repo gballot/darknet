@@ -48,7 +48,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill right node */
     right->type = LEAF;
     right->n_features = n_features;
-    float * right_feature_limit = malloc(2*n_features);
+    float * right_feature_limit = malloc(2*n_features*sizeof(float));
     memcpy(right_feature_limit, node->feature_limit, 2*n_features);
     right_feature_limit[2*index] = s;
     right->feature_limit = right_feature_limit;
@@ -64,7 +64,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill left node */
     left->type = LEAF;
     left->n_features = n_features;
-    float * left_feature_limit = malloc(2*n_features);
+    float * left_feature_limit = malloc(2*n_features*sizeof(float));
     memcpy(left_feature_limit, node->feature_limit, 2*n_features);
     left_feature_limit[2*index + 1] = s;
     left->feature_limit = left_feature_limit;

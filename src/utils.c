@@ -947,7 +947,9 @@ char *itoa(int val, int base)
  * \param n The number of vectors in the array.
  * \param size The number of feature of each vectors.
  * \param base Output paramter. Pointer to the array of size (n*size).
- * \return the index of the pivot in the output parameter base.
+ * \return The size of the left subarray that has only values inferior
+ *         or equal to the pivot value. The rest of the array has values
+ *         supperior or equal to the pivot.
  */
 static int partition(size_t index, size_t n, size_t size, float *base) {
     float *pivot = malloc(size * sizeof(float));
