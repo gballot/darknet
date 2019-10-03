@@ -791,7 +791,7 @@ void qsort_float_on_index(size_t index, size_t n, size_t size,
     } else if (n > 2) {
         int p = partition(index, n, size, base);
         qsort_float_on_index(index, p, size, base);
-        qsort_float_on_index(index, n - p, size, base + p);
+        qsort_float_on_index(index, n - p, size, base + p * size);
     }
 }
 
