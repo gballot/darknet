@@ -760,14 +760,14 @@ char *itoa(int val, int base)
 static int partition(size_t index, size_t n, size_t size, float *base) {
     float *pivot = malloc(size * sizeof(float));
     for (int i = 0; i < size; ++i) {
-        pivot[i] = base[(n/2) * size + i];
+        pivot[i] = base[(n-1)/2 * size + i];
     }
     int i = -1;
     int j = n;
     while(1) {
         do { ++i; } while (base[i*size + index] < pivot[index]);
         do { --j; } while (base[j*size + index] > pivot[index]);
-        if (i >= j) return j;
+        if (i >= j) return j + 1;
         /* Swap i and j. */
         for (size_t k = 0; k < size; ++k) {
             float swap = base[i*size + k];
