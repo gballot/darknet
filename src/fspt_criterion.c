@@ -136,8 +136,8 @@ void gini_criterion(criterion_args *args) {
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
-        bins = realloc(bins, n_bins * sizeof(size_t));
-        cdf = realloc(cdf, n_bins * sizeof(float));
+        bins = realloc(bins, n_bins * sizeof(float));
+        cdf = realloc(cdf, n_bins * sizeof(size_t));
         if (n_bins < 1) continue;
         size_t local_best_gain_index = 0;
         float local_best_gain = 0.;
