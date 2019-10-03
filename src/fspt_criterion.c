@@ -31,7 +31,7 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
         size_t n_right, float n_empty, int min_samples) {
     float l = max - min;
     if (l == 0.)
-        return FLT_MAX;
+        return 1.; // The higher gini score is 0.5 so 1 is like infinity.
     float n_empty_left = n_empty * (s - min) / l;
     float n_empty_right = n_empty * (max -s) / l;
     if (n_empty_left + n_left < min_samples
@@ -40,9 +40,9 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
     //TODO
     float gini_left = gini(n_empty_left, n_left);
     float gini_right = gini(n_empty_right, n_right);
-    int total_left = n_left + n_empty_left;
-    int total_right = n_right + n_empty_right;
-    int total = total_right + total_left;
+    float total_left = n_left + n_empty_left;
+    float total_right = n_right + n_empty_right;
+    float total = total_right + total_left;
     return gini_left * total_left / total + gini_right * total_right / total;
 }
 
@@ -121,7 +121,7 @@ void gini_criterion(criterion_args *args) {
     fspt_node *node = args->node;
     float *best_gains = malloc(fspt->n_features * sizeof(float));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
-    int *random_features = random_index_order(0, fspt->n_features - 1);
+    int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     float current_score = 0.5; // Max of Gini index.
     //TODO don't go to n_features but floor(n_features*max_features_p)
@@ -130,14 +130,14 @@ void gini_criterion(criterion_args *args) {
         int feat = random_features[i];
         float node_min = node->feature_limit[2*feat];
         float node_max = node->feature_limit[2*feat + 1];
-        size_t *cdf = malloc(2 * fspt->n_features * sizeof(float));
+        size_t *cdf = malloc(2 * fspt->n_features * sizeof(size_t));
         float *bins = malloc(2 * fspt->n_features * sizeof(float));
         size_t n_bins = 0;
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
-        bins = realloc(bins, n_bins);
-        cdf = realloc(cdf, n_bins);
+        bins = realloc(bins, n_bins * sizeof(size_t));
+        cdf = realloc(cdf, n_bins * sizeof(float));
         if (n_bins < 1) continue;
         size_t local_best_gain_index = 0;
         float local_best_gain = 0.;
