@@ -754,13 +754,13 @@ char *itoa(int val, int base)
  * \param index The index of the feature to apply QSort. 0 <= index < size.
  * \param n The number of vectors in the array.
  * \param size The number of feature of each vectors.
- * \param base Output paramter. Pointer to the array of size (n_size).
+ * \param base Output paramter. Pointer to the array of size (n*size).
  * \return the index of the pivot in the output parameter base.
  */
 static int partition(size_t index, size_t n, size_t size, float *base) {
     float *pivot = malloc(size * sizeof(float));
     for (int i = 0; i < size; ++i) {
-        pivot[i] = base[(n/2) * n + i];
+        pivot[i] = base[(n/2) * size + i];
     }
     int i = -1;
     int j = n;

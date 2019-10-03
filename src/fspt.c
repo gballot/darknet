@@ -53,7 +53,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right_feature_limit[2*index] = s;
     right->feature_limit = right_feature_limit;
     right->n_samples = node->n_samples - split_index;
-    right->samples = X + split_index;
+    right->samples = X + split_index * n_features;
     right->n_empty = node->n_empty * (node->feature_limit[2*index + 1] - s)
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
     right->depth = node->depth + 1;
@@ -189,6 +189,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
         if (*index == FAIL_TO_FIND) {
             //TODO
+            current_node->score = fspt->score(fspt, current_node);
         } else {
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
