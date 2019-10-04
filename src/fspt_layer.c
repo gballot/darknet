@@ -41,6 +41,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.out_h = l.h;
     l.out_c = l.c;
     l.outputs = l.h*l.w*l.c;
+    l.truths = 90*(4 + 1);
     l.coords = 4;
     for(int i=0; i<inputs; i++) l.total += net->layers[input_layers[i]].out_c;
 
@@ -170,11 +171,15 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     size_t n = l.fspt_n_training_data[classe];
     size_t n_max = l.fspt_n_max_training_data[classe];
     if (n_max == n) realloc_fspt_data(l, classe, 0, 1);
+    float *entry = l.fspt_training_data[classe]
+        + l.fspt_n_training_data[classe] * l.total;
 #ifdef GPU
-    cuda_pull_array(l.fspt_input_gpu, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, l.total);
+    cuda_pull_array(l.fspt_input_gpu, entry, l.total);
 #else
-    copy_cpu(l.total, l.fspt_input, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
+    copy_cpu(l.total, l.fspt_input, 1, entry, 1);
 #endif
+    if (l.total > 3)
+        debug_print("add new fspt data for classe %d : %f,%f,%f,%f...", classe, entry[0], entry[1], entry[2], entry[3]);
     l.fspt_n_training_data[classe] += 1;
 }
 

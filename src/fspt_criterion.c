@@ -7,6 +7,11 @@
 #include "fspt.h"
 #include "utils.h"
 
+#ifndef DEBUG
+#define unit_static static
+#else /* DEBUG */
+#define unit_static  
+#endif
 
 #define EPS 0.00001
 
@@ -64,7 +69,7 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
  *            elements <= bins[i].
  * \param bins Output parameter. Contains the elements in X and them minus EPS.
  */
-static void hist(size_t n, size_t step, const float *X, float lower_bond,
+unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
                  size_t *n_bins, size_t *cdf, float *bins) {
     *n_bins = 0;
     size_t last_cdf = 0;
@@ -136,8 +141,6 @@ void gini_criterion(criterion_args *args) {
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
-        bins = realloc(bins, n_bins * sizeof(float));
-        cdf = realloc(cdf, n_bins * sizeof(size_t));
         if (n_bins < 1) continue;
         size_t local_best_gain_index = 0;
         float local_best_gain = 0.;
@@ -161,13 +164,15 @@ void gini_criterion(criterion_args *args) {
         }
 
 
-
         float fspt_min = fspt->feature_limit[2*feat];
         float fspt_max = fspt->feature_limit[2*feat + 1];
         float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
         best_gains[i] = local_best_gain * fspt->feature_importance[feat]
             * relative_length;
         best_splits[i] = bins[local_best_gain_index];
+
+        free(bins);
+        free(cdf);
     }
     int *best_feature_index = &args->best_index;
     float *best_gain = &args->gain;
@@ -192,6 +197,8 @@ void gini_criterion(criterion_args *args) {
         node->count = 0;
     }
 
+    free(best_gains);
+    free(best_splits);
     free(random_features);
 }
 
@@ -204,4 +211,5 @@ criterion_func string_to_fspt_criterion(char *s) {
     return NULL;
 }
 
+#undef unit_static
 #undef EPS
