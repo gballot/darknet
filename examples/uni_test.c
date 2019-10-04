@@ -1,8 +1,10 @@
+#ifdef DEBUG
 #include <stdlib.h>
 #include <assert.h>
 
 #include "utils.h"
 #include "fspt.h"
+#include "fspt_criterion.h"
 
 static float volume(int n_features, const float *feature_limit)
 {
@@ -230,11 +232,41 @@ void uni_test() {
         error("UNI-TEST FAILD");
     }
 
-    //TODO COMPARE FSPTS
     if (!eq_fspts(*fspt, *fspt_loaded)) {
         fprintf(stderr, "FSPT LOADED DIFFERENT FROM FSPT SAVED\n");
         error("UNI-TEST FAILD");
     }
 
+
+    /***********************/
+    /* Test hist           */
+    /***********************/
+
+    float X_hist[] = 
+    {   
+        0.1f , 0.5f ,
+        -1.3f , 2.5f ,
+        3.2f , 0.7f ,
+        2.0f ,-1.5f , 
+        5.9f  , 8.2f,
+        2.7f , 1.7f,
+        3.4f , 4.7f,
+        1.2f ,-0.7f,
+        -5.7f, -0.5f
+    };
+    size_t n = 9;
+    size_t step = 2;
+    float lower = -10.f;
+    size_t n_bins = 0;
+    size_t *cdf = calloc(2*n, sizeof(size_t));
+    float *bins = calloc(2*n, sizeof(float));
+
+    hist(n, step, X_hist, lower, &n_bins, cdf, bins);
+
+    print_array(9,2,X_hist);
+    print_array(1, n_bins, bins);
+
     fprintf(stderr, "ALL TESTS OK!\n");
 }
+
+#endif /* DEBUG */

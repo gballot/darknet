@@ -35,7 +35,9 @@ extern void run_go(int argc, char **argv);
 extern void run_art(int argc, char **argv);
 extern void run_super(int argc, char **argv);
 extern void run_lsd(int argc, char **argv);
+#ifdef DEBUG
 extern void uni_test();
+#endif
 
 void average(int argc, char *argv[])
 {
@@ -549,9 +551,13 @@ int main(int argc, char **argv)
         visualize(argv[2], (argc > 3) ? argv[3] : 0);
     } else if (0 == strcmp(argv[1], "imtest")){
         test_resize(argv[2]);
-    } else if (0 == strcmp(argv[1], "uni_test")){
+    }
+#ifdef DEBUG
+    else if (0 == strcmp(argv[1], "uni_test")){
         uni_test();
-    } else {
+    }
+#endif
+    else {
         fprintf(stderr, "Not an option: %s\n", argv[1]);
     }
     return 0;
