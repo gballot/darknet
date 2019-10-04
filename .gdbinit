@@ -1,4 +1,6 @@
 # Define "split" and "ss" commands to switch to different user interface layouts
+set max-value-size unlimited
+
 define split
   layout split
   layout asm

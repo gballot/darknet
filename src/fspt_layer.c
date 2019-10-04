@@ -149,6 +149,7 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         float *entry = input_layer.output_gpu + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
         debug_print("entry = %p", entry);
         copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
+        cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
 #else
         float *entry = input_layer.output + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
         debug_print("entry = %p", entry);
@@ -170,8 +171,7 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     size_t n_max = l.fspt_n_max_training_data[classe];
     if (n_max == n) realloc_fspt_data(l, classe, 0, 1);
 #ifdef GPU
-    //TODO: Should I use cuda_pull_array ?
-    copy_gpu(l.total, l.fspt_input_gpu, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
+    cuda_pull_array(l.fspt_input_gpu, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, l.total);
 #else
     copy_cpu(l.total, l.fspt_input, 1, l.fspt_training_data[classe] + l.fspt_n_training_data[classe] * l.total, 1);
 #endif

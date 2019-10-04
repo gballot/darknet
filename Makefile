@@ -54,11 +54,16 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
+GDBCMD=
 ifeq ($(DEBUG), 1)
 OPTS= -O0 -g
 OPTS= -Og -g
 COMMON+= -DDEBUG
 CFLAGS+= -DDEBUG
+ifeq ($(GPU), 1) 
+NVCCFLAGS=-G
+GDBCMD+= -ex "set cuda memcheck on"
+endif
 else
 ifeq ($(AVX), 1)
 CFLAGS+= -ffp-contract=fast -mavx -mavx2 -msse3 -msse4.1 -msse4.2 -msse4a
@@ -150,7 +155,7 @@ $(OBJDIR)%.o: %.cpp $(DEPS)
 	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)%.o: %.cu $(DEPS)
-	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
+	$(NVCC) $(ARCH) $(COMMON) $(NVCCFLAGS) --compiler-options "$(CFLAGS)" -c $< -o $@
 
 obj:
 	mkdir -p obj
@@ -165,7 +170,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 run: $(EXEC)
 	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
