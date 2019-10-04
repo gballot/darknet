@@ -1,5 +1,5 @@
-GPU=0
-CUDNN=0
+GPU=1
+CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
@@ -39,6 +39,11 @@ ifeq ($(DEBUG), 1)
 OPTS=-O0 -g
 COMMON+= -DDEBUG
 CFLAGS+= -DDEBUG
+GDBCMD=
+ifeq ($(GPU), 1) 
+NVCCFLAGS=-G
+GDBCMD+= -ex "set cuda memcheck on"
+endif
 endif
 
 CFLAGS+=$(OPTS)
@@ -102,7 +107,7 @@ $(OBJDIR)%.o: %.c $(DEPS)
 	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)%.o: %.cu $(DEPS)
-	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
+	$(NVCC) $(ARCH) $(COMMON) $(NVCCFLAGS) --compiler-options "$(CFLAGS)" -c $< -o $@
 
 obj:
 	mkdir -p obj
@@ -115,7 +120,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 run: $(EXEC)
 	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
