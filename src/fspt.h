@@ -149,7 +149,7 @@ extern void fspt_fit(int n_samples, float *X, criterion_args *args,
  * \param fspt The feature space partitioning tree.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_save(char *filename, fspt_t fspt, int *succ);
+extern void fspt_save(const char *filename, fspt_t fspt, int *succ);
 
 
 /**
@@ -162,6 +162,6 @@ extern void fspt_save(char *filename, fspt_t fspt, int *succ);
  * \param fspt The feature space partitioning tree parsed from config file.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_load(char *filename, fspt_t *fspt, int *succ);
+extern void fspt_load(const char *filename, fspt_t *fspt, int *succ);
 
 #endif /* FSPT_H */
