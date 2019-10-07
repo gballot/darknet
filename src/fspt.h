@@ -14,7 +14,8 @@
 
 #define FAIL_TO_FIND -1
 
-typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
+// NO_NODE is only usefull for printing
+typedef enum {LEAF, INNER, NO_NODE} FSTP_NODE_TYPE;
 
 
 struct fspt_node;

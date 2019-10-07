@@ -173,10 +173,10 @@ gdb: $(EXEC)
 	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights"
 
 run: $(EXEC)
-	$(SRUN) $(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
 
 test: $(EXEC)
-	./$(EXEC) uni_test
+	$(SRUN) ./$(EXEC) uni_test
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "list.h"
 #include "utils.h"
 #include "fspt.h"
 #include "fspt_criterion.h"
@@ -92,7 +93,71 @@ static int eq_fspts(fspt_t a, fspt_t b) {
     return eq;
 }
 
-static print_array(int lines, int col, float *X) {
+static void print_fspt(fspt_t *fspt) {
+    int stop = 0;
+    fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
+    list *node_list = make_list();
+    list *next_list = make_list();
+    list_insert(node_list, (void *)fspt->root);
+    fspt_node *next = (fspt_node *)list_pop(node_list);
+    while (next && !stop) {
+        stop = 1;
+        while (next) {
+            if (next->type == INNER) {
+                fprintf(stderr, "|%2d->%5.2f", next->split_feature, next->split_value);
+                if (next->left) {
+                    list_insert(next_list, (void *)next->left);
+                    stop = 0;
+                } else {
+                    fspt_node * node = calloc(1, sizeof(fspt_node));
+                    node->type = NO_NODE;
+                    list_insert(next_list, (void *)node);
+                }
+                if (next->right) {
+                    list_insert(next_list, (void *)next->right);
+                    stop = 0;
+                } else {
+                    fspt_node * node = calloc(1, sizeof(fspt_node));
+                    node->type = NO_NODE;
+                    list_insert(next_list, (void *)node);
+                }
+            } else if (next->type == LEAF) {
+                fprintf(stderr, "|         ");
+                fspt_node * node = calloc(1, sizeof(fspt_node));
+                node->type = NO_NODE;
+                list_insert(next_list, (void *)node);
+            } else if (next->type == NO_NODE) {
+                fprintf(stderr, "          ");
+                fspt_node * node = calloc(1, sizeof(fspt_node));
+                node->type = NO_NODE;
+                list_insert(next_list, (void *)node);
+                free(next);
+            }
+            next = (fspt_node *)list_pop(node_list);
+        }
+        fprintf(stderr, "\n");
+        fspt_node *new = (fspt_node *) list_pop(next_list);
+        while (new) {
+            list_insert(node_list, new);
+            free(new);
+            new = (fspt_node *) list_pop(next_list);
+        }
+        next = list_pop(node_list);
+    }
+    free(next_list);
+    free(node_list);
+}
+
+static void print_size_t_array(int lines, int col, size_t *X) {
+    for (int i = 0; i < lines; ++i) {
+        for (int j = 0; j < col; ++j) {
+            fprintf(stderr, " %d  ", X[i*col +j]);
+        }
+        fprintf(stderr, "\n");
+    }
+}
+
+static void print_array(int lines, int col, float *X) {
     for (int i = 0; i < lines; ++i) {
         for (int j = 0; j < col; ++j) {
             fprintf(stderr, " %f  ", X[i*col +j]);
@@ -217,6 +282,7 @@ void uni_test() {
 
     /* save */
     fspt_save(filename, *fspt, &succ);
+    //print_fspt(fspt);
 
     if (!succ) {
         fprintf(stderr, "FSPT_SAVE FAILD\n");
@@ -250,21 +316,28 @@ void uni_test() {
         2.0f ,-1.5f , 
         5.9f  , 8.2f,
         2.7f , 1.7f,
+        -10.f , 1.7f,
+        0.1f , 0.0f ,
         3.4f , 4.7f,
         1.2f ,-0.7f,
         -5.7f, -0.5f
     };
-    size_t n = 9;
+    size_t n = 11;
     size_t step = 2;
     float lower = -10.f;
     size_t n_bins = 0;
     size_t *cdf = calloc(2*n, sizeof(size_t));
     float *bins = calloc(2*n, sizeof(float));
 
+    qsort_float_on_index(0, n, step, X_hist);
     hist(n, step, X_hist, lower, &n_bins, cdf, bins);
 
-    print_array(9,2,X_hist);
+    fprintf(stderr, "X = \n");
+    print_array(n,step,X_hist);
+    fprintf(stderr, "bins = \n");
     print_array(1, n_bins, bins);
+    fprintf(stderr, "cdf = \n");
+    print_size_t_array(1, n_bins, cdf);
 
     fprintf(stderr, "ALL TESTS OK!\n");
 }
