@@ -46,7 +46,6 @@ typedef struct fspt_node {
     float vol;          // volume of the node (=prod length of each dimension)
     float density;      // density = n_samples/(n_samples + n_empty)
     float score;
-    int count;          // keeps the successive violation of gain threshold
 } fspt_node;
 
 /**
@@ -68,6 +67,7 @@ typedef struct fspt_t {
     int depth;
     int max_depth;
     int min_samples;
+    int count;          // keeps the successive violation of gain threshold
 } fspt_t;
 
 
@@ -80,6 +80,7 @@ typedef struct criterion_args {
     int best_index;
     float best_split;
     float gain;
+    int forbidden_split;
 } criterion_args;
 
 /**
