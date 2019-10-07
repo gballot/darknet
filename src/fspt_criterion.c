@@ -141,7 +141,11 @@ void gini_criterion(criterion_args *args) {
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
-        if (n_bins < 1) continue;
+        if (n_bins < 1) {
+            free(bins);
+            free(cdf);
+            continue;
+        }
         size_t local_best_gain_index = 0;
         float local_best_gain = 0.;
 
