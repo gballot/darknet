@@ -82,7 +82,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
         }
         if (eps > 0) {
             bins[0] = x_0 - eps;
-            cdf[0] = ++last_cdf;
+            cdf[0] = last_cdf;
             bins[1] = x_0;
             cdf[1] = ++last_cdf;
             *n_bins = 2;
@@ -108,7 +108,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
             }
             if (eps > 0) {
                 bins[*n_bins] = x - eps;
-                cdf[(*n_bins)++] = ++last_cdf;
+                cdf[(*n_bins)++] = last_cdf;
                 bins[*n_bins] = x;
                 cdf[(*n_bins)++] = ++last_cdf;
             } else {
