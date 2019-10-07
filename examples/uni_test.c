@@ -93,60 +93,6 @@ static int eq_fspts(fspt_t a, fspt_t b) {
     return eq;
 }
 
-static void print_fspt(fspt_t *fspt) {
-    int stop = 0;
-    fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
-    list *node_list = make_list();
-    list *next_list = make_list();
-    list_insert(node_list, (void *)fspt->root);
-    fspt_node *next = (fspt_node *)list_pop(node_list);
-    while (next && !stop) {
-        stop = 1;
-        while (next) {
-            if (next->type == INNER) {
-                fprintf(stderr, "|%2d->%5.2f", next->split_feature, next->split_value);
-                if (next->left) {
-                    list_insert(next_list, (void *)next->left);
-                    stop = 0;
-                } else {
-                    fspt_node * node = calloc(1, sizeof(fspt_node));
-                    node->type = NO_NODE;
-                    list_insert(next_list, (void *)node);
-                }
-                if (next->right) {
-                    list_insert(next_list, (void *)next->right);
-                    stop = 0;
-                } else {
-                    fspt_node * node = calloc(1, sizeof(fspt_node));
-                    node->type = NO_NODE;
-                    list_insert(next_list, (void *)node);
-                }
-            } else if (next->type == LEAF) {
-                fprintf(stderr, "|         ");
-                fspt_node * node = calloc(1, sizeof(fspt_node));
-                node->type = NO_NODE;
-                list_insert(next_list, (void *)node);
-            } else if (next->type == NO_NODE) {
-                fprintf(stderr, "          ");
-                fspt_node * node = calloc(1, sizeof(fspt_node));
-                node->type = NO_NODE;
-                list_insert(next_list, (void *)node);
-                free(next);
-            }
-            next = (fspt_node *)list_pop(node_list);
-        }
-        fprintf(stderr, "\n");
-        fspt_node *new = (fspt_node *) list_pop(next_list);
-        while (new) {
-            list_insert(node_list, new);
-            free(new);
-            new = (fspt_node *) list_pop(next_list);
-        }
-        next = list_pop(node_list);
-    }
-    free(next_list);
-    free(node_list);
-}
 
 static void print_size_t_array(int lines, int col, size_t *X) {
     for (int i = 0; i < lines; ++i) {
@@ -282,7 +228,7 @@ void uni_test() {
 
     /* save */
     fspt_save(filename, *fspt, &succ);
-    //print_fspt(fspt);
+    print_fspt(fspt);
 
     if (!succ) {
         fprintf(stderr, "FSPT_SAVE FAILD\n");

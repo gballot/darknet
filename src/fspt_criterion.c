@@ -126,6 +126,8 @@ void gini_criterion(criterion_args *args) {
     fspt_node *node = args->node;
     float *best_gains = malloc(fspt->n_features * sizeof(float));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
+    size_t *cdf = malloc(2 * fspt->n_features * sizeof(size_t));
+    float *bins = malloc(2 * fspt->n_features * sizeof(float));
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     float current_score = 0.5; // Max of Gini index.
@@ -135,15 +137,11 @@ void gini_criterion(criterion_args *args) {
         int feat = random_features[i];
         float node_min = node->feature_limit[2*feat];
         float node_max = node->feature_limit[2*feat + 1];
-        size_t *cdf = malloc(2 * fspt->n_features * sizeof(size_t));
-        float *bins = malloc(2 * fspt->n_features * sizeof(float));
         size_t n_bins = 0;
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
         if (n_bins < 1) {
-            free(bins);
-            free(cdf);
             continue;
         }
         size_t local_best_gain_index = 0;
@@ -175,9 +173,9 @@ void gini_criterion(criterion_args *args) {
             * relative_length;
         best_splits[i] = bins[local_best_gain_index];
 
-        free(bins);
-        free(cdf);
     }
+    free(bins);
+    free(cdf);
     int *best_feature_index = &args->best_index;
     float *best_gain = &args->gain;
     float *best_split = &args->best_split;
