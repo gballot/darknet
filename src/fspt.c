@@ -158,84 +158,6 @@ void print_fspt(fspt_t *fspt)
     for (int i = 0; i < size; i++)
         fprintf(stderr,"%s\n", s[i]);
 }
-/*
-void print_fspt(fspt_t *fspt) {
-    int stop = 0;
-    fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
-    list *node_list = make_list();
-    list *next_list = make_list();
-    list_insert(node_list, (void *)fspt->root);
-    fspt_node *next = (fspt_node *)list_pop(node_list);
-    while (next && !stop) {
-        stop = 1;
-        char interlignes[8096] = {0};
-        char *cursor = interlignes;
-        while (next) {
-            if (cursor - interlignes > 8070) {
-                fprintf(stderr, "\n........\n");
-                break;
-            }
-            if (next->type == INNER) {
-                fprintf(stderr, "|%2d->%5.2f", next->split_feature, next->split_value);
-                if (next->left) {
-                    list_insert(next_list, (void *)next->left);
-                    if (next->right)
-                        *cursor = '+';
-                    else
-                        *cursor = '|';
-                    ++cursor;
-                    stop = 0;
-                } else {
-                    fspt_node * node = calloc(1, sizeof(fspt_node));
-                    node->type = NO_NODE;
-                    list_insert(next_list, (void *)node);
-                    *cursor = '+';
-                    ++cursor;
-                }
-                if (next->right) {
-                    list_insert(next_list, (void *)next->right);
-                    strcpy(cursor, "─────────+");
-                    cursor += 10;
-                    stop = 0;
-                } else {
-                    fspt_node * node = calloc(1, sizeof(fspt_node));
-                    node->type = NO_NODE;
-                    list_insert(next_list, (void *)node);
-                    strcpy(cursor, "         ");
-                    cursor += 9;
-                }
-            } else if (next->type == LEAF) {
-                fprintf(stderr, "|         ");
-                fspt_node * node = calloc(1, sizeof(fspt_node));
-                node->type = NO_NODE;
-                list_insert(next_list, (void *)node);
-                strcpy(cursor, "0         ");
-                cursor += 10;
-            } else if (next->type == NO_NODE) {
-                fprintf(stderr, "          ");
-                fspt_node * node = calloc(1, sizeof(fspt_node));
-                node->type = NO_NODE;
-                list_insert(next_list, (void *)node);
-                free(next);
-                strcpy(cursor, "          ");
-                cursor += 10;
-            }
-            next = (fspt_node *)list_pop(node_list);
-        }
-        fprintf(stderr, "\n");
-        fprintf(stderr, interlignes);
-        fprintf(stderr, "\n");
-        fspt_node *new = (fspt_node *) list_pop(next_list);
-        while (new) {
-            list_insert(node_list, new);
-            new = (fspt_node *) list_pop(next_list);
-        }
-        next = list_pop(node_list);
-    }
-    free(next_list);
-    free(node_list);
-}
-*/
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
                   float *feature_importance, criterion_func criterion,
@@ -331,12 +253,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     list_insert(heap, (void *)root);
     while (heap->size > 0) {
         fspt_node *current_node = (fspt_node *) list_pop(heap);
-        int *index;
-        float *s, *gain;
         args->node = current_node;
-        index = &args->best_index;
-        s = &args->best_split;
-        gain = &args->gain;
+        int *index = &args->best_index;
+        float *s = &args->best_split;
+        float *gain = &args->gain;
         /* fills the values of *args */
         fspt->criterion(args);
         debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
