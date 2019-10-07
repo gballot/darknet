@@ -57,8 +57,6 @@ static int eq_nodes(fspt_node a, fspt_node b) {
     if (!eq) fprintf(stderr, "node density differ...\n");
     eq &= (a.score == b.score);
     if (!eq) fprintf(stderr, "node score differ...\n");
-    eq &= (a.count == b.count);
-    if (!eq) fprintf(stderr, "node count differ...\n");
     return eq;
 }
 
@@ -90,6 +88,8 @@ static int eq_fspts(fspt_t a, fspt_t b) {
     if (!eq) fprintf(stderr, "fspt max_depth differ...\n");
     eq &= (a.min_samples == b.min_samples);
     if (!eq) fprintf(stderr, "fspt min_samples differ...\n");
+    eq &= (a.count == b.count);
+    if (!eq) fprintf(stderr, "fspt count differ...\n");
     return eq;
 }
 

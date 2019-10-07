@@ -33,16 +33,20 @@ static float gini(float x, float y)
  * with the notations from Toward Safe Machine Learning.
  */
 static float gini_after_split(float min, float max, float s, size_t n_left,
-        size_t n_right, float n_empty, int min_samples) {
+        size_t n_right, float n_empty, int min_samples, int *forbidden_split) {
+    *forbidden_split = 0;
     float l = max - min;
-    if (l == 0.)
-        return 1.; // The higher gini score is 0.5 so 1 is like infinity.
+    if (l == 0.) {
+        *forbidden_split = 1;
+        return 1.;
+    }
     float n_empty_left = n_empty * (s - min) / l;
     float n_empty_right = n_empty * (max -s) / l;
     if (n_empty_left + n_left < min_samples
-            || n_empty_right + n_right < min_samples)
-        return 1.; // The higher gini score is 0.5 so 1 is like infinity.
-    //TODO
+            || n_empty_right + n_right < min_samples) {
+        *forbidden_split = 1;
+        return 1.;
+    }
     float gini_left = gini(n_empty_left, n_left);
     float gini_right = gini(n_empty_right, n_right);
     float total_left = n_left + n_empty_left;
@@ -121,15 +125,53 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
     }
 }
 
+static void best_split_on_feature(int feat, fspt_node node, float current_score,
+        int min_samples, int n_bins,
+        const float *bins, const size_t *cdf, float *best_gain, int *best_index,
+        int *forbidden_split) {
+    *forbidden_split = 1;
+    float node_min = node.feature_limit[2*feat];
+    float node_max = node.feature_limit[2*feat + 1];
+    int local_best_gain_index = -1;
+    float local_best_gain = 0.;
+    //TODO: could add max_try policy.
+    //Add an argument 0<max_try_p<1
+    //and take a subsample of bins of size floor(max(1,n_bins*max_try_p))
+    for (size_t j = 0; j < n_bins; ++j) {
+        // why ??
+        //assert(node->n_empty == node->n_samples);
+        float bin = bins[j];
+        size_t n_left = cdf[j];
+        size_t n_right = node.n_samples - cdf[j];
+        int local_forbidden_split = 0;
+        float score = gini_after_split(node_min, node_max, bin, n_left,
+                n_right, node.n_empty, min_samples, &local_forbidden_split);
+        if (local_forbidden_split) continue;
+        float tmp_gain = current_score - score;
+        if (tmp_gain > local_best_gain) {
+            local_best_gain = tmp_gain;
+            local_best_gain_index = j;
+            *forbidden_split = 0;
+        }
+    }
+    *best_gain = local_best_gain;
+    *best_index = local_best_gain_index;
+}
+
 void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
+    if (node->n_samples < fspt->min_samples) {
+        args->best_index = FAIL_TO_FIND;
+        return;
+    }
     float *best_gains = malloc(fspt->n_features * sizeof(float));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
     size_t *cdf = malloc(2 * fspt->n_features * sizeof(size_t));
     float *bins = malloc(2 * fspt->n_features * sizeof(float));
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
+    int forbidden_split = 1;
     float current_score = 0.5; // Max of Gini index.
     //TODO don't go to n_features but floor(n_features*max_features_p)
     //int max_features = floor(fspt->n_features * max_features_p);
@@ -144,38 +186,34 @@ void gini_criterion(criterion_args *args) {
         if (n_bins < 1) {
             continue;
         }
-        size_t local_best_gain_index = 0;
-        float local_best_gain = 0.;
+        int local_best_gain_index = 0;
+        float local_best_gain = 0.f;
+        int local_forbidden_split = 1;
+        best_split_on_feature(feat, *node, current_score, fspt->min_samples, n_bins, bins, cdf,
+                &local_best_gain, &local_best_gain_index, &local_forbidden_split);
 
-        //TODO: could add max_try policy.
-        //Add an argument 0<max_try_p<1
-        //and take a subsample of bins of size floor(max(1,n_bins*max_try_p))
-        for (size_t j = 0; j < n_bins; ++j) {
-            // why ??
-            //assert(node->n_empty == node->n_samples);
-            float bin = bins[j];
-            size_t n_left = cdf[j];
-            size_t n_right = node->n_samples - cdf[j];
-            float score = gini_after_split(node_min, node_max, bin, n_left,
-                    n_right, node->n_empty, fspt->min_samples);
-            float tmp_gain = current_score - score;
-            if (tmp_gain > local_best_gain) {
-                local_best_gain = tmp_gain;
-                local_best_gain_index = j;
-            }
+        if (!local_forbidden_split) {
+            float fspt_min = fspt->feature_limit[2*feat];
+            float fspt_max = fspt->feature_limit[2*feat + 1];
+            float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
+            best_gains[i] = local_best_gain * fspt->feature_importance[feat]
+                * relative_length;
+            best_splits[i] = bins[local_best_gain_index];
+            forbidden_split = 0;
+        } else {
+            best_gains[i] = -1.f;
+            best_splits[i] = 0.f;
         }
-
-
-        float fspt_min = fspt->feature_limit[2*feat];
-        float fspt_max = fspt->feature_limit[2*feat + 1];
-        float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
-        best_gains[i] = local_best_gain * fspt->feature_importance[feat]
-            * relative_length;
-        best_splits[i] = bins[local_best_gain_index];
-
     }
     free(bins);
     free(cdf);
+    if (forbidden_split) {
+        debug_print("fail to find any split point ad depth %d and n_samples %d",
+                node->depth, node->n_samples);
+        args->best_index = FAIL_TO_FIND;
+        args->forbidden_split = 1;
+        return;
+    }
     int *best_feature_index = &args->best_index;
     float *best_gain = &args->gain;
     float *best_split = &args->best_split;
@@ -189,14 +227,14 @@ void gini_criterion(criterion_args *args) {
                 node->depth, node->n_samples);
     } else if (*best_gain < args->thresh) {
         debug_print("fail to find any split point ad depth %d and count %d",
-                node->depth, node->count);
-        node->count += 1;
+                node->depth, fspt->count);
+        fspt->count += 1;
         int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
-        if (node->count >= v) {
+        if (fspt->count >= v) {
             *best_feature_index = FAIL_TO_FIND;
         }
     } else {
-        node->count = 0;
+        fspt->count = 0;
     }
 
     free(best_gains);

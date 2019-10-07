@@ -260,7 +260,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         /* fills the values of *args */
         fspt->criterion(args);
         debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
-        if (*index == FAIL_TO_FIND) {
+        if (args->forbidden_split || *index == FAIL_TO_FIND) {
             //TODO
             current_node->score = fspt->score(fspt, current_node);
         } else {
