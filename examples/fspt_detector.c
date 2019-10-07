@@ -184,6 +184,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
+    fprintf(stderr, "Data extraction done... Fitting FSPTs");
     for (int i = 0; i < net->n; ++i) {
         layer l = net->layers[i];
         if (l.type == FSPT) {
@@ -198,11 +199,12 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
                 args->thresh = 0.01;
                 fspt_fit(n, X, args, fspt);
                 char buff[256];
-                sprintf(buff, "%s/%s_fspt_class/%d.dat",
+                sprintf(buff, "%s/%s_fspt_class_%d.dat",
                         backup_directory, base, class);
                 int succ = 1;
                 fspt_save(buff, *fspt, &succ);
                 if (!succ) fprintf(stderr, "Save fspt faild...");
+                print_fspt(fspt);
             }
         }
     }

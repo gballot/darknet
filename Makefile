@@ -126,7 +126,7 @@ run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data cfg/fspt-tiny.cfg weights/yolov3-tiny.weights
 
 test: $(EXEC)
-	$(SRUN) ./$(EXEC) uni_test
+	./$(EXEC) -nogpu uni_test
 
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .

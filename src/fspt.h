@@ -165,4 +165,11 @@ extern void fspt_save(const char *filename, fspt_t fspt, int *succ);
  */
 extern void fspt_load(const char *filename, fspt_t *fspt, int *succ);
 
+/**
+ * Friendly prints a fspt to the terminal.
+ *
+ * \param fspt The feature space partitioning tree.
+ */
+extern void print_fspt(fspt_t *fspt);
+
 #endif /* FSPT_H */
