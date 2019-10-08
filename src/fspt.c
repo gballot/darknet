@@ -91,79 +91,30 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
         fspt->depth = right->depth;
 }
 
-// https://stackoverflow.com/questions/801740/c-how-to-draw-a-binary-tree-to-the-console
-static int _print_t(fspt_node *tree, int is_left, int offset, int depth, char s[20][255])
+// Function to print binary tree in 2D
+// It does reverse inorder traversal
+// https://www.geeksforgeeks.org/print-binary-tree-2-dimensions/
+void print2DUtil(fspt_node *root, int space)
 {
-    int width = 7;
-    char b[width*sizeof(char)];
-
-    if (!tree) return 0;
-
-    if (tree->type == INNER)
-        sprintf(b, "%2d|%4.2f", tree->split_feature, tree->split_value);
+    const int COUNT = 10;
+    if (root == NULL)
+        return;
+    space += COUNT;
+    print2DUtil(root->right, space);
+    fprintf(stderr, "\n");
+    for (int i = COUNT; i < space; i++)
+        fprintf(stderr, " ");
+    if (root->type == INNER)
+        fprintf(stderr, "%2d|%4.2f\n", root->split_feature, root->split_value);
     else
-        sprintf(b, "%7.3f", tree->score);
-
-    int left  = _print_t(tree->left,  1, offset,                depth + 1, s);
-    int right = _print_t(tree->right, 0, offset + left + width, depth + 1, s);
-
-#ifdef COMPACT
-    for (int i = 0; i < width; i++)
-        s[depth][offset + left + i] = b[i];
-
-    if (depth && is_left) {
-
-        for (int i = 0; i < width + right; i++)
-            s[depth - 1][offset + left + width/2 + i] = '-';
-
-        s[depth - 1][offset + left + width/2] = '.';
-
-    } else if (depth && !is_left) {
-
-        for (int i = 0; i < left + width; i++)
-            s[depth - 1][offset - width/2 + i] = '-';
-
-        s[depth - 1][offset + left + width/2] = '.';
-    }
-#else
-    for (int i = 0; i < width; i++)
-        s[2 * depth][offset + left + i] = b[i];
-
-    if (depth && is_left) {
-
-        for (int i = 0; i < width + right; i++)
-            s[2 * depth - 1][offset + left + width/2 + i] = '-';
-
-        s[2 * depth - 1][offset + left + width/2] = '+';
-        s[2 * depth - 1][offset + left + width + right + width/2] = '+';
-
-    } else if (depth && !is_left) {
-
-        for (int i = 0; i < left + width; i++)
-            s[2 * depth - 1][offset - width/2 + i] = '-';
-
-        s[2 * depth - 1][offset + left + width/2] = '+';
-        s[2 * depth - 1][offset - width/2 - 1] = '+';
-    }
-#endif
-
-    return left + width + right;
+        fprintf(stderr, "%7.3f\n", root->score);
+    print2DUtil(root->left, space);
 }
 
 void print_fspt(fspt_t *fspt)
 {
-    //TODO
-    return;
     fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
-    int size = 2*fspt->depth + 1;
-    char s[size][255];
-    for (int i = 0; i < size; i++)
-        sprintf(s[i], "%80s", " ");
-
-    _print_t(fspt->root, 0, 0, 0, s);
-
-    for (int i = 0; i < size; i++)
-        fprintf(stderr,"%s\n", s[i]);
+    print2DUtil(fspt->root, 0);
 }
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
