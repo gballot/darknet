@@ -152,6 +152,8 @@ static int _print_t(fspt_node *tree, int is_left, int offset, int depth, char s[
 
 void print_fspt(fspt_t *fspt)
 {
+    //TODO
+    return;
     fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
     int size = 2*fspt->depth + 1;
     char s[size][255];

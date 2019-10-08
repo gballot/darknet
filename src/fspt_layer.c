@@ -95,13 +95,11 @@ static void realloc_fspt_data(layer l, int classe, size_t num, int relative) {
     if (num == 0) num = 1000;
     if (relative) {
         num += l.fspt_n_max_training_data[classe];
-        l.fspt_n_max_training_data[classe] += num;
-    } else {
-        l.fspt_n_max_training_data[classe] = num;
     }
+    l.fspt_n_max_training_data[classe] = num;
     assert(num >= l.fspt_n_training_data[classe]);
     l.fspt_training_data[classe]
-        = realloc(l.fspt_training_data[classe], l.total * num);
+        = realloc(l.fspt_training_data[classe], l.total * num * sizeof(float));
 }
 
 /**
@@ -171,6 +169,7 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     size_t n = l.fspt_n_training_data[classe];
     size_t n_max = l.fspt_n_max_training_data[classe];
     if (n_max == n) realloc_fspt_data(l, classe, 0, 1);
+    debug_print("Realloc space for data (n, n_max) = (%zu, %zu)", n, n_max);
     float *entry = l.fspt_training_data[classe]
         + l.fspt_n_training_data[classe] * l.total;
 #ifdef GPU
