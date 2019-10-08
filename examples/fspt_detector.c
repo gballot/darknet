@@ -184,7 +184,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
-    fprintf(stderr, "Data extraction done... Fitting FSPTs");
+    fprintf(stderr, "Data extraction done... Fitting FSPTs\n");
     for (int i = 0; i < net->n; ++i) {
         layer l = net->layers[i];
         if (l.type == FSPT) {

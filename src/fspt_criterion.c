@@ -167,12 +167,12 @@ void gini_criterion(criterion_args *args) {
     }
     float *best_gains = malloc(fspt->n_features * sizeof(float));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
-    size_t *cdf = malloc(2 * fspt->n_features * sizeof(size_t));
-    float *bins = malloc(2 * fspt->n_features * sizeof(float));
+    size_t *cdf = malloc(2 * node->n_samples * sizeof(size_t));
+    float *bins = malloc(2 * node->n_samples * sizeof(float));
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     int forbidden_split = 1;
-    float current_score = 0.5; // Max of Gini index.
+    float current_score = gini(node->n_samples, node->n_empty);
     //TODO don't go to n_features but floor(n_features*max_features_p)
     //int max_features = floor(fspt->n_features * max_features_p);
     for (int i = 0; i < fspt->n_features; ++i) {

@@ -782,6 +782,7 @@ static int partition(size_t index, size_t n, size_t size, float *base) {
 
 void qsort_float_on_index(size_t index, size_t n, size_t size,
                                  float *base) {
+    assert(n < 10000000);
     if (n == 2) {
         if (base[index] > base[size + index]) {
             for (size_t i = 0; i < size; ++i) {

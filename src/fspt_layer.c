@@ -168,8 +168,10 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
 static void copy_fspt_input_to_data(layer l, int classe) {
     size_t n = l.fspt_n_training_data[classe];
     size_t n_max = l.fspt_n_max_training_data[classe];
-    if (n_max == n) realloc_fspt_data(l, classe, 0, 1);
-    debug_print("Realloc space for data (n, n_max) = (%zu, %zu)", n, n_max);
+    if (n_max == n) {
+        realloc_fspt_data(l, classe, 0, 1);
+        debug_print("Realloc space for data (n, n_max) = (%zu, %zu)", n, n_max);
+    }
     float *entry = l.fspt_training_data[classe]
         + l.fspt_n_training_data[classe] * l.total;
 #ifdef GPU
