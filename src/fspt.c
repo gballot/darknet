@@ -104,10 +104,13 @@ void print2DUtil(fspt_node *root, int space)
     fprintf(stderr, "\n");
     for (int i = COUNT; i < space; i++)
         fprintf(stderr, " ");
+    fprintf(stderr, "%p\n", root);
+    for (int i = COUNT; i < space; i++)
+        fprintf(stderr, " ");
     if (root->type == INNER)
         fprintf(stderr, "%2d|%4.2f\n", root->split_feature, root->split_value);
     else
-        fprintf(stderr, "%7.3f\n", root->score);
+        fprintf(stderr, "%5.1f(%d|%.0f)\n", root->score, root->n_samples, root->n_empty);
     print2DUtil(root->left, space);
 }
 
@@ -228,14 +231,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
             fspt_split(fspt, current_node, *index, *s, left, right);
             /* Should I examine right ? */
             if (right->depth > fspt->max_depth
-                    || right->n_samples < fspt->min_samples) {
+                    || right->n_samples + right->n_empty < fspt->min_samples) {
                 right->score = fspt->score(fspt, right);
             } else {
                 list_insert(heap, right);
             }
             /* Should I examine left ? */
             if (left->depth > fspt->max_depth
-                    || left->n_samples < fspt->min_samples) {
+                    || left->n_samples + left->n_empty < fspt->min_samples) {
                 left->score = fspt->score(fspt, left);
             } else {
                 list_insert(heap, left);

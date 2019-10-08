@@ -210,7 +210,7 @@ void gini_criterion(criterion_args *args) {
     free(bins);
     free(cdf);
     if (forbidden_split) {
-        debug_print("fail to find any split point ad depth %d and n_samples %d",
+        debug_print("fail to find any split point at depth %d and n_samples %d",
                 node->depth, node->n_samples);
         args->forbidden_split = 1;
     } else {
@@ -221,8 +221,9 @@ void gini_criterion(criterion_args *args) {
         *best_feature_index = random_features[rand_idx];
         *best_gain = best_gains[rand_idx];
         *best_split = best_splits[rand_idx];
+        args->forbidden_split = 0;
         if (*best_gain < args->thresh) {
-            debug_print("fail to find any split point ad depth %d and count %d",
+            debug_print("fail to find any split point at depth %d and count %d",
                     node->depth, fspt->count);
             fspt->count += 1;
             int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
