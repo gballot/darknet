@@ -43,7 +43,7 @@ extern LIB_API void find_replace(const char* str, char* orig, char* rep, char* o
 extern void replace_image_to_label(const char* input_path, char* output_path);
 extern void error(const char *s);
 extern void malloc_error();
-extern void file_error(char *s);
+extern void file_error(const char *s);
 extern void strip(char *s);
 extern void strip_args(char *s);
 extern void strip_char(char *s, char bad);

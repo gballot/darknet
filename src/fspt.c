@@ -260,8 +260,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         /* fills the values of *args */
         fspt->criterion(args);
         debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
-        if (args->forbidden_split || *index == FAIL_TO_FIND) {
-            //TODO
+        assert(*gain < 1.f);
+        if (args->forbidden_split) {
             current_node->score = fspt->score(fspt, current_node);
         } else {
             fspt_node *left = calloc(1, sizeof(fspt_node));
@@ -287,7 +287,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
 
 static void pre_order_node_save(FILE *fp, fspt_node node, int *succ) {
     /* save node */
-    float *feature_limit = node.feature_limit;
+    const float *feature_limit = node.feature_limit;
     node.feature_limit = NULL;
     node.samples = NULL;
     *succ &= fwrite(&node, sizeof(fspt_node), 1, fp);

@@ -300,7 +300,7 @@ void malloc_error()
     exit(EXIT_FAILURE);
 }
 
-void file_error(char *s)
+void file_error(const char *s)
 {
     fprintf(stderr, "Couldn't open file: %s\n", s);
     exit(EXIT_FAILURE);

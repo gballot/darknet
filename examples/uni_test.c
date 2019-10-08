@@ -97,7 +97,7 @@ static int eq_fspts(fspt_t a, fspt_t b) {
 static void print_size_t_array(int lines, int col, size_t *X) {
     for (int i = 0; i < lines; ++i) {
         for (int j = 0; j < col; ++j) {
-            fprintf(stderr, " %d  ", X[i*col +j]);
+            fprintf(stderr, " %zu  ", X[i*col +j]);
         }
         fprintf(stderr, "\n");
     }
