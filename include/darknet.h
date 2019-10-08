@@ -681,6 +681,7 @@ float *network_accuracies(network *net, data d, int n);
 float train_network_datum(network *net);
 image make_random_image(int w, int h, int c);
 void train_network_fspt(network *net, data d);
+void train_networks_fspt(network **nets, int n, data d, int interval);
 
 void denormalize_connected_layer(layer l);
 void denormalize_convolutional_layer(layer l);

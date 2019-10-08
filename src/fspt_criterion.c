@@ -161,8 +161,8 @@ static void best_split_on_feature(int feat, fspt_node node, float current_score,
 void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
-    if (node->n_samples < fspt->min_samples) {
-        args->best_index = FAIL_TO_FIND;
+    if (node->n_samples < 2 * fspt->min_samples) {
+        args->forbidden_split = 1;
         return;
     }
     float *best_gains = malloc(fspt->n_features * sizeof(float));
@@ -210,33 +210,27 @@ void gini_criterion(criterion_args *args) {
     if (forbidden_split) {
         debug_print("fail to find any split point ad depth %d and n_samples %d",
                 node->depth, node->n_samples);
-        args->best_index = FAIL_TO_FIND;
         args->forbidden_split = 1;
-        return;
-    }
-    int *best_feature_index = &args->best_index;
-    float *best_gain = &args->gain;
-    float *best_split = &args->best_split;
-    int rand_idx = max_index(best_gains, fspt->n_features);
-    *best_feature_index = random_features[rand_idx];
-    *best_gain = best_gains[rand_idx];
-    *best_split = best_splits[rand_idx];
-    if (*best_gain < 0) {
-        *best_feature_index = FAIL_TO_FIND;
-        debug_print("fail to find any split point ad depth %d and n_samples %d",
-                node->depth, node->n_samples);
-    } else if (*best_gain < args->thresh) {
-        debug_print("fail to find any split point ad depth %d and count %d",
-                node->depth, fspt->count);
-        fspt->count += 1;
-        int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
-        if (fspt->count >= v) {
-            *best_feature_index = FAIL_TO_FIND;
-        }
     } else {
-        fspt->count = 0;
+        int *best_feature_index = &args->best_index;
+        float *best_gain = &args->gain;
+        float *best_split = &args->best_split;
+        int rand_idx = max_index(best_gains, fspt->n_features);
+        *best_feature_index = random_features[rand_idx];
+        *best_gain = best_gains[rand_idx];
+        *best_split = best_splits[rand_idx];
+        if (*best_gain < args->thresh) {
+            debug_print("fail to find any split point ad depth %d and count %d",
+                    node->depth, fspt->count);
+            fspt->count += 1;
+            int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
+            if (fspt->count >= v) {
+                args->forbidden_split = 1;
+            }
+        } else {
+            fspt->count = 0;
+        }
     }
-
     free(best_gains);
     free(best_splits);
     free(random_features);

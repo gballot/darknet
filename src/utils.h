@@ -41,7 +41,7 @@ extern int read_all_fail(int fd, char *buffer, size_t bytes);
 extern int write_all_fail(int fd, char *buffer, size_t bytes);
 extern void find_replace(char *str, char *orig, char *rep, char *output);
 extern void malloc_error();
-extern void file_error(char *s);
+extern void file_error(const char *s);
 extern void strip(char *s);
 extern void strip_char(char *s, char bad);
 extern list *split_str(char *s, char delim);
