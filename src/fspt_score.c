@@ -6,6 +6,7 @@
 #include "utils.h"
 
 float euristic_score(const fspt_t *fspt,const fspt_node *node) {
+    if (node->n_samples == 0) return 0.f;
     float E = fspt->n_samples / fspt->n_features;
     float cum = 0;
     for (int i = 0; i < fspt->n_features; ++i) {

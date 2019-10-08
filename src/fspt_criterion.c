@@ -161,7 +161,7 @@ static void best_split_on_feature(int feat, fspt_node node, float current_score,
 void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
-    if (node->n_samples < 2 * fspt->min_samples) {
+    if (node->n_samples + node->n_empty < 2 * fspt->min_samples) {
         args->forbidden_split = 1;
         return;
     }

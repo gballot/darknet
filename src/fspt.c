@@ -48,8 +48,9 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill right node */
     right->type = LEAF;
     right->n_features = n_features;
-    float * right_feature_limit = malloc(2*n_features*sizeof(float));
-    memcpy(right_feature_limit, node->feature_limit, 2*n_features);
+    float * right_feature_limit = malloc(2 * n_features * sizeof(float));
+    memcpy(right_feature_limit, node->feature_limit,
+            2 * n_features * sizeof(float));
     right_feature_limit[2*index] = s;
     right->feature_limit = right_feature_limit;
     right->n_samples = node->n_samples - split_index;
@@ -64,8 +65,9 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill left node */
     left->type = LEAF;
     left->n_features = n_features;
-    float * left_feature_limit = malloc(2*n_features*sizeof(float));
-    memcpy(left_feature_limit, node->feature_limit, 2*n_features);
+    float * left_feature_limit = malloc(2 * n_features * sizeof(float));
+    memcpy(left_feature_limit, node->feature_limit,
+            2 * n_features * sizeof(float));
     left_feature_limit[2*index + 1] = s;
     left->feature_limit = left_feature_limit;
     left->n_samples = split_index;
@@ -97,7 +99,10 @@ static int _print_t(fspt_node *tree, int is_left, int offset, int depth, char s[
 
     if (!tree) return 0;
 
-    sprintf(b, "%2d|%4.2f", tree->split_feature, tree->split_value);
+    if (tree->type == INNER)
+        sprintf(b, "%2d|%4.2f", tree->split_feature, tree->split_value);
+    else
+        sprintf(b, "%7.3f", tree->score);
 
     int left  = _print_t(tree->left,  1, offset,                depth + 1, s);
     int right = _print_t(tree->right, 0, offset + left + width, depth + 1, s);
@@ -224,7 +229,6 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
 
 void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
 {
-    if (!n_samples) return;
     assert(fspt->max_depth >= 1);
     args->fspt = fspt;
     /* Builds the root */
@@ -248,6 +252,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         root->score = fspt->score(fspt, root);
         return;
     }
+    if (!n_samples) return;
 
     list *heap = make_list(); // Heap of the nodes to examine
     list_insert(heap, (void *)root);
@@ -259,11 +264,12 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         float *gain = &args->gain;
         /* fills the values of *args */
         fspt->criterion(args);
-        debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
         assert(*gain < 1.f);
         if (args->forbidden_split) {
+            debug_print("forbidden split node %p", current_node);
             current_node->score = fspt->score(fspt, current_node);
         } else {
+            debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);
