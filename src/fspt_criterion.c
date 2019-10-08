@@ -184,6 +184,8 @@ void gini_criterion(criterion_args *args) {
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
                 cdf, bins);
         if (n_bins < 1) {
+            best_gains[i] = -1.f;
+            best_splits[i] = 0.f;
             continue;
         }
         int local_best_gain_index = 0;
