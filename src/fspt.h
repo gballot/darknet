@@ -11,6 +11,7 @@
 #define FSPT_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 // NO_NODE is only usefull for printing
 typedef enum {LEAF, INNER, NO_NODE} FSTP_NODE_TYPE;
@@ -151,6 +152,14 @@ extern void fspt_fit(int n_samples, float *X, criterion_args *args,
  */
 extern void fspt_save(const char *filename, fspt_t fspt, int *succ);
 
+/**
+ * Save the fspt to an open file.
+ *
+ * \param fp A file pointer. Should be open and closed by the caller.
+ * \param fspt The feature space partitioning tree.
+ * \param succ Output parameter. True if succes, false otherwise.
+ */
+extern void fspt_save_file(FILE *fp, fspt_t fspt, int *succ);
 
 /**
  * Load the fspt from a file.
@@ -163,6 +172,18 @@ extern void fspt_save(const char *filename, fspt_t fspt, int *succ);
  * \param succ Output parameter. True if succes, false otherwise.
  */
 extern void fspt_load(const char *filename, fspt_t *fspt, int *succ);
+
+/**
+ * Load the fspt from an open file.
+ * You must have created the fspt with @see make_fspt(), because
+ * some fields of the fspt are assumed to be already filled.
+ * This function fills n_nodes, n_samples, depth, vol and root.
+ *
+ * \param fp A file pointer. Should be open and closed by the caller.
+ * \param fspt The feature space partitioning tree parsed from config file.
+ * \param succ Output parameter. True if succes, false otherwise.
+ */
+extern void fspt_load_file(FILE *fp, fspt_t *fspt, int *succ);
 
 /**
  * Friendly prints a fspt to the terminal.

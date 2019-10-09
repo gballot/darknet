@@ -124,7 +124,7 @@ gdb: $(EXEC)
 	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b forward_fspt_layer" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) backup/fspt-tiny-test_final.weights
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test

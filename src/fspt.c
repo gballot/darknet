@@ -262,16 +262,20 @@ static void pre_order_node_save(FILE *fp, fspt_node node, int *succ) {
     if (node.right) pre_order_node_save(fp, *node.right, succ);
 }
 
-void fspt_save(const char *filename, fspt_t fspt, int *succ) {
-    *succ = 1;
-    fprintf(stderr, "Saving fspt to %s\n", filename);
-    FILE *fp = fopen(filename, "wb");
-    if(!fp) file_error(filename);
+void fspt_save_file(FILE *fp, fspt_t fspt, int *succ) {
     *succ &= fwrite(&fspt.n_nodes, sizeof(int), 1, fp);
     *succ &= fwrite(&fspt.n_samples, sizeof(int), 1, fp);
     *succ &= fwrite(&fspt.depth, sizeof(int), 1, fp);
     if (fspt.root)
         pre_order_node_save(fp, *fspt.root, succ);
+}
+
+void fspt_save(const char *filename, fspt_t fspt, int *succ) {
+    *succ = 1;
+    fprintf(stderr, "Saving fspt to %s\n", filename);
+    FILE *fp = fopen(filename, "wb");
+    if(!fp) file_error(filename);
+    fspt_save_file(fp, fspt, succ);
     fclose(fp);
 }
 
@@ -292,16 +296,20 @@ static fspt_node * pre_order_node_load(FILE *fp, int *succ) {
     return node;
 }
 
-void fspt_load(const char *filename, fspt_t *fspt, int *succ) {
-    fprintf(stderr, "Loading fspt from %s\n", filename);
-    *succ = 1;
-    FILE *fp = fopen(filename, "rb");
-    if(!fp) file_error(filename);
+void fspt_load_file(FILE *fp, fspt_t *fspt, int *succ) {
     *succ &= fread(&fspt->n_nodes, sizeof(int), 1, fp);
     *succ &= fread(&fspt->n_samples, sizeof(int), 1, fp);
     *succ &= fread(&fspt->depth, sizeof(int), 1, fp);
     fspt->root = pre_order_node_load(fp, succ);
     fspt->vol = volume(fspt->n_features, fspt->feature_limit);
+}
+
+void fspt_load(const char *filename, fspt_t *fspt, int *succ) {
+    fprintf(stderr, "Loading fspt from %s\n", filename);
+    *succ = 1;
+    FILE *fp = fopen(filename, "rb");
+    if(!fp) file_error(filename);
+    fspt_load_file(fp, fspt, succ);
     fclose(fp);
 }
 

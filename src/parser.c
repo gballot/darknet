@@ -1243,6 +1243,8 @@ void save_weights_upto(network *net, char *filename, int cutoff)
             int size = l.size*l.size*l.c*l.n*locations;
             fwrite(l.biases, sizeof(float), l.outputs, fp);
             fwrite(l.weights, sizeof(float), size, fp);
+        } if(l.type == FSPT) {
+            save_fspt_trees(l, fp);
         }
     }
     fclose(fp);
@@ -1469,6 +1471,9 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
                 push_local_layer(l);
             }
 #endif
+        }
+        if (l.type == FSPT) {
+            load_fspt_trees(l, fp);
         }
     }
     fprintf(stderr, "Done!\n");
