@@ -14,5 +14,7 @@ extern void resize_fspt_layer(layer *l, int w, int h);
 extern int get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
         detection *dets);
+extern void save_fspt_trees(layer l, FILE *fp);
+extern void load_fspt_trees(layer l, FILE *fp);
 
 #endif /* FSPT_LAYER_H */

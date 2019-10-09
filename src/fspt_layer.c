@@ -357,3 +357,17 @@ void forward_fspt_layer_gpu(const layer l, network net) {
 }
 #endif
 
+void save_fspt_trees(layer l, FILE *fp) {
+    for (int i = 0; i < l.classes; ++i) {
+        int succ = 1;
+        fspt_save_file(fp, *l.fspts[i], &succ);
+    }
+}
+
+void load_fspt_trees(layer l, FILE *fp) {
+    for (int i = 0; i < l.classes; ++i) {
+        int succ = 1;
+        fspt_load_file(fp, l.fspts[i], &succ);
+    }
+}
+
