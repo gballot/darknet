@@ -110,13 +110,17 @@ void print2DUtil(fspt_node *root, int space)
     if (root->type == INNER)
         fprintf(stderr, "%2d|%4.2f\n", root->split_feature, root->split_value);
     else
-        fprintf(stderr, "%5.1f(%d|%.0f)\n", root->score, root->n_samples, root->n_empty);
+        fprintf(stderr, "%5.1f(%d|%.0f)\n", root->score, root->n_samples,
+                root->n_empty);
     print2DUtil(root->left, space);
 }
 
 void print_fspt(fspt_t *fspt)
 {
-    fprintf(stderr, "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n", fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples, fspt->depth, fspt->max_depth, fspt->min_samples);
+    fprintf(stderr,
+            "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n",
+            fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples,
+            fspt->depth, fspt->max_depth, fspt->min_samples);
     print2DUtil(fspt->root, 0);
 }
 
@@ -193,7 +197,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     root->n_features = fspt->n_features;
     root->feature_limit = fspt->feature_limit;
     root->n_samples = n_samples;
-    root->n_empty = (float)n_samples; // We arbitray initialize such that Density=0.5
+    root->n_empty = (float)n_samples; //Arbitray initialize s.t. Density=0.5
     root->samples = X;
     root->depth = 1;
     root->vol = volume(root->n_features, root->feature_limit);
@@ -225,7 +229,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
             debug_print("forbidden split node %p", current_node);
             current_node->score = fspt->score(fspt, current_node);
         } else {
-            debug_print("best_index=%d, best_split=%f, gain=%f",*index,*s,*gain);
+            debug_print("best_index=%d, best_split=%f, gain=%f",
+                    *index, *s, *gain);
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);

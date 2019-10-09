@@ -181,6 +181,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
                 args->max_feature_p = 1.;
                 args->thresh = 0.01;
                 fspt_fit(n, X, args, fspt);
+                free(args);
 #ifdef DEBUG
                 if (fspt->root.type == INNER)
                     print_fspt(fspt);
