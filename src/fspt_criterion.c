@@ -125,10 +125,10 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
     }
 }
 
-static void best_split_on_feature(int feat, fspt_node node, float current_score,
-        int min_samples, int n_bins,
-        const float *bins, const size_t *cdf, float *best_gain, int *best_index,
-        int *forbidden_split) {
+static void best_split_on_feature(int feat, fspt_node node,
+        float current_score, int min_samples, int n_bins,
+        const float *bins, const size_t *cdf, float *best_gain,
+        int *best_index, int *forbidden_split) {
     *forbidden_split = 1;
     float node_min = node.feature_limit[2*feat];
     float node_max = node.feature_limit[2*feat + 1];
@@ -191,13 +191,15 @@ void gini_criterion(criterion_args *args) {
         int local_best_gain_index = 0;
         float local_best_gain = 0.f;
         int local_forbidden_split = 1;
-        best_split_on_feature(feat, *node, current_score, fspt->min_samples, n_bins, bins, cdf,
-                &local_best_gain, &local_best_gain_index, &local_forbidden_split);
+        best_split_on_feature(feat, *node, current_score, fspt->min_samples,
+                n_bins, bins, cdf, &local_best_gain, &local_best_gain_index,
+                &local_forbidden_split);
 
         if (!local_forbidden_split) {
             float fspt_min = fspt->feature_limit[2*feat];
             float fspt_max = fspt->feature_limit[2*feat + 1];
-            float relative_length = (node_max - node_min) / (fspt_max - fspt_min);
+            float relative_length = (node_max - node_min)
+                / (fspt_max - fspt_min);
             best_gains[i] = local_best_gain * fspt->feature_importance[feat]
                 * relative_length;
             best_splits[i] = bins[local_best_gain_index];
@@ -210,7 +212,7 @@ void gini_criterion(criterion_args *args) {
     free(bins);
     free(cdf);
     if (forbidden_split) {
-        debug_print("fail to find any split point at depth %d and n_samples %d",
+        debug_print("forbidden split at depth %d and n_samples %d",
                 node->depth, node->n_samples);
         args->forbidden_split = 1;
     } else {
@@ -223,7 +225,7 @@ void gini_criterion(criterion_args *args) {
         *best_split = best_splits[rand_idx];
         args->forbidden_split = 0;
         if (*best_gain < args->thresh) {
-            debug_print("fail to find any split point at depth %d and count %d",
+            debug_print("gain thresh violation at depth %d and count %d",
                     node->depth, fspt->count);
             fspt->count += 1;
             int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;

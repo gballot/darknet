@@ -117,10 +117,6 @@ static void realloc_fspt_data(layer l, int classe, size_t num, int relative) {
 static float fspt_get_score(layer l, int classe) {
     debug_print("layer %s : fspt_validate(classe %d) with l.total=%d, l.fspt_input=%p",
             l.ref, classe, l.total, l.fspt_input);
-    debug_print("         l.fspt_input : %f,%f,%f,%f,%f,%f,%f,%f...", 
-            l.fspt_input[0], l.fspt_input[1], l.fspt_input[2], l.fspt_input[3],
-            l.fspt_input[4], l.fspt_input[5], l.fspt_input[6], l.fspt_input[7]);
-
     float score = 0;
     fspt_predict(1, l.fspts[classe], l.fspt_input, &score);
     return score;
@@ -146,14 +142,22 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         debug_print("input_w, input_h : (%d,%d)",
                 input_w, input_h);
 #ifdef GPU
-        float *entry = input_layer.output_gpu + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        float *entry = input_layer.output_gpu
+            + b * input_layer.outputs
+            + input_layer.out_w*input_h
+            + input_w;
         debug_print("entry = %p", entry);
-        copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input_gpu, 1);
+        copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
+                l.fspt_input_gpu, 1);
         cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
 #else
-        float *entry = input_layer.output + input_w + input_layer.out_w*input_h + b * input_layer.outputs;
+        float *entry = input_layer.output
+            + b * input_layer.outputs
+            + input_layer.out_w*input_h
+            + input_w;
         debug_print("entry = %p", entry);
-        copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w, l.fspt_input, 1);
+        copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
+                l.fspt_input, 1);
 #endif
     }
 }
@@ -181,7 +185,8 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     copy_cpu(l.total, l.fspt_input, 1, entry, 1);
 #endif
     if (l.total > 3)
-        debug_print("add new fspt data for classe %d : %f,%f,%f,%f...", classe, entry[0], entry[1], entry[2], entry[3]);
+        debug_print("add new fspt data for classe %d : %f,%f,%f,%f...",
+                classe, entry[0], entry[1], entry[2], entry[3]);
     l.fspt_n_training_data[classe] += 1;
 }
 
@@ -241,7 +246,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                 dets[count].objectness = objectness;
                 dets[count].classes = l.classes;
                 for(j = 0; j < l.classes; ++j){
-                    int class_index = entry_index(l, b, n*l.w*l.h + i, 4 + 1 + j);
+                    int class_index = entry_index(l, b, n*l.w*l.h + i, 4+1+j);
                     float prob = objectness*predictions[class_index];
                     if(prob > yolo_thresh) {
                         update_fspt_input(l, net, bbox.x, bbox.y, b);
