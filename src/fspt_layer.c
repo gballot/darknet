@@ -282,8 +282,6 @@ void forward_fspt_layer(layer l, network net)
                 layer yolo = net.layers[l.yolo_layer];
                 float best_iou = 0;
                 int best_n = 0;
-                int i = (truth.x * l.w);
-                int j = (truth.y * l.h);
                 box truth_shift = truth;
                 truth_shift.x = truth_shift.y = 0;
                 for(int n = 0; n < yolo.total; ++n){
@@ -328,8 +326,6 @@ void forward_fspt_layer_gpu(const layer l, network net) {
                 layer yolo = net.layers[l.yolo_layer];
                 float best_iou = 0;
                 int best_n = 0;
-                int i = (truth.x * l.w);
-                int j = (truth.y * l.h);
                 box truth_shift = truth;
                 truth_shift.x = truth_shift.y = 0;
                 for(int n = 0; n < yolo.total; ++n){
