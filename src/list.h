@@ -21,6 +21,7 @@ extern int list_find(list *l, void *val);
 extern void list_insert(list *, void *);
 extern void **list_to_array(list *l);
 extern void free_list(list *l);
+extern void list_insert_front(list *l, void *val);
 extern void free_list_contents(list *l);
 extern void free_list_contents_kvp(list *l);
 
