@@ -617,7 +617,7 @@ route_layer parse_route(list *options, size_params params, network *net)
     int *layers = calloc(n, sizeof(int));
     int *sizes = calloc(n, sizeof(int));
 
-    char *tmp_ref = strtok(l, " ,");
+    char *tmp_ref = strtok(l, ",");
     int i = 0;
     while(tmp_ref != NULL) {
         int index = 0;
@@ -642,7 +642,7 @@ route_layer parse_route(list *options, size_params params, network *net)
         if(index < 0) index = params.index + index;
         layers[i] = index;
         sizes[i] = net->layers[index].outputs;
-        tmp_ref = strtok(NULL, " ,");
+        tmp_ref = strtok(NULL, ",");
         i++;
     }
     int batch = params.batch;
@@ -687,7 +687,7 @@ layer parse_fspt(list *options, size_params params)
     int *input_layers = calloc(n, sizeof(int));
     int *sizes = calloc(n, sizeof(int));
 
-    char *tmp_ref = strtok(l, " ,");
+    char *tmp_ref = strtok(l, ",");
     int i = 0;
     while(tmp_ref) {
         int index = 0;
@@ -703,16 +703,16 @@ layer parse_fspt(list *options, size_params params)
                 }
             }
             if(!found) {
-              char *legend = "label undefined : ";
-              char *message = malloc(strlen(legend) + strlen(tmp_ref));
-              sprintf(message, "%s%s", legend, tmp_ref);
-              error(message);
+                char *legend = "label undefined : ";
+                char *message = malloc(strlen(legend) + strlen(tmp_ref));
+                sprintf(message, "%s%s", legend, tmp_ref);
+                error(message);
             }
         }  
         if(index < 0) index = params.index + index;
         input_layers[i] = index;
         sizes[i] = net->layers[index].outputs;
-        tmp_ref = strtok(NULL, " ,");
+        tmp_ref = strtok(NULL, ",");
         i++;
     }
     /* min_samples */
@@ -726,33 +726,40 @@ layer parse_fspt(list *options, size_params params)
     for(int i = 0; i < n; i++)
         n_features += net->layers[input_layers[i]].out_c;
     /* feature_limit */
-    char *limit_string = option_find_str(options, "feature_limit", "-1.0,1.0");
-    len = strlen(limit_string);
-    int m = 1;
-    for(int i = 0; i < len; ++i){
-        if (limit_string[i] == ',') ++m;
-    }
+    char *limit_string = option_find(options, "feature_limit");
     float *feature_limit = calloc(2*n_features, sizeof(int));
-    if (m == 2) // If m == 2 the bonds are the same for all the features.
-    {
-        char *tmp_lim = strtok(limit_string, " ,");
-        float min = atof(tmp_lim);
-        tmp_lim = strtok(NULL, " ,");
-        float max = atof(tmp_lim);
-        for (int j = 0; j < n_features; ++j) {
-            feature_limit[2*j] = min;
-            feature_limit[2*j + 1] = max;
+    if (limit_string) {
+        len = strlen(limit_string);
+        int m = 1;
+        for(int i = 0; i < len; ++i){
+            if (limit_string[i] == ',') ++m;
+        }
+        if (m == 2) // If m == 2 the bonds are the same for all the features.
+        {
+            char *tmp_lim = strtok(limit_string, ",");
+            float min = atof(tmp_lim);
+            tmp_lim = strtok(NULL, ",");
+            float max = atof(tmp_lim);
+            for (int j = 0; j < n_features; ++j) {
+                feature_limit[2*j] = min;
+                feature_limit[2*j + 1] = max;
+            }
+        } else {
+            assert(m == 2*n_features);
+            char *tmp_lim = strtok(limit_string, ",");
+            for (int j = 0; j < n_features; ++j) {
+                float min = atof(tmp_lim);
+                tmp_lim = strtok(NULL, ",");
+                float max = atof(tmp_lim);
+                tmp_lim = strtok(NULL, ",");
+                feature_limit[2*j] = min;
+                feature_limit[2*j + 1] = max;
+            }
         }
     } else {
-        assert(m == 2*n_features);
-        char *tmp_lim = strtok(limit_string, " ,");
         for (int j = 0; j < n_features; ++j) {
-            float min = atof(tmp_lim);
-            tmp_lim = strtok(NULL, " ,");
-            float max = atof(tmp_lim);
-            tmp_lim = strtok(NULL, " ,");
-            feature_limit[2*j] = min;
-            feature_limit[2*j + 1] = max;
+            feature_limit[2*j] = -1.f;
+            feature_limit[2*j + 1] = 1.f;
         }
     }
     /* feature_importance */
@@ -772,10 +779,10 @@ layer parse_fspt(list *options, size_params params)
             }
         } else {
             assert(k == n_features);
-            char *tmp_imp = strtok(importance_string, " ,");
+            char *tmp_imp = strtok(importance_string, ",");
             for (int j = 0; j < n_features; ++j) {
                 feature_importance[j] = atof(tmp_imp);
-                tmp_imp = strtok(NULL, " ,");
+                tmp_imp = strtok(NULL, ",");
             }
         }
     }
@@ -791,8 +798,8 @@ layer parse_fspt(list *options, size_params params)
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-        net, classes, yolo_thresh, feature_limit, feature_importance,
-        criterion, score, min_samples, max_depth, params.batch, activation);
+            net, classes, yolo_thresh, feature_limit, feature_importance,
+            criterion, score, min_samples, max_depth, params.batch, activation);
     return fspt_layer;
 }
 
