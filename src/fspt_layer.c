@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "batchnorm_layer.h"
+#include "activations.h"
 #include "blas.h"
 #include "box.h"
 #include "cuda.h"
@@ -19,7 +19,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, int classes, float yolo_thresh,
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int min_samples,
-        int max_depth, int batch) {
+        int max_depth, int batch, ACTIVATION activation) {
     layer l = {0};
     l.type = FSPT;
     l.noloss = 1;
@@ -65,7 +65,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
     l.fspt_input_gpu = cuda_make_array(l.fspt_input, l.total);
 #endif
-    l.activation = LINEAR;
+    l.activation = activation;
 
     fprintf(stderr, "fspt      %d input layer(s) : ", inputs);
     for(int i = 0; i < inputs; i++) fprintf(stderr, "%d,", input_layers[i]);
@@ -149,6 +149,7 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         debug_print("entry = %p", entry);
         copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
                 l.fspt_input_gpu, 1);
+        activate_array_gpu(l.fspt_input_gpu, l.total, l.activation);
         cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
 #else
         float *entry = input_layer.output
@@ -158,6 +159,7 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         debug_print("entry = %p", entry);
         copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
                 l.fspt_input, 1);
+        activate_array(l.fspt_input, l.total, l.activation);
 #endif
     }
 }
