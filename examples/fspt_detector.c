@@ -4,7 +4,9 @@
 
 #include "utils.h"
 
-void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename, float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile, int fullscreen)
+void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
+        float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile,
+        int fullscreen)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -32,7 +34,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename, f
         image sized = letterbox_image(im, net->w, net->h);
         //image sized = resize_image(im, net->w, net->h);
         //image sized2 = resize_max(im, net->w);
-        //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
+        //image sized = crop_image(sized2, -((net->w - sized2.w)/2),
+        //    -((net->h - sized2.h)/2), net->w, net->h);
         //resize_network(net, sized.w, sized.h);
         layer l = net->layers[net->n-1];
 
@@ -40,14 +43,18 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename, f
         float *X = sized.data;
         time=what_time_is_it_now();
         network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+        printf("%s: Predicted in %f seconds.\n", input,
+                what_time_is_it_now()-time);
         int nboxes = 0;
-        detection *dets = get_network_boxes(net, im.w, im.h, yolo_thresh, hier_thresh, 0, 1, &nboxes);
+        detection *dets = get_network_boxes(net, im.w, im.h, yolo_thresh,
+                hier_thresh, 0, 1, &nboxes);
         //printf("%d\n", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, yolo_thresh, names, alphabet, l.classes);
-        dets = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh, fspt_thresh, hier_thresh, 0, 1, &nboxes);
+        draw_detections(im, dets, nboxes, yolo_thresh, names, alphabet,
+                l.classes);
+        dets = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh,
+                fspt_thresh, hier_thresh, 0, 1, &nboxes);
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);
@@ -66,7 +73,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename, f
     }
 }
 
-void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear) {
+void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
+        int ngpus, int clear) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -91,7 +99,8 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
     network *net = nets[0];
 
     int imgs = net->batch * net->subdivisions * ngpus;
-    printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
+    printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate,
+            net->momentum, net->decay);
     data train, buffer;
 
     //TODO: take a fspt layer instead of the yolo one.
@@ -101,7 +110,6 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
     float jitter = l.jitter;
 
     list *plist = get_paths(train_images);
-    //int N = plist->size;
     char **paths = (char **)list_to_array(plist);
 
     load_args args = get_base_args(net);
@@ -114,7 +122,6 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
     args.num_boxes = l.max_boxes;
     args.d = &buffer;
     args.type = DETECTION_DATA;
-    //args.type = INSTANCE_DATA;
     args.threads = 64;
 
     pthread_t load_thread = load_data(args);
@@ -124,33 +131,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
         pthread_join(load_thread, 0);
         train = buffer;
         load_thread = load_data(args);
-
-        /*
-           int k;
-           for(k = 0; k < l.max_boxes; ++k){
-           box b = float_to_box(train.y.vals[10] + 1 + k*5);
-           if(!b.x) break;
-           printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
-           }
-         */
-        /*
-           int zz;
-           for(zz = 0; zz < train.X.cols; ++zz){
-           image im = float_to_image(net->w, net->h, 3, train.X.vals[zz]);
-           int k;
-           for(k = 0; k < l.max_boxes; ++k){
-           box b = float_to_box(train.y.vals[zz] + k*5, 1);
-           printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
-           draw_bbox(im, b, 1, 1,0,0);
-           }
-           show_image(im, "truth11");
-           cvWaitKey(0);
-           save_image(im, "truth11");
-           }
-         */
-
         printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
-
         time=what_time_is_it_now();
 #ifdef GPU
         if(ngpus == 1){
@@ -162,7 +143,9 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
         train_network_fspt(net, train);
 #endif
         i = get_current_batch(net);
-        printf("%ld: %f rate, %lf seconds, %d images\n", get_current_batch(net), get_current_rate(net), what_time_is_it_now()-time, i*imgs);
+        printf("%ld: %f rate, %lf seconds, %d images\n",
+                get_current_batch(net), get_current_rate(net),
+                what_time_is_it_now()-time, i*imgs);
         if(i%100==0){
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
@@ -198,13 +181,10 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
                 args->max_feature_p = 1.;
                 args->thresh = 0.01;
                 fspt_fit(n, X, args, fspt);
-                char buff[256];
-                sprintf(buff, "%s/%s_fspt_class_%d.dat",
-                        backup_directory, base, class);
-                int succ = 1;
-                fspt_save(buff, *fspt, &succ);
-                if (!succ) fprintf(stderr, "Save fspt faild...");
-                print_fspt(fspt);
+#ifdef DEBUG
+                if (fspt->root.type == INNER)
+                    print_fspt(fspt);
+#endif
             }
         }
     }
@@ -213,7 +193,8 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int n
     save_weights(net, buff);
 }
 
-void validate_fspt(char *datacfg, char *cfgfile, char *weightfile, char *outfile) {
+void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
+        char *outfile) {
     //TODO
     error("TODO");
 }
@@ -233,7 +214,9 @@ void run_fspt(int argc, char **argv)
     int frame_skip = find_int_arg(argc, argv, "-s", 0);
     int avg = find_int_arg(argc, argv, "-avg", 3);
     if(argc < 4){
-        fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
+        fprintf(stderr,
+                "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n",
+                argv[0], argv[1]);
         return;
     }
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
@@ -271,8 +254,13 @@ void run_fspt(int argc, char **argv)
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
-    if(0==strcmp(argv[2], "test")) test_fspt(datacfg, cfg, weights, filename, yolo_thresh, fspt_thresh, hier_thresh, outfile, fullscreen);
-    else if(0==strcmp(argv[2], "train")) train_fspt(datacfg, cfg, weights, gpus, ngpus, clear);
-    else if(0==strcmp(argv[2], "valid")) validate_fspt(datacfg, cfg, weights, outfile);
-    else if(0==strcmp(argv[2], "recall")) validate_fspt_recall(cfg, weights);
+    if(0==strcmp(argv[2], "test"))
+        test_fspt(datacfg, cfg, weights, filename, yolo_thresh, fspt_thresh,
+                hier_thresh, outfile, fullscreen);
+    else if(0==strcmp(argv[2], "train"))
+        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear);
+    else if(0==strcmp(argv[2], "valid"))
+        validate_fspt(datacfg, cfg, weights, outfile);
+    else if(0==strcmp(argv[2], "recall"))
+        validate_fspt_recall(cfg, weights);
 }
