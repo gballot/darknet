@@ -239,14 +239,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
                     || right->n_samples + right->n_empty < fspt->min_samples) {
                 right->score = fspt->score(fspt, right);
             } else {
-                list_insert(heap, right);
+                list_insert_front(heap, right);
             }
             /* Should I examine left ? */
             if (left->depth > fspt->max_depth
                     || left->n_samples + left->n_empty < fspt->min_samples) {
                 left->score = fspt->score(fspt, left);
             } else {
-                list_insert(heap, left);
+                list_insert_front(heap, left);
             }
         }
     }

@@ -54,6 +54,21 @@ void list_insert(list *l, void *val)
 	++l->size;
 }
 
+void list_insert_front(list *l, void *val) {
+	node *new = malloc(sizeof(node));
+	new->val = val;
+    new->prev = 0;
+    if (l->front) {
+        new->next = l->front;
+        l->front->prev = new;
+    } else {
+        new->next = 0;
+        l->back = new;
+    }
+    l->front = new;
+	++l->size;
+}
+
 void free_node(node *n)
 {
 	node *next;
