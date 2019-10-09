@@ -300,10 +300,14 @@ void forward_fspt_layer(layer l, network net)
                 int mask_n = int_index(yolo.mask, best_n, yolo.n);
                 if(mask_n >= 0){
                     int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
+                    debug_print("truth (x,y,w,h) = (%f,%f,%f,%f) - chosen mask %d (w,h) = (%f,%f)",
+                            truth.x, truth.y, truth.w, truth.h, mask_n,
+                            yolo.biases[2*mask_n]/net.w,
+                            yolo.biases[2*mask_n+1]/net.h);
                     update_fspt_input(l, &net, truth.x, truth.y, b);
                     copy_fspt_input_to_data(l, class);
-                    ++t;
                 }
+                ++t;
             }
         }
     }
@@ -320,9 +324,35 @@ void forward_fspt_layer_gpu(const layer l, network net) {
             while(1) {
                 box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
                 if(!truth.x) break;
-                int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
-                update_fspt_input(l, &net, truth.x, truth.y, b);
-                copy_fspt_input_to_data(l, class);
+                /* Get mask index */
+                layer yolo = net.layers[l.yolo_layer];
+                float best_iou = 0;
+                int best_n = 0;
+                int i = (truth.x * l.w);
+                int j = (truth.y * l.h);
+                box truth_shift = truth;
+                truth_shift.x = truth_shift.y = 0;
+                for(int n = 0; n < yolo.total; ++n){
+                    box pred = {0};
+                    pred.w = yolo.biases[2*n]/net.w;
+                    pred.h = yolo.biases[2*n+1]/net.h;
+                    float iou = box_iou(pred, truth_shift);
+                    if (iou > best_iou){
+                        best_iou = iou;
+                        best_n = n;
+                    }
+                }
+                /* Update fspt */
+                int mask_n = int_index(yolo.mask, best_n, yolo.n);
+                if(mask_n >= 0){
+                    int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
+                    debug_print("truth (x,y,w,h) = (%f,%f,%f,%f) - chosen mask %d (w,h) = (%f,%f)",
+                            truth.x, truth.y, truth.w, truth.h, mask_n,
+                            yolo.biases[2*mask_n]/net.w,
+                            yolo.biases[2*mask_n+1]/net.h);
+                    update_fspt_input(l, &net, truth.x, truth.y, b);
+                    copy_fspt_input_to_data(l, class);
+                }
                 ++t;
             }
         }
