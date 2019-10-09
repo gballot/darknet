@@ -811,8 +811,7 @@ layer parse_fspt(list *options, size_params params)
     for(int i = 0; i < n; i++)
         n_features += net->layers[input_layers[i]].out_c;
     /* feature_limit */
-    char *limit_string = option_find(options, "feature_limit");
-    if(!limit_string) error("FSPT Layer must specify feature_limit");
+    char *limit_string = option_find_str(options, "feature_limit", "-1.0,1.0");
     len = strlen(limit_string);
     int m = 1;
     for(int i = 0; i < len; ++i){
@@ -871,11 +870,14 @@ layer parse_fspt(list *options, size_params params)
     /* score */
     char *score_string = option_find(options, "score");
     score_func score = string_to_fspt_score(score_string);
-    
+    /* activation */
+    char *activation_s = option_find_str(options, "activation", "loggy");
+    ACTIVATION activation = get_activation(activation_s);
+
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
         net, classes, yolo_thresh, feature_limit, feature_importance,
-        criterion, score, min_samples, max_depth, params.batch);
+        criterion, score, min_samples, max_depth, params.batch, activation);
     return fspt_layer;
 }
 
