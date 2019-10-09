@@ -121,7 +121,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b forward_fspt_layer" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights"
 
 run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights
