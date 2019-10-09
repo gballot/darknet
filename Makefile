@@ -55,6 +55,8 @@ COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
 NETCONF=cfg/fspt-tiny-test.cfg
+DATACONF=cfg/voc.data
+WEIGHTS=weights/yolov3-tiny.weights
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -177,10 +179,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b forward_fspt_layer" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) weights/yolov3-tiny.weights"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) cfg/voc.data $(NETCONF) backup/fspt-tiny-test_final.weights
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
@@ -188,7 +190,7 @@ test: $(EXEC)
 tag:
 	ctags -R --exclude=*.py,VOCdevkit/ .
 
-.PHONY: clean tag
+.PHONY: clean tag test run gdb
 
 clean:
 	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO)
