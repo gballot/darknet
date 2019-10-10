@@ -48,13 +48,14 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         int nboxes = 0;
         detection *dets = get_network_boxes(net, im.w, im.h, yolo_thresh,
                 hier_thresh, 0, 1, &nboxes);
-        //printf("%d\n", nboxes);
+        debug_print("%d boxes predicted by yolo", nboxes);
         //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
         draw_detections(im, dets, nboxes, yolo_thresh, names, alphabet,
                 l.classes);
         dets = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh,
                 fspt_thresh, hier_thresh, 0, 1, &nboxes);
+        debug_print("%d boxes predicted by fspt", nboxes);
         free_detections(dets, nboxes);
         if(outfile){
             save_image(im, outfile);

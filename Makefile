@@ -31,10 +31,10 @@ COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
 FSPTCMD=test
-NETCONF=cfg/fspt-tiny-test.cfg
+NETCONF=cfg/fspt.cfg
 DATACONF=cfg/voc.data
-#WEIGHTS=weights/yolov3-tiny.weights
-WEIGHTS=weights/fspt-tiny-test.weights
+WEIGHTS=weights/yolov3.weights
+#WEIGHTS=weights/fspt-tiny-test.weights
 BREAKPOINTS=
 
 ifeq ($(OPENMP), 1) 
