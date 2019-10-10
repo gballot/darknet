@@ -9,6 +9,7 @@ float euristic_score(const fspt_t *fspt,const fspt_node *node) {
     if (node->n_samples == 0) return 0.f;
     float E = fspt->n_samples / fspt->n_features;
     float cum = 0;
+    float cum2 = 0;
     for (int i = 0; i < fspt->n_features; ++i) {
         float d_feature_local = node->feature_limit[2*i + 1]
             - node->feature_limit[2*i];
@@ -16,8 +17,9 @@ float euristic_score(const fspt_t *fspt,const fspt_node *node) {
             - fspt->feature_limit[2*i];
         float c = E * d_feature_local / (node->n_samples * d_feature_global);
         cum += fspt->feature_importance[i] / (1. + c);
+        cum2 += fspt->feature_importance[i];
     }
-    return cum;
+    return cum / cum2;
 }
 
 score_func string_to_fspt_score(char *s) {
