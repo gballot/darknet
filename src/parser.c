@@ -787,10 +787,10 @@ layer parse_fspt(list *options, size_params params)
         }
     }
     /* criterion */
-    char *criterion_string = option_find(options, "criterion");
+    char *criterion_string = option_find_str(options, "criterion", "gini");
     criterion_func criterion = string_to_fspt_criterion(criterion_string);
     /* score */
-    char *score_string = option_find(options, "score");
+    char *score_string = option_find_str(options, "score", "euristic");
     score_func score = string_to_fspt_score(score_string);
     /* activation */
     char *activation_s = option_find_str(options, "activation", "loggy");
