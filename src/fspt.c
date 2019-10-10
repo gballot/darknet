@@ -157,17 +157,12 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
         fspt_node *tmp_node = fspt->root;
         while (tmp_node->type != LEAF) {
             int split_feature = tmp_node->split_feature;
-            if (x[split_feature] <= tmp_node->split_value) {
+            if (x[split_feature] < tmp_node->split_value) {
                 tmp_node = tmp_node->left;
             } else if (x[split_feature] >= tmp_node->split_value) {
                 tmp_node = tmp_node->right;
-            } else {
-                nodes[i] = NULL;
-                continue;
-            }
-        }
-        if (tmp_node->type == LEAF)
-        {
+            }        }
+        if (tmp_node->type == LEAF) {
             nodes[i] = tmp_node;
         }
     }
@@ -181,6 +176,7 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
         if (nodes[i] == NULL) {
             Y[i] = 0.;
         } else {
+            debug_print("predicted score %f", nodes[i]->score);
             Y[i] = nodes[i]->score;
         }
     }

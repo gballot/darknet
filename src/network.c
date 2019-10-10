@@ -796,7 +796,6 @@ void fill_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, floa
     for(j = 0; j < net->n; ++j){
         layer l = net->layers[j];
         if(l.type == FSPT){
-            debug_print("layer %s : type FSPT", l.ref);
             int count = get_fspt_detections(l, w, h, net, yolo_thresh, fspt_thresh, map, relative, dets);
             dets += count;
         }

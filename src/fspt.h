@@ -13,8 +13,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-// NO_NODE is only usefull for printing
-typedef enum {LEAF, INNER, NO_NODE} FSTP_NODE_TYPE;
+typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 
 
 struct fspt_node;

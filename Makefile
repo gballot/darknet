@@ -54,10 +54,12 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
+FSPTCMD=test
 NETCONF=cfg/fspt-tiny-test.cfg
 DATACONF=cfg/voc.data
-WEIGHTS=weights/yolov3-tiny.weights
-BREAKPOINTS=list_insert_front
+#WEIGHTS=weights/yolov3-tiny.weights
+WEIGHTS=weights/fspt-tiny-test.weights
+BREAKPOINTS=
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -180,10 +182,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b $(BREAKPOINTS)" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) fspt $(FSPTCMD) $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt $(FSPTCMD) $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
