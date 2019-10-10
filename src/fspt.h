@@ -80,6 +80,7 @@ typedef struct criterion_args {
     float best_split;
     float gain;
     int forbidden_split;
+    int end_of_fitting;
 } criterion_args;
 
 /**

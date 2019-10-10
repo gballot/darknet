@@ -32,6 +32,7 @@ void *list_pop(list *l){
     void *val = b->val;
     l->back = b->prev;
     if(l->back) l->back->next = 0;
+    else l->front = 0; // added by Gabriel Ballot
     free(b);
     --l->size;
 

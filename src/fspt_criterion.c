@@ -161,6 +161,7 @@ static void best_split_on_feature(int feat, fspt_node node,
 void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
+    args->end_of_fitting = 0;
     if (node->n_samples + node->n_empty < 2 * fspt->min_samples) {
         args->forbidden_split = 1;
         return;
@@ -216,21 +217,19 @@ void gini_criterion(criterion_args *args) {
                 node->depth, node->n_samples);
         args->forbidden_split = 1;
     } else {
-        int *best_feature_index = &args->best_index;
-        float *best_gain = &args->gain;
-        float *best_split = &args->best_split;
         int rand_idx = max_index(best_gains, fspt->n_features);
-        *best_feature_index = random_features[rand_idx];
-        *best_gain = best_gains[rand_idx];
-        *best_split = best_splits[rand_idx];
+        args->best_index = random_features[rand_idx];
+        args->gain = best_gains[rand_idx];
+        args->best_split = best_splits[rand_idx];
         args->forbidden_split = 0;
-        if (*best_gain < args->thresh) {
+        if (args->gain < args->thresh) {
             debug_print("gain thresh violation at depth %d and count %d",
                     node->depth, fspt->count);
             fspt->count += 1;
             int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
             if (fspt->count >= v) {
                 args->forbidden_split = 1;
+                args->end_of_fitting = 1;
             }
         } else {
             fspt->count = 0;

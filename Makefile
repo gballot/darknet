@@ -57,6 +57,7 @@ CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -
 NETCONF=cfg/fspt-tiny-test.cfg
 DATACONF=cfg/voc.data
 WEIGHTS=weights/yolov3-tiny.weights
+BREAKPOINTS=list_insert_front
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -179,7 +180,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b src/parser.c:729" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) -ex "b $(BREAKPOINTS)" -ex "run $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
 
 run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt train $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)
