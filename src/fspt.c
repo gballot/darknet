@@ -214,10 +214,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     }
     if (!n_samples) return;
 
-    list *heap = make_list(); // Heap of the nodes to examine
-    list_insert(heap, (void *)root);
-    while (heap->size > 0) {
-        fspt_node *current_node = (fspt_node *) list_pop(heap);
+    list *fifo = make_list(); // fifo of the nodes to examine
+    list_insert(fifo, (void *)root);
+    while (fifo->size > 0) {
+        fspt_node *current_node = (fspt_node *) list_pop(fifo);
         args->node = current_node;
         int *index = &args->best_index;
         float *s = &args->best_split;
@@ -234,20 +234,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);
-            /* Should I examine right ? */
-            if (right->depth > fspt->max_depth
-                    || right->n_samples + right->n_empty < fspt->min_samples) {
-                right->score = fspt->score(fspt, right);
-            } else {
-                list_insert_front(heap, right);
-            }
-            /* Should I examine left ? */
-            if (left->depth > fspt->max_depth
-                    || left->n_samples + left->n_empty < fspt->min_samples) {
-                left->score = fspt->score(fspt, left);
-            } else {
-                list_insert_front(heap, left);
-            }
+            list_insert_front(fifo, right);
+            list_insert_front(fifo, left);
         }
     }
 }
