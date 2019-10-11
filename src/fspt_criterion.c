@@ -247,9 +247,8 @@ criterion_func string_to_fspt_criterion(char *s) {
     if (strcmp(s, "gini") == 0) {
         return gini_criterion;
     } else {
-        error("unknown criterion");
+        return NULL;
     }
-    return NULL;
 }
 
 #undef unit_static
