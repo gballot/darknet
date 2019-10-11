@@ -185,11 +185,13 @@ void uni_test() {
     /***********************/
     
     float feat_lim[] = {0.f, 1.f, -1.f, 1.5f};
+    float feat_lim2[] = {0.f, 1.f, -1.f, 1.5f};
     float feat_lim_left[] = {0.f, 0.5f, -1.f, 1.5f};
     float feat_lim_right[] = {0.5f, 1.f, -1.f, 1.5f};
     int split_index = 0;
     float split_value = 0.5;
     float feat_imp[] = {1.f, 2.f};
+    float feat_imp2[] = {1.f, 2.f};
     int min_samp = 3;
     int max_depth = 2;
     char *filename = "backup/uni_test_fspt.dat";
@@ -236,7 +238,7 @@ void uni_test() {
     }
 
     /* load */
-    fspt_t *fspt_loaded = make_fspt(2, feat_lim, feat_imp, NULL, NULL, min_samp, max_depth);
+    fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL, min_samp, max_depth);
     fspt_load(filename, fspt_loaded, &succ);
 
     if (!succ) {
