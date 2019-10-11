@@ -75,7 +75,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 }
 
 void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
-        int ngpus, int clear) {
+        int ngpus, int clear, int refit) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -156,6 +156,8 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
         if (l.type == FSPT) {
             for (int class = 0; class < l.classes; ++class) {
                 fspt_t *fspt = l.fspts[class];
+                if (!refit && fspt->root) continue;
+                if (refit && fspt->root) free_fspt_nodes(fspt->root);
                 int n = l.fspt_n_training_data[class];
                 float *X = l.fspt_training_data[class];
                 criterion_args *args = calloc(1, sizeof(criterion_args)); 
@@ -317,13 +319,13 @@ void validate_fspt_recall(char *cfgfile, char *weightfile) {
 
 void run_fspt(int argc, char **argv)
 {
-    char *prefix = find_char_arg(argc, argv, "-prefix", 0);
+    //char *prefix = find_char_arg(argc, argv, "-prefix", 0);
     float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
     float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
     float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
-    int cam_index = find_int_arg(argc, argv, "-c", 0);
-    int frame_skip = find_int_arg(argc, argv, "-s", 0);
-    int avg = find_int_arg(argc, argv, "-avg", 3);
+    //int cam_index = find_int_arg(argc, argv, "-c", 0);
+    //int frame_skip = find_int_arg(argc, argv, "-s", 0);
+    //int avg = find_int_arg(argc, argv, "-avg", 3);
     if(argc < 4){
         fprintf(stderr,
                 "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n",
@@ -355,10 +357,11 @@ void run_fspt(int argc, char **argv)
     }
 
     int clear = find_int_arg(argc, argv, "-clear", 1);
+    int refit_fspts = find_int_arg(argc, argv, "-refit", 1);
     int fullscreen = find_arg(argc, argv, "-fullscreen");
-    int width = find_int_arg(argc, argv, "-w", 0);
-    int height = find_int_arg(argc, argv, "-h", 0);
-    int fps = find_int_arg(argc, argv, "-fps", 0);
+    //int width = find_int_arg(argc, argv, "-w", 0);
+    //int height = find_int_arg(argc, argv, "-h", 0);
+    //int fps = find_int_arg(argc, argv, "-fps", 0);
     //int class = find_int_arg(argc, argv, "-class", 0);
 
     char *datacfg = argv[3];
@@ -369,7 +372,7 @@ void run_fspt(int argc, char **argv)
         test_fspt(datacfg, cfg, weights, filename, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
-        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear);
+        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "recall"))

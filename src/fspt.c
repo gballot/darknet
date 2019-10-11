@@ -302,4 +302,19 @@ void fspt_load(const char *filename, fspt_t *fspt, int *succ) {
     fclose(fp);
 }
 
+void free_fspt_nodes(fspt_node *node) {
+    if (!node) return;
+    free_fspt_nodes(node->right);
+    free_fspt_nodes(node->left);
+    free(node->feature_limit);
+    free(node);
+}
+
+void free_fspt(fspt_t *fspt) {
+    free(fspt->feature_limit);
+    free(fspt->feature_importance);
+    free_fspt_nodes(fspt->root);
+    free(fspt->samples);
+    free(fspt);
+}
 
