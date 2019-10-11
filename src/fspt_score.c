@@ -26,8 +26,7 @@ score_func string_to_fspt_score(char *s) {
     if (strcmp(s, "euristic") == 0) {
         return euristic_score;
     } else {
-        error("unknow score function");
+        return NULL;
     }
-    return NULL;
 }
 
