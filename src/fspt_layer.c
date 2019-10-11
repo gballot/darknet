@@ -18,8 +18,8 @@
 layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, float yolo_thresh,
         float *feature_limit, float *feature_importance,
-        criterion_func criterion, score_func score, int min_samples,
-        int max_depth, int batch, ACTIVATION activation) {
+        criterion_func criterion, score_func score, int batch,
+        criterion_args args_template, ACTIVATION activation) {
     layer l = {0};
     l.type = FSPT;
     l.noloss = 1;
@@ -55,9 +55,11 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.fspt_n_max_training_data = calloc(l.classes, sizeof(int));
     l.fspt_training_data = calloc(l.classes, sizeof(float *));
 
+    l.fspt_criterion_args = args_template;
+
     for (int i = 0; i < l.classes; ++i) {
         l.fspts[i] = make_fspt(l.total, feature_limit, feature_importance,
-                criterion, score, min_samples, max_depth);
+                criterion, score);
     }
 
     l.forward = forward_fspt_layer;
@@ -399,3 +401,20 @@ void load_fspt_trees(layer l, FILE *fp) {
     }
 }
 
+void fspt_layer_fit(layer l, int refit) {
+    for (int class = 0; class < l.classes; ++class) {
+        fspt_t *fspt = l.fspts[class];
+        if (!refit && fspt->root) continue;
+        if (refit && fspt->root) free_fspt_nodes(fspt->root);
+        int n = l.fspt_n_training_data[class];
+        float *X = l.fspt_training_data[class];
+        criterion_args *args = calloc(1, sizeof(criterion_args)); 
+        *args = l.fspt_criterion_args;
+        fspt_fit(n, X, args, fspt);
+        free(args);
+#ifdef DEBUG
+        if (fspt->root->type == INNER)
+            print_fspt(fspt);
+#endif
+    }
+}

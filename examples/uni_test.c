@@ -84,10 +84,6 @@ static int eq_fspts(fspt_t a, fspt_t b) {
     if (!eq) fprintf(stderr, "fspt score differ...\n");
     eq &= (a.vol == b.vol);
     if (!eq) fprintf(stderr, "fspt vol differ...\n");
-    eq &= (a.max_depth == b.max_depth);
-    if (!eq) fprintf(stderr, "fspt max_depth differ...\n");
-    eq &= (a.min_samples == b.min_samples);
-    if (!eq) fprintf(stderr, "fspt min_samples differ...\n");
     eq &= (a.count == b.count);
     if (!eq) fprintf(stderr, "fspt count differ...\n");
     return eq;
@@ -192,12 +188,10 @@ void uni_test() {
     float split_value = 0.5;
     float feat_imp[] = {1.f, 2.f};
     float feat_imp2[] = {1.f, 2.f};
-    int min_samp = 3;
-    int max_depth = 2;
     char *filename = "backup/uni_test_fspt.dat";
     int succ = 1;
 
-    fspt_t *fspt = make_fspt(2, feat_lim, feat_imp, NULL, NULL, min_samp, max_depth);
+    fspt_t *fspt = make_fspt(2, feat_lim, feat_imp, NULL, NULL);
     /* Builds left */
     fspt_node *left = calloc(1, sizeof(fspt_node));
     left->type = LEAF;
@@ -238,7 +232,7 @@ void uni_test() {
     }
 
     /* load */
-    fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL, min_samp, max_depth);
+    fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL);
     fspt_load(filename, fspt_loaded, &succ);
 
     if (!succ) {

@@ -123,15 +123,15 @@ static void print2DUtil(fspt_node *root, int space)
 void print_fspt(fspt_t *fspt)
 {
     fprintf(stderr,
-            "fspt %p: %d featrues, %d nodes, %d samples, %d depth, %d max_depth, %d min_samples\n",
+            "fspt %p: %d featrues, %d nodes, %d samples, %d depth\n",
             fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples,
-            fspt->depth, fspt->max_depth, fspt->min_samples);
+            fspt->depth);
     print2DUtil(fspt->root, 0);
 }
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
                   float *feature_importance, criterion_func criterion,
-                  score_func score, int min_samples, int max_depth)
+                  score_func score)
 {
     if (!feature_importance) {
         feature_importance = malloc(n_features * sizeof(float));
@@ -148,8 +148,6 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     fspt->criterion = criterion;
     fspt->score = score;
     fspt->vol = volume(n_features, feature_limit);
-    fspt->max_depth = max_depth;
-    fspt->min_samples = min_samples;
     return fspt;
 }
 
@@ -190,7 +188,6 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y)
 
 void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
 {
-    assert(fspt->max_depth >= 1);
     args->fspt = fspt;
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
@@ -208,11 +205,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
-    if (root->depth > fspt->max_depth
-            || root->n_samples < fspt->min_samples) {
-        root->score = fspt->score(fspt, root);
-        return;
-    }
     if (!n_samples) return;
 
     list *fifo = make_list(); // fifo of the nodes to examine
