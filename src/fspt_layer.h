@@ -2,6 +2,7 @@
 #define FSPT_LAYER_H
 
 #include "darknet.h"
+#include "fspt.h"
 
 /**
  * Creates a fspt layer.
@@ -25,9 +26,10 @@
  * \param feature_importance The feature importance. Size n_features.
  * \param criterion Pointer to the criterion function for training.
  * \param score Pointer to the score function for training.
- * \param min_samples The minimum number of training + empty samples per node.
- * \param max_depth The maximum depth of the tree.
  * \param batch The number of images per batch.
+ * \param args_template Argument that will be passed to the criterion function.
+ *                      Can specify the max depth of the tree or the minimum
+ *                      number of samples per leaves for instance.
  * \param activation The activation function applied to the input features
  *                   before storing them as input for fspts. Useful to restrict
  *                   the inputs to feature_limit.
@@ -36,8 +38,8 @@
 extern layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, float yolo_thresh,
         float *feature_limit, float *feature_importance,
-        criterion_func criterion, score_func score, int min_samples,
-        int max_depth, int batch, ACTIVATION activation);
+        criterion_func criterion, score_func score, int batch,
+        criterion_args args_template, ACTIVATION activation);
 
 /**
  * Forward for the fspt layer.
@@ -111,5 +113,14 @@ extern void save_fspt_trees(layer l, FILE *fp);
  * \param fp The file pointer.
  */
 extern void load_fspt_trees(layer l, FILE *fp);
+
+/**
+ * Fits the fspts of the fspt layer.
+ * The data must be already extracted.
+ *
+ * \param l The fspt layer.
+ * \param refit If true, refit fspts even if they are already fitted.
+ */
+extern void fspt_layer_fit(layer l, int refit);
 
 #endif /* FSPT_LAYER_H */

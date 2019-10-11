@@ -798,10 +798,6 @@ layer parse_fspt(list *options, size_params params)
         tmp_ref = strtok(NULL, ",");
         i++;
     }
-    /* min_samples */
-    int min_samples = option_find_int(options, "min_samples",1);
-    /* max_depth */
-    int max_depth = option_find_int(options, "max_depth",10);
     /* yolo_thresh */
     float yolo_thresh = option_find_float(options, "yolo_thresh", 0.7);
     /* n_features */
@@ -878,11 +874,19 @@ layer parse_fspt(list *options, size_params params)
     /* activation */
     char *activation_s = option_find_str(options, "activation", "loggy");
     ACTIVATION activation = get_activation(activation_s);
+    /* criterion args */
+    criterion_args args = {0};
+    args.min_samples = option_find_int_quiet(options, "min_samples", 1);
+    args.max_depth = option_find_int_quiet(options, "max_depth", 10);
+    args.max_try_p = option_find_float_quiet(options, "max_try_p", 1.f);
+    args.max_feature_p = option_find_float_quiet(options, "max_feature_p",1.f);
+    args.gini_gain_thresh = option_find_float_quiet(options,
+            "gini_gain_thresh", 0.01f);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
             net, yolo_thresh, feature_limit, feature_importance,
-            criterion, score, min_samples, max_depth, params.batch, activation);
+            criterion, score, params.batch, args, activation);
     return fspt_layer;
 }
 

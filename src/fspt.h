@@ -63,8 +63,6 @@ typedef struct fspt_t {
     score_func score;    // score_function
     float vol;           // volume of the tree
     int depth;
-    int max_depth;
-    int min_samples;
     int count;          // keeps the successive violation of gain threshold
 } fspt_t;
 
@@ -74,7 +72,9 @@ typedef struct criterion_args {
     fspt_node *node;
     float max_try_p;
     float max_feature_p;
-    float thresh;
+    float gini_gain_thresh;
+    int max_depth;
+    int min_samples;
     int best_index;
     float best_split;
     float gain;
@@ -92,8 +92,6 @@ typedef struct criterion_args {
  *                           if NULL.
  * \param criterion The criterion to optimize.
  * \param score The score function for the leaves.
- * \param min_samples Lower bound of samples per leaf.
- * \param max_depth Upper bound of the depth of the tree.
  * \return A pointer to the fspt_tree. Must be freed by the caller with
  *         a call to fspt_free(fspt_tree fspt).
  */
@@ -102,9 +100,7 @@ extern fspt_t *make_fspt(
         const float *feature_limit,
         float *feature_importance,
         criterion_func criterion,
-        score_func score,
-        int min_samples,
-        int max_depth);
+        score_func score);
 
 /**
  * Gives the nodes containing each input X. The output parameter nodes

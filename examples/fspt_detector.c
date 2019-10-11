@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "utils.h"
+#include "fspt_layer.h"
 
 void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile,
@@ -154,29 +155,11 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     for (int i = 0; i < net->n; ++i) {
         layer l = net->layers[i];
         if (l.type == FSPT) {
-            for (int class = 0; class < l.classes; ++class) {
-                fspt_t *fspt = l.fspts[class];
-                if (!refit && fspt->root) continue;
-                if (refit && fspt->root) free_fspt_nodes(fspt->root);
-                int n = l.fspt_n_training_data[class];
-                float *X = l.fspt_training_data[class];
-                criterion_args *args = calloc(1, sizeof(criterion_args)); 
-                /*TODO: Theses values can be passed from up frame */
-                args->max_try_p = 1.;
-                args->max_feature_p = 1.;
-                args->thresh = 0.01;
-                fspt_fit(n, X, args, fspt);
-                free(args);
-                /* Backup */
-                char buff[256];
-                sprintf(buff, "%s/%s_%s_class_%2d.weights", backup_directory, base,
-                        l.ref, class);
-                save_weights(net, buff);
-#ifdef DEBUG
-                if (fspt->root->type == INNER)
-                    print_fspt(fspt);
-#endif
-            }
+            fspt_layer_fit(l, refit);
+            /* Backup */
+            char buff[256];
+            sprintf(buff, "%s/%s_%s.weights", backup_directory, base, l.ref);
+            save_weights(net, buff);
         }
     }
     char buff[256];

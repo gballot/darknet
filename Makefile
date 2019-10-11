@@ -6,7 +6,7 @@ AVX=0
 OPENMP=0
 LIBSO=0
 ZED_CAMERA=0
-DEBUG=0
+DEBUG=1
 TRAIN=1
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
@@ -55,18 +55,19 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
+CONF=coco-test
 MAINCMD=fspt
-NETCONF=cfg/fspt-coco.cfg
-DATACONF=cfg/coco.data
-WEIGHTS=weights/yolov3.weights
+BREAKPOINTS=
+
+NETCONF=cfg/$(MAINCMD)-$(CONF).cfg
+DATACONF=cfg/$(CONF).data
+WEIGHTS=weights/$(MAINCMD)-$(CONF).weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
 NETCMD=test
 FILE= data/dog.jpg
 endif
-
-BREAKPOINTS=
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
