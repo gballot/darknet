@@ -37,6 +37,7 @@ darknet
 weights/
 backup/
 VOCdevkit/
+coco/
 darknet
 .fuse*
 *.weights
