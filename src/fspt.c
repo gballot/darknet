@@ -273,6 +273,7 @@ static fspt_node * pre_order_node_load(FILE *fp, int *succ) {
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
     if (!*succ) return NULL;
+    node->samples = 0;
     /* load feature_limit */
     size_t lim_size = 2 * node->n_features;
     float *feature_limit = malloc(lim_size * sizeof(float));
@@ -306,13 +307,13 @@ void free_fspt_nodes(fspt_node *node) {
     if (!node) return;
     free_fspt_nodes(node->right);
     free_fspt_nodes(node->left);
-    free(node->feature_limit);
+    free((float *) node->feature_limit);
     free(node);
 }
 
 void free_fspt(fspt_t *fspt) {
-    free(fspt->feature_limit);
-    free(fspt->feature_importance);
+    free((float *) fspt->feature_limit);
+    free((float *) fspt->feature_importance);
     free_fspt_nodes(fspt->root);
     free(fspt->samples);
     free(fspt);
