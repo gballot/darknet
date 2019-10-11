@@ -670,8 +670,6 @@ layer parse_fspt(list *options, size_params params)
 {
     /* net */
     network *net = params.net;
-    /* classes */
-    int classes = option_find_int(options, "classes",1);
     /* yolo_layer */
     int yolo_layer_idx = option_find_int_from_label(options, "yolo_layer", -1);
     if(yolo_layer_idx < 0) yolo_layer_idx = params.index + yolo_layer_idx;
@@ -798,7 +796,7 @@ layer parse_fspt(list *options, size_params params)
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-            net, classes, yolo_thresh, feature_limit, feature_importance,
+            net, yolo_thresh, feature_limit, feature_importance,
             criterion, score, min_samples, max_depth, params.batch, activation);
     return fspt_layer;
 }

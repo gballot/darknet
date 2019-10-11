@@ -125,6 +125,9 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
     }
 }
 
+/**
+ * Finds the best split point on feature feat.
+ */
 static void best_split_on_feature(int feat, fspt_node node,
         float current_score, int min_samples, int n_bins,
         const float *bins, const size_t *cdf, float *best_gain,

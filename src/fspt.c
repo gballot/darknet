@@ -91,10 +91,15 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
         fspt->depth = right->depth;
 }
 
-// Function to print binary tree in 2D
-// It does reverse inorder traversal
-// https://www.geeksforgeeks.org/print-binary-tree-2-dimensions/
-void print2DUtil(fspt_node *root, int space)
+/**
+ * Function to print binary tree in 2D
+ * It does reverse inorder traversal
+ * taken from : https://www.geeksforgeeks.org/print-binary-tree-2-dimensions/
+ *
+ * \param root Root of a subtree.
+ * \param space indent to print this node
+ */
+static void print2DUtil(fspt_node *root, int space)
 {
     const int COUNT = 10;
     if (root == NULL)
@@ -236,6 +241,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     }
 }
 
+/**
+ * Recursively saves from node in fp.
+ *
+ * \param fp A file pointer. Open and close file is caller's responsibility.
+ * \param node The node from where we save.
+ * \param succ Output parameter. Will contain 1 if successfully save,
+ *             0 otherwise.
+ */
 static void pre_order_node_save(FILE *fp, fspt_node node, int *succ) {
     /* save node */
     const float *feature_limit = node.feature_limit;
@@ -268,6 +281,14 @@ void fspt_save(const char *filename, fspt_t fspt, int *succ) {
     fclose(fp);
 }
 
+/**
+ * Recursively loads from node in fp.
+ *
+ * \param fp A file pointer. Open and close file is caller's responsibility.
+ * \param succ Output parameter. Will contain 1 if successfully load,
+ *             0 otherwise.
+ * \return Pointer to the newly created fspt_node.
+ */
 static fspt_node * pre_order_node_load(FILE *fp, int *succ) {
     /* load node */
     fspt_node *node = malloc(sizeof(fspt_node));
