@@ -16,7 +16,7 @@
 #include "yolo_layer.h"
 
 layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, int classes, float yolo_thresh,
+        int yolo_layer, network *net, float yolo_thresh,
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int min_samples,
         int max_depth, int batch, ACTIVATION activation) {
@@ -24,10 +24,11 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.type = FSPT;
     l.noloss = 1;
     l.onlyforward = 1;
+    assert(net->layers[yolo_layer].type == YOLO);
 
     l.inputs = inputs;
     l.input_layers = input_layers; 
-    l.classes = classes;
+    l.classes = net->layers[yolo_layer].classes;
     l.yolo_layer = yolo_layer;
     l.yolo_thresh = yolo_thresh;
 
@@ -49,12 +50,12 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.output = calloc(batch*l.outputs, sizeof(float));
     l.fspt_input = calloc(l.total, sizeof(float));
 
-    l.fspts = calloc(classes, sizeof(fspt_t *));
-    l.fspt_n_training_data = calloc(classes, sizeof(int));
-    l.fspt_n_max_training_data = calloc(classes, sizeof(int));
-    l.fspt_training_data = calloc(classes, sizeof(float *));
+    l.fspts = calloc(l.classes, sizeof(fspt_t *));
+    l.fspt_n_training_data = calloc(l.classes, sizeof(int));
+    l.fspt_n_max_training_data = calloc(l.classes, sizeof(int));
+    l.fspt_training_data = calloc(l.classes, sizeof(float *));
 
-    for (int i = 0; i < classes; ++i) {
+    for (int i = 0; i < l.classes; ++i) {
         l.fspts[i] = make_fspt(l.total, feature_limit, feature_importance,
                 criterion, score, min_samples, max_depth);
     }
@@ -70,7 +71,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     fprintf(stderr, "fspt      %d input layer(s) : ", inputs);
     for(int i = 0; i < inputs; i++) fprintf(stderr, "%d,", input_layers[i]);
     fprintf(stderr, "    yolo layer : %d      trees : %d\n", yolo_layer,
-            classes);
+            l.classes);
 
     return l;
 }
