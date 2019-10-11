@@ -24,8 +24,10 @@ cfg/
 weights/
 backup/
 VOCdevkit/
+coco/
 darknet
 .fuse*
+gpu*.output
 
 # OS Generated #
 .DS_Store*

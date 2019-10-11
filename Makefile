@@ -3,6 +3,7 @@ CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
+TRAIN=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -30,11 +31,17 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-FSPTCMD=test
-NETCONF=cfg/fspt.cfg
-DATACONF=cfg/voc.data
+MAINCMD=fspt
+NETCONF=cfg/fspt-coco.cfg
+DATACONF=cfg/coco.data
 WEIGHTS=weights/yolov3.weights
-#WEIGHTS=weights/fspt-tiny-test.weights
+ifeq ($(TRAIN), 1) 
+NETCMD=train
+else
+NETCMD=test
+FILE= data/dog.jpg
+endif
+
 BREAKPOINTS=
 
 ifeq ($(OPENMP), 1) 
@@ -126,10 +133,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) fspt $(FSPTCMD) $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP)"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) fspt $(FSPTCMD) $(FSPT_GPU_OP) $(DATACONF) $(NETCONF) $(WEIGHTS)
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP) 
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
