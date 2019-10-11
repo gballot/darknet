@@ -76,6 +76,19 @@ layer make_fspt_layer(int inputs, int *input_layers,
     return l;
 }
 
+/**
+ * Extracts the index in l.outputs of the object in batch, at location
+ * with offset entry.
+ *
+ * \param l The fspt layer.
+ * \param batch The index of the data in the batch.
+ * \param location should be l.n*l.w*l.h + row
+ * \param entry index in the raw. 0 for box.x, 1 for box.y, 2 for box.w,
+ *              3 for box.h, 4 for objectness, 5 + j for the prediciton
+ *              of class j.
+ * \return The index of the needed data. Should be used on a float pointer
+ *         to the outputs of l.
+ */
 static int entry_index(layer l, int batch, int location, int entry)
 {
     int n =   location / (l.w*l.h);
@@ -272,7 +285,14 @@ int get_fspt_detections(layer l, int w, int h, network *net,
 }
 
 void resize_fspt_layer(layer *l, int w, int h) {
-    return;
+    l->w = w;
+    l->h = h;
+    l->outputs = h*w*l->n*(l->classes + 4 + 1);
+    l->output = realloc(l->output, l->batch*l->outputs*sizeof(float));
+#ifdef GPU
+    cuda_free(l->output_gpu);
+    l->output_gpu =    cuda_make_array(l->output, l->batch*l->outputs);
+#endif
 }
 
 void forward_fspt_layer(layer l, network net)
