@@ -54,7 +54,7 @@ typedef struct fspt_t {
     const float *feature_limit;// size 2*n_feature:
                          //feature_limit[2*i] = min feature(i)
                          // feature_limite[2*i+1] = max feature(i)
-    float *feature_importance; // feature_importance of size n_feature
+    const float *feature_importance; // feature_importance of size n_feature
     int n_nodes;         // number of nodes
     int n_samples;       // number of training samples
     float *samples;     // training samples
@@ -191,5 +191,21 @@ extern void fspt_load_file(FILE *fp, fspt_t *fspt, int *succ);
  * \param fspt The feature space partitioning tree.
  */
 extern void print_fspt(fspt_t *fspt);
+
+/**
+ * Recursively frees fspt_nodes. Don't free the samples because they are
+ * shared between all the tree. The samples are freed by free_fspt.
+ *
+ * \param node The root from where the nodes are freed.
+ */
+extern void free_fspt_nodes(fspt_node *node);
+
+/**
+ * Frees a fspt with call to free_fspt_nodes.
+ * Frees the samples.
+ *
+ * \param fspt The fspt that will be freed.
+ */
+extern void free_fspt(fspt_t *fspt);
 
 #endif /* FSPT_H */
