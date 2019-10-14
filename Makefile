@@ -7,7 +7,7 @@ OPENMP=0
 LIBSO=0
 ZED_CAMERA=0
 DEBUG=1
-TRAIN=1
+TRAIN=0
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
 # set CUDNN_HALF=1 to further speedup 3 x times (Mixed-precision on Tensor Cores) GPU: Volta, Xavier, Turing and higher
@@ -55,7 +55,7 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-CONF=coco-test
+CONF=voc
 MAINCMD=fspt
 BREAKPOINTS=
 
