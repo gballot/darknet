@@ -150,6 +150,7 @@ static float fspt_get_score(layer l, int classe) {
  * \param b The element of the batch which is examined.
  */
 static void update_fspt_input(layer l, network *net, float x, float y, int b) {
+    int fspt_input_offset = 0;
     for(int input_layer_idx = 0; input_layer_idx < l.inputs;
             input_layer_idx++) {
         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
@@ -164,9 +165,7 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
             + input_w;
         debug_print("entry = %p", entry);
         copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
-                l.fspt_input_gpu, 1);
-        activate_array_gpu(l.fspt_input_gpu, l.total, l.activation);
-        cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
+                l.fspt_input_gpu + fspt_input_offset, 1);
 #else
         float *entry = input_layer.output
             + b * input_layer.outputs
@@ -174,10 +173,17 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
             + input_w;
         debug_print("entry = %p", entry);
         copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
-                l.fspt_input, 1);
-        activate_array(l.fspt_input, l.total, l.activation);
+                l.fspt_input + fspt_input_offset, 1);
 #endif
+        fspt_input_offset += input_layer.out_c;
     }
+#ifdef GPU
+    activate_array_gpu(l.fspt_input_gpu, l.total, l.activation);
+    cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
+#else
+    activate_array(l.fspt_input, l.total, l.activation);
+#endif
+
 }
 
 /**
