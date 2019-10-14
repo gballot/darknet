@@ -3,7 +3,7 @@ CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
-TRAIN=0
+TRAIN=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -31,13 +31,15 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-CONF=voc
+CONF=coco
+VERSION=-tiny
 MAINCMD=fspt
 BREAKPOINTS=
+FSPT_OP=-refit 1
 
-NETCONF=cfg/$(MAINCMD)-$(CONF).cfg
+NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
-WEIGHTS=weights/$(MAINCMD)-$(CONF).weights
+WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
@@ -74,13 +76,12 @@ COMMON+= -DGPU -I${CUDA_PATH}
 CFLAGS+= -DGPU
 LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
 DARKNET_GPU_OP= -i 0
-FSPT_GPU_OP= -gpus 0
+FSPT_OP+= -gpus 0
 GDB=cuda-gdb
 SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb
-FSPT_GPU_OP=
 SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:0
 endif
 
@@ -134,10 +135,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP)"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP) 
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP) 
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test

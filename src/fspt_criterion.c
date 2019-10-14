@@ -178,7 +178,6 @@ void gini_criterion(criterion_args *args) {
     float *X = node->samples;
     int forbidden_split = 1;
     float current_score = gini(node->n_samples, node->n_empty);
-    //TODO don't go to n_features but floor(n_features*max_features_p)
     int max_features = floor(fspt->n_features * args->max_features_p);
     for (int i = 0; i < max_features; ++i) {
         int feat = random_features[i];
