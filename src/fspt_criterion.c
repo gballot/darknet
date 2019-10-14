@@ -179,8 +179,8 @@ void gini_criterion(criterion_args *args) {
     int forbidden_split = 1;
     float current_score = gini(node->n_samples, node->n_empty);
     //TODO don't go to n_features but floor(n_features*max_features_p)
-    //int max_features = floor(fspt->n_features * max_features_p);
-    for (int i = 0; i < fspt->n_features; ++i) {
+    int max_features = floor(fspt->n_features * args->max_features_p);
+    for (int i = 0; i < max_features; ++i) {
         int feat = random_features[i];
         float node_min = node->feature_limit[2*feat];
         float node_max = node->feature_limit[2*feat + 1];
@@ -213,6 +213,10 @@ void gini_criterion(criterion_args *args) {
             best_gains[i] = -1.f;
             best_splits[i] = 0.f;
         }
+    }
+    for (int i = max_features; i < fspt->n_features; ++i) {
+        best_gains[i] = -1.f;
+        best_splits[i] = 0.f;
     }
     free(bins);
     free(cdf);

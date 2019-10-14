@@ -70,8 +70,8 @@ typedef struct fspt_t {
 typedef struct criterion_args {
     fspt_t *fspt;
     fspt_node *node;
-    float max_try_p;
-    float max_feature_p;
+    float max_tries_p;
+    float max_features_p;
     float gini_gain_thresh;
     int max_depth;
     int min_samples;
