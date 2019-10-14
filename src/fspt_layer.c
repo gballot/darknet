@@ -291,7 +291,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
             }
         }
     }
-    //correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
+    correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
     return count;
 }
 

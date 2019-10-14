@@ -46,12 +46,13 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
                 hier_thresh, 0, 1, &nboxes_yolo);
         debug_print("%d boxes predicted by yolo", nboxes_yolo);
         if (nms) do_nms_sort(dets_yolo, nboxes_yolo, l.classes, nms);
-        draw_detections(im, dets_yolo, nboxes_yolo, yolo_thresh, names, alphabet,
-                l.classes);
         int nboxes_fspt = 0;
-        detection *dets_fspt = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh,
-                fspt_thresh, hier_thresh, 0, 1, &nboxes_fspt);
+        detection *dets_fspt = get_network_fspt_boxes(net, im.w, im.h,
+                yolo_thresh, fspt_thresh, hier_thresh, 0, 1, &nboxes_fspt);
         debug_print("%d boxes predicted by fspt", nboxes_fspt);
+        if (nms) do_nms_sort(dets_fspt, nboxes_fspt, l.classes, nms);
+        draw_detections(im, dets_fspt, nboxes_fspt, yolo_thresh, names,
+                alphabet, l.classes);
         free_detections(dets_yolo, nboxes_yolo);
         free_detections(dets_fspt, nboxes_fspt);
         if(outfile){
