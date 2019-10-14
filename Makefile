@@ -3,7 +3,7 @@ CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
-TRAIN=1
+TRAIN=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -35,7 +35,7 @@ CONF=coco
 VERSION=-tiny
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP=-refit 1
+FSPT_OP=
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data

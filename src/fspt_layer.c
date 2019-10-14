@@ -253,6 +253,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
     layer yolo_layer = net->layers[l.yolo_layer];
     float *predictions = l.output;
     //if (l.batch == 2) avg_flipped_yolo(l);
+    int fspt_box_find = 0;
     int count = 0;
     for (int b = 0; b < l.batch; ++b) {
         for (i = 0; i < l.w*l.h; ++i){
@@ -266,30 +267,32 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                 box bbox = get_yolo_box(predictions, yolo_layer.biases,
                         yolo_layer.mask[n], box_index, col, row,
                         l.w, l.h, netw, neth, l.w*l.h);
-                dets[count].bbox = bbox;
-                dets[count].objectness = objectness;
-                dets[count].classes = l.classes;
                 for(j = 0; j < l.classes; ++j){
                     int class_index = entry_index(l, b, n*l.w*l.h + i, 4+1+j);
                     float prob = objectness*predictions[class_index];
                     if(prob > yolo_thresh) {
                         update_fspt_input(l, net, bbox.x, bbox.y, b);
                         float score = fspt_get_score(l, j);
-                        if(score > fspt_thresh)
+                        if(score > fspt_thresh) {
+                            fspt_box_find = 1;
+                            dets[count].bbox = bbox;
+                            dets[count].objectness = objectness;
+                            dets[count].classes = l.classes;
                             dets[count].prob[j] = prob;
-                        else
-                            dets[count].prob[j] = -1.;
+                        } else {
+                            dets[count].prob[j] = 0;
+                        }
                     } else {
                         dets[count].prob[j] = 0;
                     }
                 }
-                ++count;
+                if (fspt_box_find) ++count;
+                fspt_box_find = 0;
             }
         }
     }
     //correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
     return count;
-    return 0;
 }
 
 void resize_fspt_layer(layer *l, int w, int h) {
