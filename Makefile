@@ -7,7 +7,7 @@ OPENMP=0
 LIBSO=0
 ZED_CAMERA=0
 DEBUG=1
-TRAIN=0
+TRAIN=1
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
 # set CUDNN_HALF=1 to further speedup 3 x times (Mixed-precision on Tensor Cores) GPU: Volta, Xavier, Turing and higher
@@ -55,13 +55,15 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-CONF=voc
+CONF=coco
+VERSION=-tiny
 MAINCMD=fspt
 BREAKPOINTS=
+FSPT_OP=-refit 1
 
-NETCONF=cfg/$(MAINCMD)-$(CONF).cfg
+NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
-WEIGHTS=weights/$(MAINCMD)-$(CONF).weights
+WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
@@ -112,7 +114,7 @@ else # OS != Darwin
 LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
 endif # OS
 DARKNET_GPU_OP= -i 0
-FSPT_GPU_OP= -gpus 0
+FSPT_OP+= -gpus 0
 GDB=cuda-gdb
 SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:1
 else # GPU == 0
@@ -190,10 +192,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP)"
+	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
 
 run: $(EXEC)
-	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_GPU_OP) 
+	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP) 
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test

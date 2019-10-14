@@ -410,14 +410,15 @@ void load_fspt_trees(layer l, FILE *fp) {
 void fspt_layer_fit(layer l, int refit) {
     for (int class = 0; class < l.classes; ++class) {
         fspt_t *fspt = l.fspts[class];
-        if (!refit && fspt->root) continue;
-        if (refit && fspt->root) free_fspt_nodes(fspt->root);
-        int n = l.fspt_n_training_data[class];
-        float *X = l.fspt_training_data[class];
-        criterion_args *args = calloc(1, sizeof(criterion_args)); 
-        *args = l.fspt_criterion_args;
-        fspt_fit(n, X, args, fspt);
-        free(args);
+        if (refit || !fspt->root) {
+            if (fspt->root) free_fspt_nodes(fspt->root);
+            int n = l.fspt_n_training_data[class];
+            float *X = l.fspt_training_data[class];
+            criterion_args *args = calloc(1, sizeof(criterion_args)); 
+            *args = l.fspt_criterion_args;
+            fspt_fit(n, X, args, fspt);
+            free(args);
+        }
 #ifdef DEBUG
         if (fspt->root->type == INNER)
             print_fspt(fspt);
