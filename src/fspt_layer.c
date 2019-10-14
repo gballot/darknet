@@ -45,6 +45,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.outputs = l.h*l.w*l.c;
     l.truths = 90*(4 + 1);
     l.coords = 4;
+    l.max_boxes = net->layers[yolo_layer].max_boxes;
+    l.jitter = net->layers[yolo_layer].jitter;
     for(int i=0; i<inputs; i++) l.total += net->layers[input_layers[i]].out_c;
 
     l.output = calloc(batch*l.outputs, sizeof(float));
@@ -311,7 +313,6 @@ void forward_fspt_layer(layer l, network net)
     memcpy(l.output, net.input, l.outputs*l.batch*sizeof(float));
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
-            //for(int t = 0; t < l.max_boxes; ++t)
             /* while there are truth boxes*/
             int t = 0;
             while(1) {
@@ -355,7 +356,6 @@ void forward_fspt_layer_gpu(const layer l, network net) {
     copy_gpu(l.batch*l.outputs, net.input_gpu, 1, l.output_gpu, 1);
     if(net.train_fspt) {
         for (int b = 0; b < l.batch; ++b) {
-            //for(int t = 0; t < l.max_boxes; ++t)
             /* while there are truth boxes*/
             int t = 0;
             while(1) {
