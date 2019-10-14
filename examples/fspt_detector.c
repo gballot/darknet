@@ -100,11 +100,16 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     int imgs = net->batch * net->subdivisions * ngpus;
     data train, buffer;
 
-    //TODO: take a fspt layer instead of the yolo one.
-    layer l = net->layers[net->n - 2];
+    layer l = net->layers[0];
+    for (int i = 0; i < net->n; ++i) {
+        l = net->layers[net->n - 2];
+        if (l.type == FSPT || l.type == YOLO)
+            break;
+    }
+    if (l.type != FSPT && l.type != YOLO)
+        error("The net must have fspt or yolo layers");
 
     int classes = l.classes;
-    float jitter = l.jitter;
 
     list *plist = get_paths(train_images);
     char **paths = (char **)list_to_array(plist);
@@ -115,7 +120,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     args.n = imgs;
     args.m = plist->size;
     args.classes = classes;
-    args.jitter = jitter;
+    args.jitter = l.jitter;
     args.num_boxes = l.max_boxes;
     args.d = &buffer;
     args.type = DETECTION_DATA;
