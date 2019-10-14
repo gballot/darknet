@@ -158,13 +158,18 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
     for (int i = 0; i < n; i++) {
         const float *x = X + i * n_features;
         fspt_node *tmp_node = fspt->root;
+        if (!tmp_node) {
+            nodes[i] = 0;
+            continue;
+        }
         while (tmp_node->type != LEAF) {
             int split_feature = tmp_node->split_feature;
             if (x[split_feature] < tmp_node->split_value) {
                 tmp_node = tmp_node->left;
             } else if (x[split_feature] >= tmp_node->split_value) {
                 tmp_node = tmp_node->right;
-            }        }
+            }
+        }
         if (tmp_node->type == LEAF) {
             nodes[i] = tmp_node;
         }

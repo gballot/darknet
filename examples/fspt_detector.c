@@ -33,11 +33,6 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         }
         image im = load_image_color(input,0,0);
         image sized = letterbox_image(im, net->w, net->h);
-        //image sized = resize_image(im, net->w, net->h);
-        //image sized2 = resize_max(im, net->w);
-        //image sized = crop_image(sized2, -((net->w - sized2.w)/2),
-        //    -((net->h - sized2.h)/2), net->w, net->h);
-        //resize_network(net, sized.w, sized.h);
         layer l = net->layers[net->n-1];
 
 
@@ -46,26 +41,27 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         network_predict(net, X);
         printf("%s: Predicted in %f seconds.\n", input,
                 what_time_is_it_now()-time);
-        int nboxes = 0;
-        detection *dets = get_network_boxes(net, im.w, im.h, yolo_thresh,
-                hier_thresh, 0, 1, &nboxes);
-        debug_print("%d boxes predicted by yolo", nboxes);
-        //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, yolo_thresh, names, alphabet,
+        int nboxes_yolo = 0;
+        detection *dets_yolo = get_network_boxes(net, im.w, im.h, yolo_thresh,
+                hier_thresh, 0, 1, &nboxes_yolo);
+        debug_print("%d boxes predicted by yolo", nboxes_yolo);
+        if (nms) do_nms_sort(dets_yolo, nboxes_yolo, l.classes, nms);
+        draw_detections(im, dets_yolo, nboxes_yolo, yolo_thresh, names, alphabet,
                 l.classes);
-        dets = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh,
-                fspt_thresh, hier_thresh, 0, 1, &nboxes);
-        debug_print("%d boxes predicted by fspt", nboxes);
-        free_detections(dets, nboxes);
+        int nboxes_fspt = 0;
+        detection *dets_fspt = get_network_fspt_boxes(net, im.w, im.h, yolo_thresh,
+                fspt_thresh, hier_thresh, 0, 1, &nboxes_fspt);
+        debug_print("%d boxes predicted by fspt", nboxes_fspt);
+        free_detections(dets_yolo, nboxes_yolo);
+        free_detections(dets_fspt, nboxes_fspt);
         if(outfile){
             save_image(im, outfile);
         }
         else{
-            save_image(im, "predictions");
+            save_image(im, "predictions_fspt");
 #ifdef OPENCV
-            make_window("predictions", 512, 512, 0);
-            show_image(im, "predictions", 0);
+            make_window("predictions_fspt", 512, 512, 0);
+            show_image(im, "predictions_fspt", 0);
 #endif
         }
 

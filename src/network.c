@@ -790,16 +790,19 @@ void fill_network_boxes(network *net, int w, int h, float thresh, float hier, in
     }
 }
 
-void fill_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, float fspt_thresh, float hier, int *map, int relative, detection *dets)
+int fill_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, float fspt_thresh, float hier, int *map, int relative, detection *dets)
 {
+    int total = 0;
     int j;
     for(j = 0; j < net->n; ++j){
         layer l = net->layers[j];
         if(l.type == FSPT){
             int count = get_fspt_detections(l, w, h, net, yolo_thresh, fspt_thresh, map, relative, dets);
             dets += count;
+            total += count;
         }
     }
+    return total;
 }
 
 detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num, int letter)
@@ -811,8 +814,9 @@ detection *get_network_boxes(network *net, int w, int h, float thresh, float hie
 
 detection *get_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, float fspt_thresh, float hier, int *map, int relative, int *num)
 {
-    detection *dets = make_network_boxes(net, yolo_thresh, num);
-    fill_network_fspt_boxes(net, w, h, yolo_thresh, fspt_thresh, hier, map, relative, dets);
+    int num_yolo = 0;
+    detection *dets = make_network_boxes(net, yolo_thresh, &num_yolo);
+    *num = fill_network_fspt_boxes(net, w, h, yolo_thresh, fspt_thresh, hier, map, relative, dets);
     return dets;
 }
 

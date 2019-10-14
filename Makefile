@@ -7,7 +7,7 @@ OPENMP=0
 LIBSO=0
 ZED_CAMERA=0
 DEBUG=1
-TRAIN=1
+TRAIN=0
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
 # set CUDNN_HALF=1 to further speedup 3 x times (Mixed-precision on Tensor Cores) GPU: Volta, Xavier, Turing and higher
@@ -59,7 +59,7 @@ CONF=coco
 VERSION=-tiny
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP=-refit 1
+FSPT_OP=
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
