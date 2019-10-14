@@ -878,8 +878,9 @@ layer parse_fspt(list *options, size_params params)
     criterion_args args = {0};
     args.min_samples = option_find_int_quiet(options, "min_samples", 1);
     args.max_depth = option_find_int_quiet(options, "max_depth", 10);
-    args.max_try_p = option_find_float_quiet(options, "max_try_p", 1.f);
-    args.max_feature_p = option_find_float_quiet(options, "max_feature_p",1.f);
+    args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.f);
+    args.max_features_p = option_find_float_quiet(options,
+            "max_features_p", 1.f);
     args.gini_gain_thresh = option_find_float_quiet(options,
             "gini_gain_thresh", 0.01f);
 
