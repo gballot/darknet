@@ -39,6 +39,20 @@ char **get_random_paths_indexes(char **paths, int n, int m, int *indexes)
 }
 */
 
+char **get_ordered_paths(char **paths, int beg, int n, int m) {
+    int k = beg + n < m ? n : m - beg - 1;
+    char **ordered_paths = calloc(k, sizeof(char*));
+    int i;
+    pthread_mutex_lock(&mutex);
+    for(i = 0; i < k; ++i){
+        int index = beg + i;
+        ordered_paths[i] = paths[index];
+        //if(i == 0) printf("%s\n", paths[index]);
+    }
+    pthread_mutex_unlock(&mutex);
+    return ordered_paths;
+}
+
 char **get_random_paths(char **paths, int n, int m)
 {
     char **random_paths = calloc(n, sizeof(char*));
@@ -1033,9 +1047,18 @@ data load_data_swag(char **paths, int n, int classes, float jitter)
     return d;
 }
 
-data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure)
+data load_data_detection(int n, char **paths, int m, int beg, int ordered, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure)
 {
-    char **random_paths = get_random_paths(paths, n, m);
+    char **selected_paths;
+    if (ordered) {
+        selected_paths = get_ordered_paths(paths, beg, n, m);
+        if (selected_paths[0]) {
+            debug_print("beg, n, m = %d, %d, %d", beg, n, m);
+            debug_print("path : %s", selected_paths[0]);
+        }
+    } else {
+        selected_paths = get_random_paths(paths, n, m);
+    }
     int i;
     data d = {0};
     d.shallow = 0;
@@ -1046,7 +1069,7 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
 
     d.y = make_matrix(n, 5*boxes);
     for(i = 0; i < n; ++i){
-        image orig = load_image_color(random_paths[i], 0, 0);
+        image orig = load_image_color(selected_paths[i], 0, 0);
         image sized = make_image(w, h, orig.c);
         fill_image(sized, .5);
 
@@ -1079,11 +1102,11 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
         d.X.vals[i] = sized.data;
 
 
-        fill_truth_detection(random_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h);
+        fill_truth_detection(selected_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h);
 
         free_image(orig);
     }
-    free(random_paths);
+    free(selected_paths);
     return d;
 }
 
@@ -1114,7 +1137,7 @@ void *load_thread(void *ptr)
     } else if (a.type == REGION_DATA){
         *a.d = load_data_region(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
     } else if (a.type == DETECTION_DATA){
-        *a.d = load_data_detection(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
+        *a.d = load_data_detection(a.n, a.paths, a.m, a.beg, a.ordered, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
     } else if (a.type == SWAG_DATA){
         *a.d = load_data_swag(a.paths, a.n, a.classes, a.jitter);
     } else if (a.type == COMPARE_DATA){
@@ -1151,9 +1174,14 @@ void *load_threads(void *ptr)
     free(ptr);
     data *buffers = calloc(args.threads, sizeof(data));
     pthread_t *threads = calloc(args.threads, sizeof(pthread_t));
+    int beg = args.beg;
     for(i = 0; i < args.threads; ++i){
         args.d = buffers + i;
         args.n = (i+1) * total/args.threads - i * total/args.threads;
+        if (args.ordered) {
+            args.beg = beg;
+            beg += args.n;
+        }
         threads[i] = load_data_in_thread(args);
     }
     for(i = 0; i < args.threads; ++i){

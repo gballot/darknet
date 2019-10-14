@@ -567,6 +567,7 @@ typedef struct load_args{
     char *path;
     int n;
     int m;
+    int beg;
     char **labels;
     int h;
     int w;
@@ -581,6 +582,7 @@ typedef struct load_args{
     int scale;
     int center;
     int coords;
+    int ordered;
     float jitter;
     float angle;
     float aspect;
