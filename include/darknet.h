@@ -775,6 +775,7 @@ typedef struct load_args {
     char *path;
     int n;
     int m;
+    int beg;
     char **labels;
     int h;
     int w;
@@ -795,6 +796,7 @@ typedef struct load_args {
     int augment_speed;
     int letter_box;
     int show_imgs;
+    int ordered;
     float jitter;
     int flip;
     int blur;

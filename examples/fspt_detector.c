@@ -125,13 +125,18 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     args.d = &buffer;
     args.type = DETECTION_DATA;
     args.threads = 64;
+    args.ordered = 1;
+    args.beg = 0;
 
     pthread_t load_thread = load_data(args);
     double time;
-    while(get_current_batch(net) < net->max_batches){
+    int max_images = net->max_batches < plist->size ?
+        net->max_batches : plist->size;
+    while(get_current_batch(net) < max_images){
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
         train = buffer;
+        args.beg = *net->seen;
         load_thread = load_data(args);
         printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
         time=what_time_is_it_now();

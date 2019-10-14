@@ -73,6 +73,20 @@ char **get_sequential_paths(char **paths, int n, int m, int mini_batch, int augm
     return sequentia_paths;
 }
 
+char **get_ordered_paths(char **paths, int beg, int n, int m) {
+    int k = beg + n < m ? n : m - beg - 1;
+    char **ordered_paths = calloc(k, sizeof(char*));
+    int i;
+    pthread_mutex_lock(&mutex);
+    for(i = 0; i < k; ++i){
+        int index = beg + i;
+        ordered_paths[i] = paths[index];
+        //if(i == 0) printf("%s\n", paths[index]);
+    }
+    pthread_mutex_unlock(&mutex);
+    return ordered_paths;
+}
+
 char **get_random_paths(char **paths, int n, int m)
 {
     char** random_paths = (char**)calloc(n, sizeof(char*));
@@ -780,7 +794,6 @@ data load_data_swag(char **paths, int n, int classes, float jitter)
 }
 
 static box float_to_box_stride(float *f, int stride)
-{
     box b = { 0 };
     b.x = f[0];
     b.y = f[1 * stride];
@@ -1216,9 +1229,14 @@ void *load_threads(void *ptr)
     free(ptr);
     data* buffers = (data*)calloc(args.threads, sizeof(data));
     pthread_t* threads = (pthread_t*)calloc(args.threads, sizeof(pthread_t));
+    int beg = args.beg;
     for(i = 0; i < args.threads; ++i){
         args.d = buffers + i;
         args.n = (i+1) * total/args.threads - i * total/args.threads;
+        if (args.ordered) {
+            args.beg = beg;
+            beg += args.n;
+        }
         threads[i] = load_data_in_thread(args);
     }
     for(i = 0; i < args.threads; ++i){
