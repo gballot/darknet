@@ -111,10 +111,9 @@ static void print2DUtil(fspt_node *root, int space)
     for (int i = COUNT; i < space; i++)
         fprintf(stderr, " ");
     if (root->type == INNER)
-        fprintf(stderr, "%2d|%4.2f\n", root->split_feature, root->split_value);
+        fprintf(stderr, "%2d|%4.2f (%d)\n", root->split_feature, root->split_value, root->n_samples);
     else
-        fprintf(stderr, "%5.1f(%d|%.0f)\n", root->score, root->n_samples,
-                root->n_empty);
+        fprintf(stderr, "%4.3f(%d spl)\n", root->score, root->n_samples);
     print2DUtil(root->left, space);
 }
 
