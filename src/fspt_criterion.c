@@ -129,7 +129,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
  * Finds the best split point on feature feat.
  */
 static void best_split_on_feature(int feat, fspt_node node,
-        float current_score, int min_samples, int n_bins,
+        float current_score, int min_samples, float max_tries_p, int n_bins,
         const float *bins, const size_t *cdf, float *best_gain,
         int *best_index, int *forbidden_split) {
     *forbidden_split = 1;
@@ -137,15 +137,14 @@ static void best_split_on_feature(int feat, fspt_node node,
     float node_max = node.feature_limit[2*feat + 1];
     int local_best_gain_index = -1;
     float local_best_gain = 0.;
-    //TODO: could add max_try policy.
-    //Add an argument 0<max_try_p<1
-    //and take a subsample of bins of size floor(max(1,n_bins*max_try_p))
-    for (size_t j = 0; j < n_bins; ++j) {
-        // why ??
-        //assert(node->n_empty == node->n_samples);
-        float bin = bins[j];
-        size_t n_left = cdf[j];
-        size_t n_right = node.n_samples - cdf[j];
+    int *random_index = random_index_order(0, n_bins);
+    int max_bins = floor(n_bins * max_tries_p);
+    if (!max_bins) max_bins = 1;
+    for (size_t j = 0; j < max_bins; ++j) {
+        int index = random_index[j];
+        float bin = bins[index];
+        size_t n_left = cdf[index];
+        size_t n_right = node.n_samples - cdf[index];
         int local_forbidden_split = 0;
         float score = gini_after_split(node_min, node_max, bin, n_left,
                 n_right, node.n_empty, min_samples, &local_forbidden_split);
@@ -153,7 +152,7 @@ static void best_split_on_feature(int feat, fspt_node node,
         float tmp_gain = current_score - score;
         if (tmp_gain > local_best_gain) {
             local_best_gain = tmp_gain;
-            local_best_gain_index = j;
+            local_best_gain_index = index;
             *forbidden_split = 0;
         }
     }
@@ -196,8 +195,8 @@ void gini_criterion(criterion_args *args) {
         float local_best_gain = 0.f;
         int local_forbidden_split = 1;
         best_split_on_feature(feat, *node, current_score, args->min_samples,
-                n_bins, bins, cdf, &local_best_gain, &local_best_gain_index,
-                &local_forbidden_split);
+                args->max_tries_p, n_bins, bins, cdf, &local_best_gain,
+                &local_best_gain_index, &local_forbidden_split);
 
         if (!local_forbidden_split) {
             float fspt_min = fspt->feature_limit[2*feat];
