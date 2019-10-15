@@ -106,7 +106,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     srand(time(0));
     int seed = rand();
     int i;
-    for(i = 0; i < ngpus; ++i){
+    for(i = 0; i < ngpus; ++i) {
         srand(seed);
 #ifdef GPU
         cuda_set_device(gpus[i]);
@@ -294,7 +294,7 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             int w = val[t].w;
             int h = val[t].h;
             int nboxes = 0;
-            detection *dets = get_network_boxes(net, w, h, thresh, .5, map, 0, &nboxes);
+            detection *dets = get_fspt_boxes(net, w, h, thresh, .5, map, 0, &nboxes);
             if (nms) do_nms_sort(dets, nboxes, classes, nms);
             if (coco){
                 //print_cocos(fp, path, dets, nboxes, classes, w, h);
