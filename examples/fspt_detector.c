@@ -5,6 +5,26 @@
 #include "utils.h"
 #include "fspt_layer.h"
 
+static void print_fspt_detections(FILE **fps, char *id, detection *dets,
+        int total, int classes, int w, int h) {
+    for(int i = 0; i < total; ++i) {
+        float xmin = dets[i].bbox.x - dets[i].bbox.w/2. + 1;
+        float xmax = dets[i].bbox.x + dets[i].bbox.w/2. + 1;
+        float ymin = dets[i].bbox.y - dets[i].bbox.h/2. + 1;
+        float ymax = dets[i].bbox.y + dets[i].bbox.h/2. + 1;
+
+        if (xmin < 1) xmin = 1;
+        if (ymin < 1) ymin = 1;
+        if (xmax > w) xmax = w;
+        if (ymax > h) ymax = h;
+
+        for(int j = 0; j < classes; ++j) {
+            if (dets[i].prob[j]) fprintf(fps[j], "%s %f %f %f %f %f\n", id, dets[i].prob[j],
+                    xmin, ymin, xmax, ymax);
+        }
+    }
+}
+
 void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile,
         int fullscreen)
@@ -177,7 +197,6 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char *outfile) {
     //TODO
-    /*
     int j;
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/train.list");
@@ -278,11 +297,13 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             detection *dets = get_network_boxes(net, w, h, thresh, .5, map, 0, &nboxes);
             if (nms) do_nms_sort(dets, nboxes, classes, nms);
             if (coco){
-                print_cocos(fp, path, dets, nboxes, classes, w, h);
+                //print_cocos(fp, path, dets, nboxes, classes, w, h);
+                print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
             } else if (imagenet){
-                print_imagenet_detections(fp, i+t-nthreads+1, dets, nboxes, classes, w, h);
+                //print_imagenet_detections(fp, i+t-nthreads+1, dets, nboxes, classes, w, h);
+                print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
             } else {
-                print_detector_detections(fps, id, dets, nboxes, classes, w, h);
+                print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
             }
             free_detections(dets, nboxes);
             free(id);
@@ -299,7 +320,6 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         fclose(fp);
     }
     fprintf(stderr, "Total Detection Time: %f Seconds\n", what_time_is_it_now() - start);
-    */
 }
 
 void validate_fspt_recall(char *cfgfile, char *weightfile) {
