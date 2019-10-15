@@ -55,8 +55,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->feature_limit = right_feature_limit;
     right->n_samples = node->n_samples - split_index;
     right->samples = X + split_index * n_features;
-    right->n_empty = node->n_empty * (node->feature_limit[2*index + 1] - s)
-        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    right->n_empty = right->n_samples;
     right->depth = node->depth + 1;
     right->vol = node->vol * (node->feature_limit[2*index + 1] - s)
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
@@ -72,8 +71,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->feature_limit = left_feature_limit;
     left->n_samples = split_index;
     left->samples = X;
-    left->n_empty = node->n_empty * (s - node->feature_limit[2*index])
-        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
+    left->n_empty = left->n_samples;
     left->depth = node->depth + 1;
     left->vol = node->vol * (s - node->feature_limit[2*index])
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
