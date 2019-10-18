@@ -38,6 +38,7 @@ weights/
 backup/
 VOCdevkit/
 coco/
+waymo/
 darknet
 .fuse*
 *.weights
