@@ -25,6 +25,7 @@ weights/
 backup/
 VOCdevkit/
 coco/
+waymo/
 darknet
 .fuse*
 gpu*.output
