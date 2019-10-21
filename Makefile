@@ -144,7 +144,8 @@ test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
 
 tag:
-	ctags -R --exclude=*.py,VOCdevkit/ .
+	ctags src/* include/* examples/*
+#ctags -R --exclude=*.py,VOCdevkit/,python/,coco/,backup/,weights .
 
 .PHONY: clean tag test run gdb
 
