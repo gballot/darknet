@@ -211,7 +211,7 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     copy_cpu(l.total, l.fspt_input, 1, entry, 1);
 #endif
     if (l.total > 3)
-        debug_print("add new fspt data for classe %d : %f,%f,%f,%f...",
+        debug_print("add new fspt data for class %d : %f,%f,%f,%f...",
                 classe, entry[0], entry[1], entry[2], entry[3]);
     l.fspt_n_training_data[classe] += 1;
 }
