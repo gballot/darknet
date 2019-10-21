@@ -63,6 +63,12 @@ for m0 in DayLightRange:
                     path = folder_path+  m0_new+"/"+m1+"/"+x+"/"+y+"/"+z
                     if not os.path.exists(path):
                         os.mkdir(path)
+                    images_path = path + "/images"
+                    if not os.path.exists(images_path):
+                        os.mkdir(images_path)
+                    labels_path = path + "/labels"
+                    if not os.path.exists(labels_path):
+                        os.mkdir(labels_path)
                     folder_count=folder_count+1
 print(folder_count)
 
@@ -157,6 +163,13 @@ for root, dirs, files in os.walk(train_folder_path):
 print(head)
 
 #######################################
+
+def print_save_labels(indent, path):
+    label_path = path + "/labels/"
+    print(indent + "with open('%s' + trainfolder + str(image_count) + '.txt', 'a') as f" % label_path)
+    print(indent + "    f.write(frame.laser_labels)"
+    #TODO exctract boxes
+
 num_combinations = 0
 
 for m0 in DayLightRange:
@@ -176,12 +189,15 @@ for m0 in DayLightRange:
                     print("                                            if(%s and %s):" % (m4[0], m4[1])) if(len(m4) > 1) else print("                                            if(%s):" % m4[0])
                     #print("                    filepath = folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'" %(m0,m1,x,y,z))
                     if(m0 != 'Dawn/Dusk'):
-                        print("                                                imag.save(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+train_folder+str(image_count)+'.jpg')" %(m0,m1,x,y,z))
-                        print("                                                print(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+train_folder+str(image_count)+'.jpg')" %(m0,m1,x,y,z))
+                        print("                                                imag.save(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/images/'+train_folder+str(image_count)+'.jpg')" %(m0,m1,x,y,z))
+                        print("                                                print(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/images/'+train_folder+str(image_count)+'.jpg')" %(m0,m1,x,y,z))
+                        indent = "                                                "
+                        path = folder_path + m0 + "/" +m1 + "/" + x + "/" + y + "/" + z
+                        print_save_labels(indent, path)
                     else:
                         m0_new = 'Dawn_Dusk'
-                        print("                                                imag.save(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+train_folder+str(image_count)+'.jpg')" %(m0_new,m1,x,y,z))
-                        print("                                                print(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+train_folder+str(image_count)+'.jpg')" %(m0_new,m1,x,y,z))
+                        print("                                                imag.save(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/images/'+train_folder+str(image_count)+'.jpg')" %(m0_new,m1,x,y,z))
+                        print("                                                print(folder_path+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/'+'%s'+'/images/'+train_folder+str(image_count)+'.jpg')" %(m0_new,m1,x,y,z))
                     num_combinations = num_combinations + 1
 
 #######################################
