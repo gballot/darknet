@@ -20,12 +20,14 @@ from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset.utils import range_image_utils
 from waymo_open_dataset.utils import transform_utils
 
-history = CSVLogger('kerasloss.csv', append=True, separator=';')
-tf.compat.v1.enable_eager_execution()
-
 # Parameters
 folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
 train_folder ='training_0000'
+links_train_images = folder_path + "links_train_images"
+links_train_labels = folder_path + "links_train_labels"
+links_test_images = folder_path + "links_test_images"
+links_test_labels = folder_path + "links_test_labels"
+
 
 # Specify your Generative Factors and their ranges chosen for 'Waymo dataset'.
 # Can be an array containing an empty string [''] if you don't want to specify
@@ -66,6 +68,9 @@ count_cyclists_ranges = [count_cyclists_ranges_train, \
 count_pedestrians_ranges = [count_pedestrians_ranges_train, \
         count_pedestrians_ranges_test]
 count_signs_ranges = [count_signs_ranges_train, count_signs_ranges_test]
+
+history = CSVLogger('kerasloss.csv', append=True, separator=';')
+image_count = 0
 
 
 def generate_folder():
@@ -269,14 +274,28 @@ class LabeledImage:
 
     def save():
         for path in path_train:
-            image_data.save(path)
+            image_data.save(path[0])
+            with open(path[1], 'w') as f:
+                f.write(self.labels_text)
         for path in path_test:
-            image_data.save(path)
-        if len(path_train > 0)
-        with open(label_train_path, 'w') as f:
-            f.write(self.labels_text)
-        with open(label_test_path, 'w') as f:
-            f.write(self.labels_text)
+            image_data.save(path[0])
+            with open(path[1], 'w') as f:
+                f.write(self.labels_text)
+
+    def add_to_links_files():
+        with open(links_train_images, 'a') as f:
+            for path in path_train:
+                f.write(path[0] + "\n")
+        with open(links_train_labels, 'a') as f:
+            for path in path_train:
+                f.write(path[1] + "\n")
+        with open(links_test_images, 'a') as f:
+            for path in path_test:
+                f.write(path[0] + "\n")
+        with open(links_test_labels, 'a') as f:
+            for path in path_test:
+                f.write(path[1] + "\n")
+
 
 
 
@@ -325,23 +344,26 @@ def examine_frame(frame):
                 labeled_image.add_to_links_files()
 
 
+def main(argv):
+    # Code to partition images based on Generative Factors
+    train_folder_path = folder_path + train_folder
+    image_count = 0
+    tf.compat.v1.enable_eager_execution()
+    for root, dirs, files in os.walk(train_folder_path):
+        for file in files:
+            if file.startswith("segment"):  # avoid license file inside the folder
+                filepath = os.path.join(root, file)
+                #print(filepath)
+                dataset = tf.data.TFRecordDataset(filepath, compression_type='')
+                for data in dataset:
+                    frame = open_dataset.Frame() # instance of a frame
+                    frame.ParseFromString(bytearray(data.numpy()))
+                    exmamine_frame(frame)
+    tf.compat.v1.disable_eager_execution()
 
-# Code to partition images based on Generative Factors
-train_folder_path = folder_path + train_folder
-image_count = 0
-for root, dirs, files in os.walk(train_folder_path):
-    for file in files:
-        if file.startswith("segment"):  # avoid license file inside the folder
-            filepath = os.path.join(root, file)
-            #print(filepath)
-            dataset = tf.data.TFRecordDataset(filepath, compression_type='')
-            for data in dataset:
-                frame = open_dataset.Frame() # instance of a frame
-                frame.ParseFromString(bytearray(data.numpy()))
-                exmamine_frame(frame)
+if __name__ == "__main__":
+    main(sys.argv)
 
 
 
 
-
-tf.compat.v1.disable_eager_execution()
