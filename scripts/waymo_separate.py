@@ -31,83 +31,126 @@ train_folder ='training_0000'
 # Can be an array containing an empty string [''] if you don't want to specify
 # a range.
 
-# Daylight ranges
-daylight_ranges = ['Day', 'Night', 'Dawn/Dusk']
-# Location ranges
-location_ranges = ['location_phx', 'location_sf', 'location_other']
-# Total area of vehicules ranges
-total_area_vehicule_ranges = [[0, 1], [1, 2196], [2196, 1000000000]]
-# Number of vehicles ranges
-count_vehicules_ranges = [[0, 1], [1, 61], [61, 121], [121, 1000000]]
-# Number of cyclists ranges
-count_cyclists_ranges = ['']
-# Number of pedestrian ranges
-count_pedestrians_ranges = [[0, 1], [1, 61], [61, 1000000]]
-# Number of signs ranges
-count_signs_ranges = ['']
+# Daylight ranges. ex: ['Day', 'Night', 'Dawn/Dusk']
+daylight_ranges_train = ['Day']
+daylight_ranges_test = ['Night']
+# Location ranges. ex: ['location_phx', 'location_sf', 'location_other']
+location_ranges_train = ['']
+location_ranges_test = ['']
+# Total area of vehicules ranges. ex: [[0, 1], [1, 2196], [2196, 1000000000]]
+total_area_vehicule_ranges_train = ['']
+total_area_vehicule_ranges_test = ['']
+# Number of vehicles ranges. ex: [[0, 1], [1, 61], [61, 121], [121, 1000000]]
+count_vehicules_ranges_train = ['']
+count_vehicules_ranges_test = ['']
+# Number of cyclists ranges. ex: [[0, 1], [1, 61], [61, 121], [121, 10000]]
+count_cyclists_ranges_train = ['']
+count_cyclists_ranges_test = ['']
+# Number of pedestrian ranges. ex: [[0, 1], [1, 61], [61, 1000000]]
+count_pedestrians_ranges_train = ['']
+count_pedestrians_ranges_test = ['']
+# Number of signs ranges. ex: [[0, 1], [1, 61], [61, 1000000]]
+count_signs_ranges_train = ['']
+count_signs_ranges_test = ['']
 
-# automated code to generate folder structure for all combinations of
-# generative factor for the above chosen generative factor combinations
-folder_count = 0
-for s0 in daylight_ranges:
-    # This done to create a folder named 'Dawn_Dusk' because name
-    # with 'Dawn/Dusk' creates problem
-    if(s0 == 'Dawn/Dusk'):
-        s0 = 'Dawn_Dusk'
-    if len(s0) > 0:
-        s0 = s0 + "/"
-    path = folder_path + s0
-    if not os.path.exists(path):
-        os.mkdir(path)
-    for s1 in location_ranges:
-        if len(s1) > 0:
-            s1 = s1 + "/"
-        path = folder_path + s0 + s1
+
+# Concatenation of train and test ranges
+daylight_ranges = list(set(daylight_ranges_train + daylight_ranges_test))
+location_ranges = list(set(location_ranges_train + location_ranges_test))
+total_area_vehicule_ranges = list(set(total_area_vehicule_ranges_train \
+        + total_area_vehicule_ranges_test))
+count_vehicules_ranges = list(set(count_vehicules_ranges_train \
+        + count_vehicules_ranges_test))
+count_cyclists_ranges = list(set(count_cyclists_ranges_train \
+        + count_cyclists_ranges_test))
+count_pedestrians_ranges = list(set(count_pedestrians_ranges_train \
+        + count_pedestrians_ranges_test))
+count_signs_ranges = list(set(count_signs_ranges_train \
+        + count_signs_ranges_test))
+
+
+def generate_folder():
+    """
+    Automated code to generate folder structure for all combinations of
+    generative factor for the above chosen generative factor combinations
+    """
+
+    folder_count = 0
+    for s0 in daylight_ranges:
+        # This done to create a folder named 'Dawn_Dusk' because name
+        # with 'Dawn/Dusk' creates problem
+        if(s0 == 'Dawn/Dusk'):
+            s0 = 'Dawn_Dusk'
+        if len(s0) > 0:
+            s0 = s0 + "/"
+        path = folder_path + s0
         if not os.path.exists(path):
             os.mkdir(path)
-        for s2 in total_area_vehicule_ranges:
-            if len(s2) > 0:
-                s2 = str(s2[0]) + " <= total_area_vehicules < " + str(s2[1])
-                        + "/"
-            path = folder_path + s0 + s1 + s2
+        for s1 in location_ranges:
+            if len(s1) > 0:
+                s1 = s1 + "/"
+            path = folder_path + s0 + s1
             if not os.path.exists(path):
                 os.mkdir(path)
-            for s3 in count_vehicules_ranges:
-                if len(s3) > 0:
-                    s3 = str(s3[0]) + " <= count_vehicules < " + str(s3[1])
-                            + "/"
-                path = folder_path + s0 + s1 + s2 + s3
+            for s2 in total_area_vehicule_ranges:
+                if len(s2) > 0:
+                    s2 = str(s2[0]) + " <= total_area_vehicules < " \
+                            + str(s2[1]) + "/"
+                path = folder_path + s0 + s1 + s2
                 if not os.path.exists(path):
                     os.mkdir(path)
-                for s4 in count_cyclists_ranges:
-                    if len(s4) > 0:
-                        s4 = str(s4[0]) + " <= count_cyclists < " + str(s4[1])
-                                + "/"
-                    path = folder_path + s0 + s1 + s2 + s3 + s4
+                for s3 in count_vehicules_ranges:
+                    if len(s3) > 0:
+                        s3 = str(s3[0]) + " <= count_vehicules < " \
+                                + str(s3[1]) + "/"
+                    path = folder_path + s0 + s1 + s2 + s3
                     if not os.path.exists(path):
                         os.mkdir(path)
-                    for s5 in count_pedestrians_ranges:
-                        if len(s5) > 0:
-                            s5 = str(s5([0]) + " <= count_pedestrians < "
-                                    + str(s5[1]) + "/"
-                        path = folder_path + s0 + s1 + s2 + s3 + s4 + s5
+                    for s4 in count_cyclists_ranges:
+                        if len(s4) > 0:
+                            s4 = str(s4[0]) + " <= count_cyclists < " \
+                                    + str(s4[1]) + "/"
+                        path = folder_path + s0 + s1 + s2 + s3 + s4
                         if not os.path.exists(path):
                             os.mkdir(path)
-                        images_path = path + "images/"
-                        if not os.path.exists(images_path):
-                            os.mkdir(images_path)
-                        labels_path = path + "labels/"
-                        if not os.path.exists(labels_path):
-                            os.mkdir(labels_path)
-                        folder_count = folder_count + 1
-print(folder_count)
+                        for s5 in count_pedestrians_ranges:
+                            if len(s5) > 0:
+                                s5 = str(s5([0]) + " <= count_pedestrians < " \
+                                        + str(s5[1]) + "/"
+                                        path = folder_path + s0 + s1 + s2 + s3 + s4 + s5
+                                        if not os.path.exists(path):
+                                        os.mkdir(path)
+                                        images_path = path + "images/"
+                                        if not os.path.exists(images_path):
+                                        os.mkdir(images_path)
+                                        labels_path = path + "labels/"
+                                        if not os.path.exists(labels_path):
+                                        os.mkdir(labels_path)
+                                        folder_count = folder_count + 1
+    return folder_count
+
+
+class Labeled_image:
+
+    def __init__(self, count_vehicules, area_vehicules, count_pedestrian, \
+            count_signs, count_cyclists, daylight, location):
+        self.path = ""
+        self.count_vehicules = count_vehicules
+        self.area_vehicules = area_vehicules
+        self.count_pedestrians = count_pedestrians
+        self.count_signs = count_signs
+        self.count_cyclists = count_cyclists
+        self.deylight = deylight
+        self.location = location
+
+
 
 
 def examine_frame(frame):
-    for angle in [open_dataset.CameraName.Name.FRONT,
-                  open_dataset.CameraName.Name.FRONT_LEFT,
-                  open_dataset.CameraName.Name.FRONT_RIGHT,
-                  open_dataset.CameraName.Name.SIDE_LEFT,
+    for angle in [open_dataset.CameraName.Name.FRONT, \
+                  open_dataset.CameraName.Name.FRONT_LEFT, \
+                  open_dataset.CameraName.Name.FRONT_RIGHT, \
+                  open_dataset.CameraName.Name.SIDE_LEFT, \
                   open_dataset.CameraName.Name.SIDE_RIGHT]
         count_vehicules = 0
         count_pedestrians = 0
@@ -126,16 +169,6 @@ def examine_frame(frame):
                     count_signs += 1
                 if label.type == open_labels.Type.TYPE_CYCLIST:
                     count_cyclists += 1
-
-    for m in range(0, len(frame.camera_labels)): # selects frame's front camera and label 'm'
-    # Selects only front camera
-    if (frame.camera_labels[m].name != FRONT):
-        continue
-    if (frame.laser_labels[m].type == 2 or frame.laser_labels[m].type == 4):  # Type pedestrian and cyclist
-        Frame_Count_TYPE_PEDESTRIAN = Frame_Count_TYPE_PEDESTRIAN+1
-    if (frame.laser_labels[m].type == 1):  # Type vehicle
-        Frame_Count_TYPE_VEHICLE = Frame_Count_TYPE_VEHICLE + 1
-        FAD_Vehicle = FAD_Vehicle + frame.laser_labels[m].box.width*frame.laser_labels[m].box.width*frame.laser_labels[m].box.length
 
 
 # Code to partition images based on Generative Factors
