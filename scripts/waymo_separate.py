@@ -15,6 +15,7 @@ import shutil
 import sys
 import tensorflow as tf
 from waymo_open_dataset import dataset_pb2 as open_dataset
+from waymo_open_dataset import label_pb2 as open_labels
 from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset.utils import range_image_utils
 from waymo_open_dataset.utils import transform_utils
@@ -35,13 +36,15 @@ daylight_ranges = ['Day', 'Night', 'Dawn/Dusk']
 # Location ranges
 location_ranges = ['location_phx', 'location_sf', 'location_other']
 # Total area of vehicules ranges
-total_area_Vehicle_ranges = [[0, 1], [1, 2196], [2196, 1000000000]]
+total_area_vehicule_ranges = [[0, 1], [1, 2196], [2196, 1000000000]]
 # Number of vehicles ranges
 count_vehicules_ranges = [[0, 1], [1, 61], [61, 121], [121, 1000000]]
 # Number of cyclists ranges
 count_cyclists_ranges = ['']
 # Number of pedestrian ranges
 count_pedestrians_ranges = [[0, 1], [1, 61], [61, 1000000]]
+# Number of signs ranges
+count_signs_ranges = ['']
 
 # automated code to generate folder structure for all combinations of
 # generative factor for the above chosen generative factor combinations
@@ -62,7 +65,7 @@ for s0 in daylight_ranges:
         path = folder_path + s0 + s1
         if not os.path.exists(path):
             os.mkdir(path)
-        for s2 in total_area_Vehicle_ranges:
+        for s2 in total_area_vehicule_ranges:
             if len(s2) > 0:
                 s2 = str(s2[0]) + " <= total_area_vehicules < " + str(s2[1])
                         + "/"
@@ -98,6 +101,41 @@ for s0 in daylight_ranges:
                             os.mkdir(labels_path)
                         folder_count = folder_count + 1
 print(folder_count)
+
+
+def examine_frame(frame):
+    for angle in [open_dataset.CameraName.Name.FRONT,
+                  open_dataset.CameraName.Name.FRONT_LEFT,
+                  open_dataset.CameraName.Name.FRONT_RIGHT,
+                  open_dataset.CameraName.Name.SIDE_LEFT,
+                  open_dataset.CameraName.Name.SIDE_RIGHT]
+        count_vehicules = 0
+        count_pedestrians = 0
+        count_signs = 0
+        count_cyclists = 0
+        for camera_label in camera_labels:
+            if camera_label.name != angle:
+                continue
+            for label in camera_label.labels:
+                if label.type == open_labels.Type.TYPE_VEHICULE:
+                    count_vehicules += 1
+                    total_area_vehicules += label.box.width * label.box.length
+                if label.type == open_labels.Type.TYPE_PEDESTRIAN:
+                    count_pedestrians += 1
+                if label.type == open_labels.Type.TYPE_SIGN:
+                    count_signs += 1
+                if label.type == open_labels.Type.TYPE_CYCLIST:
+                    count_cyclists += 1
+
+    for m in range(0, len(frame.camera_labels)): # selects frame's front camera and label 'm'
+    # Selects only front camera
+    if (frame.camera_labels[m].name != FRONT):
+        continue
+    if (frame.laser_labels[m].type == 2 or frame.laser_labels[m].type == 4):  # Type pedestrian and cyclist
+        Frame_Count_TYPE_PEDESTRIAN = Frame_Count_TYPE_PEDESTRIAN+1
+    if (frame.laser_labels[m].type == 1):  # Type vehicle
+        Frame_Count_TYPE_VEHICLE = Frame_Count_TYPE_VEHICLE + 1
+        FAD_Vehicle = FAD_Vehicle + frame.laser_labels[m].box.width*frame.laser_labels[m].box.width*frame.laser_labels[m].box.length
 
 
 # Code to partition images based on Generative Factors
@@ -140,7 +178,6 @@ for root, dirs, files in os.walk(train_folder_path):
                             image_count = image_count + 1
                             print(image_count)
                             #print(frame.context.stats.time_of_day)
-                            """
 
 
 
