@@ -195,6 +195,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 }
 
 void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
+        float yolo_thresh, float fspt_thresh, float hier_thresh,
         char *outfile) {
     //TODO
     int j;
@@ -209,7 +210,8 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     network *net = load_network(cfgfile, weightfile, 0);
     set_batch_network(net, 1);
-    fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net->learning_rate, net->momentum, net->decay);
+    fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n",
+            net->learning_rate, net->momentum, net->decay);
     srand(time(0));
 
     list *plist = get_paths(valid_images);
@@ -250,7 +252,6 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int i=0;
     int t;
 
-    float thresh = .005;
     float nms = .45;
 
     int nthreads = 4;
@@ -294,13 +295,15 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             int w = val[t].w;
             int h = val[t].h;
             int nboxes = 0;
-            detection *dets = get_fspt_boxes(net, w, h, thresh, .5, map, 0, &nboxes);
+            detection *dets = get_network_fspt_boxes(net, w, h, yolo_thresh,
+                    fspt_thresh, hier_thresh, map, 0, &nboxes);
             if (nms) do_nms_sort(dets, nboxes, classes, nms);
             if (coco){
                 //print_cocos(fp, path, dets, nboxes, classes, w, h);
                 print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
             } else if (imagenet){
-                //print_imagenet_detections(fp, i+t-nthreads+1, dets, nboxes, classes, w, h);
+                //print_imagenet_detections(fp, i+t-nthreads+1, dets, nboxes,
+                //      classes, w, h);
                 print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
             } else {
                 print_fspt_detections(fps, id, dets, nboxes, classes, w, h);
@@ -319,7 +322,8 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         fprintf(fp, "\n]\n");
         fclose(fp);
     }
-    fprintf(stderr, "Total Detection Time: %f Seconds\n", what_time_is_it_now() - start);
+    fprintf(stderr, "Total Detection Time: %f Seconds\n",
+            what_time_is_it_now() - start);
 }
 
 void validate_fspt_recall(char *cfgfile, char *weightfile) {
@@ -384,7 +388,8 @@ void run_fspt(int argc, char **argv)
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts);
     else if(0==strcmp(argv[2], "valid"))
-        validate_fspt(datacfg, cfg, weights, outfile);
+        validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
+                hier_thresh, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
 }

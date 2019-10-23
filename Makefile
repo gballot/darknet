@@ -31,9 +31,9 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-CONF=coco
+CONF=waymo
 VERSION=-tiny
-MAINCMD=fspt
+MAINCMD=detector
 BREAKPOINTS=
 FSPT_OP=
 
