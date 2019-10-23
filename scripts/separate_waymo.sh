@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o separate_waymo.output
+#SBATCH -o gpu-job-separate-waymo.output
 #SBATCH -p PV100q
 #SBATCH --gres=gpu:0
 #SBATCH -n 1
@@ -8,4 +8,4 @@
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176
 
-python /home/gballot/NTU/FSPT\ Yolo/darknet/waymo/generated_code.py
+python /home/gballot/NTU/FSPT\ Yolo/darknet/scripts/waymo_separate.py
