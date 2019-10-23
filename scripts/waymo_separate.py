@@ -20,14 +20,25 @@ from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset.utils import range_image_utils
 from waymo_open_dataset.utils import transform_utils
 
-# Parameters
+###############################################################################
+#                                Parameters                                   #
+###############################################################################
+
 folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
-train_folder ='training_0001'
+train_folders = ['training_0000', 'training_0001', 'training_0002']
 links_train_images = folder_path + "links_train_images"
 links_train_labels = folder_path + "links_train_labels"
 links_test_images = folder_path + "links_test_images"
 links_test_labels = folder_path + "links_test_labels"
 
+# The values are only used to be printed in the label files.
+save_label_dict = {
+        open_labels.Label.Type.TYPE_VEHICLE: 0,
+        open_labels.Label.Type.TYPE_PEDESTRIAN: 1,
+        open_labels.Label.Type.TYPE_CYCLIST: 2,
+        open_labels.Label.Type.TYPE_SIGN: 3,
+        open_labels.Label.Type.TYPE_UNKNOWN: 4
+        }
 
 # Specify your Generative Factors and their ranges chosen for 'Waymo dataset'.
 # Can be an array containing an empty string [''] if you don't want to specify
@@ -56,6 +67,9 @@ count_signs_ranges_train = ['']
 count_signs_ranges_test = ['']
 
 
+###############################################################################
+
+
 # Concatenation of train and test ranges
 daylight_ranges = [daylight_ranges_train, daylight_ranges_test]
 location_ranges = [location_ranges_train, location_ranges_test]
@@ -71,6 +85,7 @@ count_signs_ranges = [count_signs_ranges_train, count_signs_ranges_test]
 
 history = CSVLogger('kerasloss.csv', append=True, separator=';')
 image_id = 0
+train_folder = train_folders[0]
 
 
 def generate_folder():
@@ -249,7 +264,7 @@ class LabeledImage:
 
     def add_label(self, label, width, length):
         self.labels.append(label)
-        label_class = label.type
+        label_class = save_label_dict.get(label.type)
         x = label.box.center_x / width
         y = label.box.center_y / length
         w = label.box.width / width
@@ -340,20 +355,23 @@ def examine_frame(frame):
 
 def main(argv):
     # Code to partition images based on Generative Factors
-    train_folder_path = folder_path + train_folder
-    global image_id
-    image_id = 0
     tf.compat.v1.enable_eager_execution()
-    for root, dirs, files in os.walk(train_folder_path):
-        for file in files:
-            if file.startswith("segment"):  # avoid license file inside the folder
-                filepath = os.path.join(root, file)
-                #print(filepath)
-                dataset = tf.data.TFRecordDataset(filepath, compression_type='')
-                for data in dataset:
-                    frame = open_dataset.Frame() # instance of a frame
-                    frame.ParseFromString(bytearray(data.numpy()))
-                    examine_frame(frame)
+    global train_folder
+    for folder in train_folders:
+        train_folder = folder
+        train_folder_path = folder_path + train_folder
+        global image_id
+        image_id = 0
+        for root, dirs, files in os.walk(train_folder_path):
+            for file in files:
+                if file.startswith("segment"):  # avoid license file inside the folder
+                    filepath = os.path.join(root, file)
+                    #print(filepath)
+                    dataset = tf.data.TFRecordDataset(filepath, compression_type='')
+                    for data in dataset:
+                        frame = open_dataset.Frame() # instance of a frame
+                        frame.ParseFromString(bytearray(data.numpy()))
+                        examine_frame(frame)
     tf.compat.v1.disable_eager_execution()
 
 if __name__ == "__main__":
