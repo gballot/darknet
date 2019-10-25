@@ -52,7 +52,7 @@ CPP=g++
 NVCC=nvcc
 OPTS=-Ofast
 LDFLAGS= -lm -pthread
-COMMON= -Iinclude/ -I3rdparty/stb/include
+COMMON= -Iinclude/ -I3rdparty/stb/include -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
 CONF=waymo
@@ -81,15 +81,15 @@ OPTS= -O0 -g
 OPTS= -Og -g
 COMMON+= -DDEBUG
 CFLAGS+= -DDEBUG
-
 ifeq ($(GPU), 1) 
 NVCCFLAGS=-G
 GDBCMD+= -ex "set cuda memcheck on"
-endif
-else
+endif # GPU
+else # DEBUG == 0
 ifeq ($(AVX), 1)
 CFLAGS+= -ffp-contract=fast -mavx -mavx2 -msse3 -msse4.1 -msse4.2 -msse4a
 endif
+endif # DEBUG
 
 CFLAGS+=$(OPTS)
 
@@ -132,6 +132,7 @@ LDFLAGS+= -L/usr/local/cuda/lib -lcudnn
 else
 CFLAGS+= -DCUDNN -I/usr/local/cudnn/include
 LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
+endif
 endif
 
 ifeq ($(CUDNN_HALF), 1)
