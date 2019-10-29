@@ -100,6 +100,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
+    int ordered = option_find_int_quiet(options, "ordered", 0);
 
     srand(time(0));
     char *base = basecfg(cfgfile);
@@ -148,14 +149,23 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     args.d = &buffer;
     args.type = DETECTION_DATA;
     args.threads = 64;
-    args.ordered = 1;
+    args.ordered = ordered;
     args.beg = 0;
 
     pthread_t load_thread = load_data(args);
     double time;
-    int max_images = net->max_batches < plist->size ?
-        net->max_batches : plist->size;
-    while(get_current_batch(net) < max_images){
+    int max_images;
+    int marge = 0;
+    if (ordered) {
+        marge = net->batch * net->subdivisions;
+        if (net->max_batches * net->batch * net->subdivisions < plist->size)
+            max_images = net->max_batches * net->batch * net->subdivisions;
+        else
+            max_images = plist->size;
+    } else {
+        max_images = net->max_batches * net->batch * net->subdivisions;
+    }
+    while (*net->seen + marge < max_images) {
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
         train = buffer;
@@ -173,9 +183,8 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
         train_network_fspt(net, train);
 #endif
         i = get_current_batch(net);
-        printf("%ld: %f rate, %lf seconds, %d images\n",
-                get_current_batch(net), get_current_rate(net),
-                what_time_is_it_now()-time, i*imgs);
+        printf("%ld: %lf seconds, %d images added to fspt input\n",
+                get_current_batch(net), what_time_is_it_now()-time, i*imgs);
         free_data(train);
     }
 #ifdef GPU
@@ -185,6 +194,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     for (int i = 0; i < net->n; ++i) {
         layer l = net->layers[i];
         if (l.type == FSPT) {
+            fprintf(stderr, "Fitting FSPT layer : %s\n", l.ref);
             fspt_layer_fit(l, refit);
             /* Backup */
             char buff[256];

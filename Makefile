@@ -44,7 +44,8 @@ ifeq ($(TRAIN), 1)
 NETCMD=train
 else
 NETCMD=test
-FILE= waymo/Day/images/training_00029.jpg
+#FILE= waymo/Day/images/training_00017972.jpg
+FILE=
 endif
 
 ifeq ($(OPENMP), 1) 
@@ -78,7 +79,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV1003q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb

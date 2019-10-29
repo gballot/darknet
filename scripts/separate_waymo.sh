@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH -o gpu-job-separate-waymo.output
-#SBATCH -p PV100q
+#SBATCH -p PV1003q
 #SBATCH --gres=gpu:0
 #SBATCH -n 1
 #SBATCH -c 4

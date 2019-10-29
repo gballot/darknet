@@ -420,6 +420,8 @@ void fspt_layer_fit(layer l, int refit) {
             criterion_args *args = calloc(1, sizeof(criterion_args)); 
             *args = l.fspt_criterion_args;
             fspt_fit(n, X, args, fspt);
+            fprintf(stderr, "Fit successful with n_samples = %d, depth = %d, class = %d, layer = %s\n",
+                    fspt->n_samples, fspt->depth, class, l.ref);
             free(args);
         }
 #ifdef DEBUG

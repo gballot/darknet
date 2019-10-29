@@ -5,6 +5,7 @@
 *.png
 *.jpg
 *.pyc
+*.orig
 .ale_config
 .lvimrc
 tags

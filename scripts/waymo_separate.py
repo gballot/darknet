@@ -267,17 +267,23 @@ class LabeledImage:
         label_class = save_label_dict.get(label.type)
         x = label.box.center_x / width
         y = label.box.center_y / length
-        w = label.box.width / width
-        h = label.box.length / length
-        self.labels_text = self.labels_text \
-                + "\n{0} {1:9.8f} {1:9.8f} {1:9.8f} {1:9.8f}".format(label_class, x, y, w, h)
+        w = label.box.length / width
+        h = label.box.width / length
+        if len(self.labels_text) == 0:
+            self.labels_text = \
+                    "{0} {1:9.8f} {2:9.8f} {3:9.8f} {4:9.8f}".format(label_class, x, y, w, h)
+        else:
+            self.labels_text = self.labels_text \
+                    + "\n{0} {1:9.8f} {2:9.8f} {3:9.8f} {4:9.8f}".format(label_class, x, y, w, h)
 
     def save(self):
         for path in self.path_train:
+            print("save image {}\n".format(path[0]))
             self.image_data.save(path[0])
             with open(path[1], 'w') as f:
                 f.write(self.labels_text)
         for path in self.path_test:
+            print("save image {}\n".format(path[0]))
             self.image_data.save(path[0])
             with open(path[1], 'w') as f:
                 f.write(self.labels_text)
