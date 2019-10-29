@@ -181,7 +181,7 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
     }
 #ifdef GPU
     activate_array_gpu(l.fspt_input_gpu, l.total, l.activation);
-    cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
+    //cuda_pull_array(l.fspt_input_gpu, l.fspt_input, l.total);
 #else
     activate_array(l.fspt_input, l.total, l.activation);
 #endif
@@ -410,23 +410,40 @@ void load_fspt_trees(layer l, FILE *fp) {
     }
 }
 
+void fspt_layer_fit_class(layer l, int class, int refit) {
+    fspt_t *fspt = l.fspts[class];
+    if (refit || !fspt->root) {
+        if (fspt->root) free_fspt_nodes(fspt->root);
+        int n = l.fspt_n_training_data[class];
+        float *X = l.fspt_training_data[class];
+        criterion_args *args = calloc(1, sizeof(criterion_args)); 
+        *args = l.fspt_criterion_args;
+        fspt_fit(n, X, args, fspt);
+        fprintf(stderr, "Fit successful with n_samples = %d, depth = %d, class = %d, layer = %s\n",
+                fspt->n_samples, fspt->depth, class, l.ref);
+        free(args);
+    }
+#ifdef DEBUG
+    if (fspt->root->type == INNER)
+        print_fspt(fspt);
+#endif
+}
+
 void fspt_layer_fit(layer l, int refit) {
     for (int class = 0; class < l.classes; ++class) {
-        fspt_t *fspt = l.fspts[class];
-        if (refit || !fspt->root) {
-            if (fspt->root) free_fspt_nodes(fspt->root);
-            int n = l.fspt_n_training_data[class];
-            float *X = l.fspt_training_data[class];
-            criterion_args *args = calloc(1, sizeof(criterion_args)); 
-            *args = l.fspt_criterion_args;
-            fspt_fit(n, X, args, fspt);
-            fprintf(stderr, "Fit successful with n_samples = %d, depth = %d, class = %d, layer = %s\n",
-                    fspt->n_samples, fspt->depth, class, l.ref);
-            free(args);
+        fspt_layer_fit_class(l, class, refit);
+    }
+}
+
+void merge_training_data(layer l, layer base) {
+    for (int class = 0; class < l.classes; ++class) {
+        int size_l = l.fspt_n_training_data[class];
+        int size_base = base.fspt_n_training_data[class];
+        int max_base = base.fspt_n_max_training_data[class];
+        if (size_l + size_base > max_base) {
+            realloc_fspt_data(base, class, size_l, 1);
         }
-#ifdef DEBUG
-        if (fspt->root->type == INNER)
-            print_fspt(fspt);
-#endif
+        copy_cpu(size_l, l.fspt_training_data[class], 1,
+                base.fspt_training_data[class] + size_base, 1);
     }
 }

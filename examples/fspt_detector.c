@@ -5,6 +5,7 @@
 #include "image.h"
 #include "utils.h"
 #include "fspt_layer.h"
+#include "network.h"
 
 static void print_fspt_detections(FILE **fps, char *id, detection *dets,
         int total, int classes, int w, int h) {
@@ -126,7 +127,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 
     layer l = net->layers[0];
     for (int i = 0; i < net->n; ++i) {
-        l = net->layers[net->n - 2];
+        l = net->layers[i];
         if (l.type == FSPT || l.type == YOLO)
             break;
     }
@@ -191,17 +192,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
     fprintf(stderr, "Data extraction done... Fitting FSPTs\n");
-    for (int i = 0; i < net->n; ++i) {
-        layer l = net->layers[i];
-        if (l.type == FSPT) {
-            fprintf(stderr, "Fitting FSPT layer : %s\n", l.ref);
-            fspt_layer_fit(l, refit);
-            /* Backup */
-            char buff[256];
-            sprintf(buff, "%s/%s_%s.weights", backup_directory, base, l.ref);
-            save_weights(net, buff);
-        }
-    }
+    fit_fspts(net, classes, refit);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
@@ -278,7 +269,9 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.w = net->w;
     args.h = net->h;
     //args.type = IMAGE_DATA;
-    args.type = LETTERBOX_DATA;
+    //args.type = LETTERBOX_DATA;
+    args.type = DETECTION_DATA;
+    args.ordered = 1;
 
     for(t = 0; t < nthreads; ++t){
         args.path = paths[i+t];
@@ -307,15 +300,17 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             network_predict(net, X);
             int w = val[t].w;
             int h = val[t].h;
+            /* Yolo boxes. */
+            int nboxes_yolo = 0;
+            detection *dets_yolo = get_network_boxes(net, w, h, fspt_thresh,
+                    hier_thresh, map, 0, &nboxes_yolo);
+            if (nms) do_nms_sort(dets_yolo, nboxes_yolo, classes, nms);
+            /* FSPT boxes. */
             int nboxes_fspt = 0;
             detection *dets_fspt = get_network_fspt_boxes(net, w, h,
                     yolo_thresh, fspt_thresh, hier_thresh, map, 0,
                     &nboxes_fspt);
             if (nms) do_nms_sort(dets_fspt, nboxes_fspt, classes, nms);
-            int nboxes_yolo = 0;
-            detection *dets_yolo = get_network_boxes(net, w, h, fspt_thresh,
-                    hier_thresh, map, 0, &nboxes_fspt);
-            if (nms) do_nms_sort(dets_yolo, nboxes_yolo, classes, nms);
             if (coco){
                 //print_cocos(fp, path, dets_fspt, nboxes_fspt, classes, w, h);
                 print_fspt_detections(fps, id, dets_fspt, nboxes_fspt, classes,

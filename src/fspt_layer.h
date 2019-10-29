@@ -115,6 +115,16 @@ extern void save_fspt_trees(layer l, FILE *fp);
 extern void load_fspt_trees(layer l, FILE *fp);
 
 /**
+ * Fits the fspt of class class of the fspt layer.
+ * The data must be already extracted.
+ *
+ * \param l The fspt layer.
+ * \param class The class to fit.
+ * \param refit If true, refit fspts even if they are already fitted.
+ */
+extern void fspt_layer_fit_class(layer l, int class, int refit);
+
+/**
  * Fits the fspts of the fspt layer.
  * The data must be already extracted.
  *
@@ -122,5 +132,15 @@ extern void load_fspt_trees(layer l, FILE *fp);
  * \param refit If true, refit fspts even if they are already fitted.
  */
 extern void fspt_layer_fit(layer l, int refit);
+
+/**
+ * Merges the training data in layer l and base.
+ * the training data of layer l are appended to the training data
+ * of layer base.
+ *
+ * \param l Fspt layer source of the merge.
+ * \param base Fspt layer destination of the merge.
+ */
+extern void merge_training_data(layer l, layer base);
 
 #endif /* FSPT_LAYER_H */
