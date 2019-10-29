@@ -278,12 +278,12 @@ class LabeledImage:
 
     def save(self):
         for path in self.path_train:
-            print("save image {}\n".format(path[0]))
+            print("save image {}".format(path[0]))
             self.image_data.save(path[0])
             with open(path[1], 'w') as f:
                 f.write(self.labels_text)
         for path in self.path_test:
-            print("save image {}\n".format(path[0]))
+            print("save image {}".format(path[0]))
             self.image_data.save(path[0])
             with open(path[1], 'w') as f:
                 f.write(self.labels_text)

@@ -196,6 +196,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
+    fprintf(stderr, "End of FSPT training\n");
 }
 
 void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,

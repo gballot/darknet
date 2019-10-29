@@ -31,8 +31,8 @@ LDFLAGS= -lm -pthread
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
 
-CONF=waymo
-VERSION=
+CONF=coco
+VERSION=-tiny
 MAINCMD=fspt
 BREAKPOINTS=
 FSPT_OP=
@@ -76,14 +76,14 @@ ifeq ($(GPU), 1)
 COMMON+= -DGPU -I${CUDA_PATH}
 CFLAGS+= -DGPU
 LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcublas -lcurand
-DARKNET_GPU_OP= -i 0
-FSPT_OP+= -gpus 0
+DARKNET_GPU_OP= -i 1
+FSPT_OP+= -gpus 0,1
 GDB=cuda-gdb
-SRUN= srun -X -p PV1003q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p GV1002q -n 1 -c 8 --gres=gpu:2
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb
-SRUN= srun -X -p PV100q -n 1 -c 4 --gres=gpu:0
+SRUN= srun -X -p K20q -n 1 -c 4 --gres=gpu:0
 endif
 
 ifeq ($(CUDNN), 1) 
