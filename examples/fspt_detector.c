@@ -97,11 +97,10 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 }
 
 void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
-        int ngpus, int clear, int refit) {
+        int ngpus, int clear, int refit, int ordered) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
-    int ordered = option_find_int_quiet(options, "ordered", 0);
 
     srand(time(0));
     char *base = basecfg(cfgfile);
@@ -155,18 +154,10 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 
     pthread_t load_thread = load_data(args);
     double time;
-    int max_images;
-    int marge = 0;
     if (ordered) {
-        marge = net->batch * net->subdivisions;
-        if (net->max_batches * net->batch * net->subdivisions < plist->size)
-            max_images = net->max_batches * net->batch * net->subdivisions;
-        else
-            max_images = plist->size;
-    } else {
-        max_images = net->max_batches * net->batch * net->subdivisions;
+        net->max_batches = plist->size / imgs;
     }
-    while (*net->seen + marge < max_images) {
+    while (get_current_batch(net) < net->max_batches) {
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
         train = buffer;
@@ -390,6 +381,7 @@ void run_fspt(int argc, char **argv)
 
     int clear = find_int_arg(argc, argv, "-clear", 1);
     int refit_fspts = find_int_arg(argc, argv, "-refit", 1);
+    int ordered = find_arg(argc, argv, "-ordered");
     int fullscreen = find_arg(argc, argv, "-fullscreen");
     //int width = find_int_arg(argc, argv, "-w", 0);
     //int height = find_int_arg(argc, argv, "-h", 0);
@@ -404,7 +396,8 @@ void run_fspt(int argc, char **argv)
         test_fspt(datacfg, cfg, weights, filename, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
-        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts);
+        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts,
+                ordered);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile);

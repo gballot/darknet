@@ -180,6 +180,8 @@ struct layer{
     int tanh;
     int *mask;
     int total;
+    int projection;
+    int prod_strides;
 
     char *ref;
 

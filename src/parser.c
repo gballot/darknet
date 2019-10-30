@@ -132,6 +132,10 @@ typedef struct size_params{
     int c;
     int index;
     int time_steps;
+    /* Computes the size of the projection of one pixel of the layer
+     * on the input image. */
+    int projection;
+    int prod_strides;
     network *net;
 } size_params;
 
@@ -208,6 +212,9 @@ convolutional_layer parse_convolutional(list *options, size_params params)
     convolutional_layer layer = make_convolutional_layer(batch,h,w,c,n,groups,size,stride,padding,activation, batch_normalize, binary, xnor, params.net->adam);
     layer.flipped = option_find_int_quiet(options, "flipped", 0);
     layer.dot = option_find_float_quiet(options, "dot", 0);
+    layer.projection = params.projection
+        + params.prod_strides * (layer.size - 1);
+    layer.prod_strides = params.prod_strides * layer.stride;
 
     return layer;
 }
@@ -344,6 +351,8 @@ layer parse_yolo(list *options, size_params params)
             a = strchr(a, ',')+1;
         }
     }
+    l.projection = params.projection;
+    l.prod_strides = params.prod_strides;
     return l;
 }
 
@@ -500,6 +509,9 @@ maxpool_layer parse_maxpool(list *options, size_params params)
     if(!(h && w && c)) error("Layer before maxpool layer must output image.");
 
     maxpool_layer layer = make_maxpool_layer(batch,h,w,c,size,stride,padding);
+    layer.projection = params.projection
+        + params.prod_strides * (layer.size - 1);
+    layer.prod_strides = params.prod_strides * layer.stride;
     return layer;
 }
 
@@ -513,6 +525,9 @@ avgpool_layer parse_avgpool(list *options, size_params params)
     if(!(h && w && c)) error("Layer before avgpool layer must output image.");
 
     avgpool_layer layer = make_avgpool_layer(batch,w,h,c);
+    layer.projection = params.projection
+        + params.prod_strides * (layer.size - 1);
+    layer.prod_strides = params.prod_strides * layer.stride;
     return layer;
 }
 
@@ -601,6 +616,8 @@ layer parse_upsample(list *options, size_params params, network *net)
     int stride = option_find_int(options, "stride",2);
     layer l = make_upsample_layer(params.batch, params.w, params.h, params.c, stride);
     l.scale = option_find_float_quiet(options, "scale", 1);
+    l.projection = params.projection;
+    l.prod_strides = params.prod_strides / stride;
     return l;
 }
 
@@ -662,6 +679,18 @@ route_layer parse_route(list *options, size_params params, network *net)
             layer.out_h = layer.out_w = layer.out_c = 0;
         }
     }
+    int tmp_projection = 1;
+    int tmp_prod_strides = 1;
+    for (int i = 0; i < layer.n; ++i) {
+        if (layer.input_layers[i].projection > tmp_projection) {
+            tmp_projection = layer.input_layers.projection
+        }
+        if (layer.input_layers[i].prod_strides > tmp_prod_strides) {
+            tmp_prod_strides = layer.input_layers.prod_strides
+        }
+    }
+    layer.projection = tmp_projection;
+    layer.prod_strides = prod_strides;
 
     return layer;
 }
@@ -803,6 +832,8 @@ layer parse_fspt(list *options, size_params params)
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
             net, yolo_thresh, feature_limit, feature_importance,
             criterion, score, params.batch, args, activation);
+    fspt_layer.projection = params.projection;
+    fspt_layer.prod_strides = params.prod_strides;
     return fspt_layer;
 }
 
@@ -927,6 +958,8 @@ network *parse_network_cfg(char *filename)
     params.batch = net->batch;
     params.time_steps = net->time_steps;
     params.net = net;
+    params.projection = 1;
+    params.prid_strides = 1;
 
     labels = make_list();
 
@@ -1028,6 +1061,11 @@ network *parse_network_cfg(char *filename)
         l.dontloadscales = option_find_int_quiet(options, "dontloadscales", 0);
         l.learning_rate_scale = option_find_float_quiet(options, "learning_rate", 1);
         l.smooth = option_find_float_quiet(options, "smooth", 0);
+        params.projection = l.projection;
+        params.prod_strides = l.prod_strides;
+        if(params.projection)
+            debug_print("       projection : %d * %d\n",
+                    params.projection, params.projection);
         option_unused(options);
         net->layers[count] = l;
         if (l.workspace_size > workspace_size) workspace_size = l.workspace_size;
