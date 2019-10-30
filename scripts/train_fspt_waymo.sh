@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH -o gpu-job-train-fspt-waymo.output
-#SBATCH -p PV1003q
+#SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:2
 #SBATCH -n 1
 #SBATCH -c 8

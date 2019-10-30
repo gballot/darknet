@@ -2,7 +2,7 @@ GPU=1
 CUDNN=1
 OPENCV=0
 OPENMP=0
-DEBUG=1
+DEBUG=0
 TRAIN=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -79,7 +79,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV1003q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV1003q,PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb

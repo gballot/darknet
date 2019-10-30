@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH -o gpu-job-train-voc.output
-#SBATCH -p PV100q
+#SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
 #SBATCH -c 4
