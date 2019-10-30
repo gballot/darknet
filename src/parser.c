@@ -573,6 +573,10 @@ layer parse_shortcut(list *options, size_params params, network *net)
     s.activation = activation;
     s.alpha = option_find_float_quiet(options, "alpha", 1);
     s.beta = option_find_float_quiet(options, "beta", 1);
+    s.projection = net->layers[index].projection < params.projection ?
+        params.projection : net->layers[index].projection;
+    s.prod_strides = net->layers[index].prod_strides < params.prod_strides ?
+        params.prod_strides : net->layers[index].prod_strides;
     return s;
 }
 
@@ -679,18 +683,18 @@ route_layer parse_route(list *options, size_params params, network *net)
             layer.out_h = layer.out_w = layer.out_c = 0;
         }
     }
-    int tmp_projection = 1;
-    int tmp_prod_strides = 1;
+    layer.projection = 1;
+    layer.prod_strides = 1;
     for (int i = 0; i < layer.n; ++i) {
-        if (layer.input_layers[i].projection > tmp_projection) {
-            tmp_projection = layer.input_layers.projection
+        int tmp_projection = net->layers[layer.input_layers[i]].projection;
+        int tmp_prod_strides = net->layers[layer.input_layers[i]].prod_strides;
+        if (tmp_projection > layer.projection) {
+            layer.projection = tmp_projection;
         }
-        if (layer.input_layers[i].prod_strides > tmp_prod_strides) {
-            tmp_prod_strides = layer.input_layers.prod_strides
+        if (tmp_prod_strides > layer.prod_strides) {
+            layer.prod_strides = tmp_prod_strides;
         }
     }
-    layer.projection = tmp_projection;
-    layer.prod_strides = prod_strides;
 
     return layer;
 }
@@ -959,7 +963,7 @@ network *parse_network_cfg(char *filename)
     params.time_steps = net->time_steps;
     params.net = net;
     params.projection = 1;
-    params.prid_strides = 1;
+    params.prod_strides = 1;
 
     labels = make_list();
 
