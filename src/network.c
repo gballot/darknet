@@ -1185,25 +1185,34 @@ static pthread_t fit_fspt_in_thread(layer l, int class, int refit) {
     return thread;
 }
 
-void fit_fspts(network *net, int classes, int refit) {
+void fit_fspts(network *net, int classes, int refit, int one_thread) {
     int n = net->n;
     int n_fspt_layers = 0;
-    pthread_t *threads = (pthread_t *) calloc(n * classes, sizeof(pthread_t));
-    for (int i = 0; i < n; ++i) {
-        layer l = net->layers[i];
-        if (l.type == FSPT) {
-            for (int class = 0; class < classes; ++class) {
-                threads[classes * n_fspt_layers + class] =
-                    fit_fspt_in_thread(l, class, refit);
+    if (one_thread) {
+        for (int i = 0; i < n; ++i) {
+            layer l = net->layers[i];
+            if (l.type == FSPT) {
+                fspt_layer_fit(l, refit);
             }
-            ++n_fspt_layers;
         }
+    } else {
+        pthread_t *threads = (pthread_t *) calloc(n * classes, sizeof(pthread_t));
+        for (int i = 0; i < n; ++i) {
+            layer l = net->layers[i];
+            if (l.type == FSPT) {
+                for (int class = 0; class < classes; ++class) {
+                    threads[classes * n_fspt_layers + class] =
+                        fit_fspt_in_thread(l, class, refit);
+                }
+                ++n_fspt_layers;
+            }
+        }
+        threads = realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
+        for (int i = 0; i < classes * n_fspt_layers; ++i) {
+            pthread_join(threads[i], 0);
+        }
+        free(threads);
     }
-    threads = realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
-    for (int i = 0; i < classes * n_fspt_layers; ++i) {
-        pthread_join(threads[i], 0);
-    }
-    free(threads);
 }
 
 float train_networks(network **nets, int n, data d, int interval)

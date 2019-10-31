@@ -219,7 +219,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         float *gain = &args->gain;
         /* fills the values of *args */
         fspt->criterion(args);
-        assert(*gain < 1.f);
+        assert(*gain <= 0.5f);
         if (args->forbidden_split) {
             debug_print("forbidden split node %p", current_node);
             current_node->score = fspt->score(fspt, current_node);

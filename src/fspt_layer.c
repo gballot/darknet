@@ -141,9 +141,10 @@ static float fspt_get_score(layer l, int classe) {
 }
 
 /**
- * Updates the raw fspt_input of layer l with the content of the feature layers
+ * Updates the row fspt_input of layer l with the content of the feature layers
  * at relative width x, height h and througth all the channels.
- * The float values pointed by l.fspt_input are modified.
+ * The float values pointed by l.fspt_input or l.fspt_input_gpu are modified.
+ * But if GPU is defined, l.fspt_input_gpu is not pulled by this function.
  *
  * \param l The fspt layer.
  * \param net The network containing l.
@@ -274,6 +275,10 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                     float prob = objectness*predictions[class_index];
                     if(prob > yolo_thresh) {
                         update_fspt_input(l, net, bbox.x, bbox.y, b);
+#ifdef GPU
+                        cuda_pull_array(l.fspt_input_gpu, l.fspt_input,
+                                l.total);
+#endif
                         float score = fspt_get_score(l, j);
                         if(score > fspt_thresh) {
                             fspt_box_find = 1;
@@ -418,9 +423,12 @@ void fspt_layer_fit_class(layer l, int class, int refit) {
         float *X = l.fspt_training_data[class];
         criterion_args *args = calloc(1, sizeof(criterion_args)); 
         *args = l.fspt_criterion_args;
+        fprintf(stderr, "Start fitting with n_samples = %d, class = %d,\
+                layer = %s... ", n, class, l.ref);
+        fflush(stderr);
         fspt_fit(n, X, args, fspt);
-        fprintf(stderr, "Fit successful with n_samples = %d, depth = %d, class = %d, layer = %s\n",
-                fspt->n_samples, fspt->depth, class, l.ref);
+        fprintf(stderr, "Fit successful n_nodes = %d, depth = %d\n",
+                fspt->n_nodes, fspt->depth);
         free(args);
     }
 #ifdef DEBUG

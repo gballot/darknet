@@ -35,11 +35,12 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP=
+FSPT_OP= -ordered -one_thread
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
+#WEIGHTS=weights/yolov3-waymo-trainined-on-night.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
@@ -136,7 +137,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) $(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
+	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
 
 run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP) 

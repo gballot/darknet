@@ -24,7 +24,7 @@ int get_predicted_class_network(network *net);
 void print_network(network *net);
 int resize_network(network *net, int w, int h);
 void calc_network_cost(network *net);
-void fit_fspts(network *net, int classes, int refit);
+void fit_fspts(network *net, int classes, int refit, int one_thread);
 
 #endif
 

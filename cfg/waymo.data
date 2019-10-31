@@ -1,5 +1,5 @@
 classes = 3
-train = waymo/links_test_images
+train = waymo/links_train_images
 valid = waymo/links_test_images
 names = data/waymo.names
 backup = backup/

@@ -21,8 +21,8 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
         if (ymax > h) ymax = h;
 
         for(int j = 0; j < classes; ++j) {
-            if (dets[i].prob[j]) fprintf(fps[j], "%s %f %f %f %f %f\n", id, dets[i].prob[j],
-                    xmin, ymin, xmax, ymax);
+            if (dets[i].prob[j]) fprintf(fps[j], "%s %f %f %f %f %f\n", id,
+                    dets[i].prob[j], xmin, ymin, xmax, ymax);
         }
     }
 }
@@ -97,7 +97,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 }
 
 void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
-        int ngpus, int clear, int refit, int ordered) {
+        int ngpus, int clear, int refit, int ordered, int one_thread) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -175,7 +175,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
         train_network_fspt(net, train);
 #endif
         i = get_current_batch(net);
-        printf("%ld: %lf seconds, %d images added to fspt input\n",
+        fprintf(stderr, "%ld: %lf seconds, %d images added to fspt input\n",
                 get_current_batch(net), what_time_is_it_now()-time, i*imgs);
         free_data(train);
     }
@@ -183,7 +183,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
     fprintf(stderr, "Data extraction done... Fitting FSPTs\n");
-    fit_fspts(net, classes, refit);
+    fit_fspts(net, classes, refit, one_thread);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
@@ -342,21 +342,47 @@ void validate_fspt_recall(char *cfgfile, char *weightfile) {
 
 void run_fspt(int argc, char **argv)
 {
-    //char *prefix = find_char_arg(argc, argv, "-prefix", 0);
-    float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
-    float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
-    float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
-    //int cam_index = find_int_arg(argc, argv, "-c", 0);
-    //int frame_skip = find_int_arg(argc, argv, "-s", 0);
-    //int avg = find_int_arg(argc, argv, "-avg", 3);
     if(argc < 4){
         fprintf(stderr,
-                "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n",
+                "usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
+With :\n\
+    train -> train fspts on an already trained yolo network.\n\
+    test  -> test fspt predictions.\n\
+    valid -> validate fspt.\n\
+And :\n\
+    <datacfg>   -> path to the data configuration file.\n\
+    <netcfg>    -> path to the network configuration file.\n\
+    [weights]   -> path to a weightfile corresponding to the netcfg file.\n\
+                   (optional)\n\
+    [inputfile] -> path to a file with list of test images.\n\
+                   only for commande test. (optional)\n\
+Options are :\n\
+    -yolo_thresh -> yolo detection threashold. default 0.5.\n\
+    -fspt_thresh -> fspt rejection threshold. default 0.5.\n\
+    -hier        -> unused.\n\
+    -gpus        -> coma separated list of gpus.\n\
+    -out         -> ouput file for test and valid.\n\
+    -clear       -> if set, the training number of seen images is reset.\n\
+    -refit       -> if set, the fspts are refitted if they already exist.\n\
+    -ordered     -> if set, the data are selected sequentialy and not randomly.\n\
+    -one_thread  -> if set, the fspts are fitted in only one thread instead of\n\
+                    one thread per fspt.\n\
+    -fullscreen  -> unused.\n",
                 argv[0], argv[1]);
         return;
     }
+
+    float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
+    float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
+    float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
     char *outfile = find_char_arg(argc, argv, "-out", 0);
+    int clear = find_arg(argc, argv, "-clear");
+    int refit_fspts = find_arg(argc, argv, "-refit");
+    int ordered = find_arg(argc, argv, "-ordered");
+    int one_thread = find_arg(argc, argv, "-one_thread");
+    int fullscreen = find_arg(argc, argv, "-fullscreen");
+
     int *gpus = 0;
     int gpu = 0;
     int ngpus = 0;
@@ -379,15 +405,6 @@ void run_fspt(int argc, char **argv)
         ngpus = 1;
     }
 
-    int clear = find_int_arg(argc, argv, "-clear", 1);
-    int refit_fspts = find_int_arg(argc, argv, "-refit", 1);
-    int ordered = find_arg(argc, argv, "-ordered");
-    int fullscreen = find_arg(argc, argv, "-fullscreen");
-    //int width = find_int_arg(argc, argv, "-w", 0);
-    //int height = find_int_arg(argc, argv, "-h", 0);
-    //int fps = find_int_arg(argc, argv, "-fps", 0);
-    //int class = find_int_arg(argc, argv, "-class", 0);
-
     char *datacfg = argv[3];
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
@@ -397,7 +414,7 @@ void run_fspt(int argc, char **argv)
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts,
-                ordered);
+                ordered, one_thread);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile);
