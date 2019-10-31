@@ -801,6 +801,59 @@ float *network_output(network *net)
     return network_output_layer(net).output;
 }
 
+typedef struct{
+    layer l;
+    int class;
+    int refit;
+} fspt_fit_args;
+
+static void *fit_fspt_thread(void *ptr) {
+    fspt_fit_args args = *(fspt_fit_args *)ptr;
+    fspt_layer_fit_class(args.l, args.class, args.refit);
+    free(ptr);
+    return 0;
+}
+
+static pthread_t fit_fspt_in_thread(layer l, int class, int refit) {
+    pthread_t thread;
+    fspt_fit_args *ptr = (fspt_fit_args *)calloc(1, sizeof(fspt_fit_args));
+    ptr->l= l;
+    ptr->class = class;
+    ptr->refit = refit;
+    if(pthread_create(&thread, 0, fit_fspt_thread, ptr)) error("Thread creation failed");
+    return thread;
+}
+
+void fit_fspts(network *net, int classes, int refit, int one_thread) {
+    int n = net->n;
+    int n_fspt_layers = 0;
+    if (one_thread) {
+        for (int i = 0; i < n; ++i) {
+            layer l = net->layers[i];
+            if (l.type == FSPT) {
+                fspt_layer_fit(l, refit);
+            }
+        }
+    } else {
+        pthread_t *threads = (pthread_t *) calloc(n * classes, sizeof(pthread_t));
+        for (int i = 0; i < n; ++i) {
+            layer l = net->layers[i];
+            if (l.type == FSPT) {
+                for (int class = 0; class < classes; ++class) {
+                    threads[classes * n_fspt_layers + class] =
+                        fit_fspt_in_thread(l, class, refit);
+                }
+                ++n_fspt_layers;
+            }
+        }
+        threads = realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
+        for (int i = 0; i < classes * n_fspt_layers; ++i) {
+            pthread_join(threads[i], 0);
+        }
+        free(threads);
+    }
+}
+
 #ifdef GPU
 
 void forward_network_gpu(network *netp)
@@ -1162,59 +1215,6 @@ void sync_nets(network **nets, int n, int interval)
     free(threads);
 }
 
-typedef struct{
-    layer l;
-    int class;
-    int refit;
-} fspt_fit_args;
-
-static void *fit_fspt_thread(void *ptr) {
-    fspt_fit_args args = *(fspt_fit_args *)ptr;
-    fspt_layer_fit_class(args.l, args.class, args.refit);
-    free(ptr);
-    return 0;
-}
-
-static pthread_t fit_fspt_in_thread(layer l, int class, int refit) {
-    pthread_t thread;
-    fspt_fit_args *ptr = (fspt_fit_args *)calloc(1, sizeof(fspt_fit_args));
-    ptr->l= l;
-    ptr->class = class;
-    ptr->refit = refit;
-    if(pthread_create(&thread, 0, fit_fspt_thread, ptr)) error("Thread creation failed");
-    return thread;
-}
-
-void fit_fspts(network *net, int classes, int refit, int one_thread) {
-    int n = net->n;
-    int n_fspt_layers = 0;
-    if (one_thread) {
-        for (int i = 0; i < n; ++i) {
-            layer l = net->layers[i];
-            if (l.type == FSPT) {
-                fspt_layer_fit(l, refit);
-            }
-        }
-    } else {
-        pthread_t *threads = (pthread_t *) calloc(n * classes, sizeof(pthread_t));
-        for (int i = 0; i < n; ++i) {
-            layer l = net->layers[i];
-            if (l.type == FSPT) {
-                for (int class = 0; class < classes; ++class) {
-                    threads[classes * n_fspt_layers + class] =
-                        fit_fspt_in_thread(l, class, refit);
-                }
-                ++n_fspt_layers;
-            }
-        }
-        threads = realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
-        for (int i = 0; i < classes * n_fspt_layers; ++i) {
-            pthread_join(threads[i], 0);
-        }
-        free(threads);
-    }
-}
-
 float train_networks(network **nets, int n, data d, int interval)
 {
     int i;
@@ -1280,4 +1280,4 @@ void pull_network_output(network *net)
     cuda_pull_array(l.output_gpu, l.output, l.outputs*l.batch);
 }
 
-#endif
+#endif /* GPU */

@@ -1,5 +1,5 @@
-GPU=1
-CUDNN=1
+GPU=0
+CUDNN=0
 OPENCV=0
 OPENMP=0
 DEBUG=0
@@ -147,9 +147,8 @@ test: $(EXEC)
 
 tag:
 	ctags src/* include/* examples/*
-#ctags -R --exclude=*.py,VOCdevkit/,python/,coco/,backup/,weights .
 
-.PHONY: clean tag test run gdb
+.PHONY: clean tag test run gdb all simple-test
 
 clean:
 	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
