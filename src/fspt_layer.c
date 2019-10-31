@@ -427,8 +427,8 @@ void fspt_layer_fit_class(layer l, int class, int refit) {
                 layer = %s... ", n, class, l.ref);
         fflush(stderr);
         fspt_fit(n, X, args, fspt);
-        fprintf(stderr, "Fit successful n_nodes = %d, depth = %d\n",
-                fspt->n_nodes, fspt->depth);
+        fprintf(stderr, "fspt %s:%d: Fit successful n_nodes = %d, depth = %d\n",
+                l.ref, class, fspt->n_nodes, fspt->depth);
         free(args);
     }
 #ifdef DEBUG

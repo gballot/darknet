@@ -235,6 +235,11 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     }
 }
 
+static void save_fspt_input_data(FILE *fp, fspt_t fspt, int *succ) {
+    //TODO
+    *succ &= fwrite(&fspt.n_samples, sizeof(int), 1, fp);
+}
+
 /**
  * Recursively saves from node in fp.
  *

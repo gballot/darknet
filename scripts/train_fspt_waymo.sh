@@ -8,5 +8,5 @@
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176
 
-# /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train cfg/waymo.data cfg/fspt-waymo.cfg weights/fspt-waymo.weights -ordered -gpus 0,1
-/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt train cfg/waymo.data cfg/fspt-waymo.cfg weights/fspt-waymo.weights -ordered -one_thread -gpus 0
+# /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train cfg/waymo.data cfg/fspt-waymo.cfg weights/fspt-waymo.weights -clear -ordered -gpus 0,1
+/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt train cfg/waymo.data cfg/fspt-waymo.cfg weights/fspt-waymo.weights -clear -ordered -one_thread -gpus 0
