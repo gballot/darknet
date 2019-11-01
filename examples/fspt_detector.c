@@ -136,56 +136,63 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 
     int classes = l.classes;
 
-    if (only_fit) goto fit;
-    list *plist = get_paths(train_images);
-    char **paths = (char **)list_to_array(plist);
+    if (only_fit) { 
+        fprintf(stderr, "Only fit FSPTs...\n");
+    } else {
+        list *plist = get_paths(train_images);
+        char **paths = (char **)list_to_array(plist);
 
-    load_args args = get_base_args(net);
-    args.coords = l.coords;
-    args.paths = paths;
-    args.n = imgs;
-    args.m = plist->size;
-    args.classes = classes;
-    args.jitter = l.jitter;
-    args.num_boxes = l.max_boxes;
-    args.d = &buffer;
-    args.type = DETECTION_DATA;
-    args.threads = 64;
-    args.ordered = ordered;
-    args.beg = 0;
+        load_args args = get_base_args(net);
+        args.coords = l.coords;
+        args.paths = paths;
+        args.n = imgs;
+        args.m = plist->size;
+        args.classes = classes;
+        args.jitter = l.jitter;
+        args.num_boxes = l.max_boxes;
+        args.d = &buffer;
+        args.type = DETECTION_DATA;
+        args.threads = 64;
+        args.ordered = ordered;
+        args.beg = 0;
 
-    pthread_t load_thread = load_data(args);
-    double time;
-    if (ordered) {
-        net->max_batches = plist->size / imgs;
-    }
-    while (get_current_batch(net) < net->max_batches) {
-        time=what_time_is_it_now();
-        pthread_join(load_thread, 0);
-        train = buffer;
-        args.beg = *net->seen;
-        load_thread = load_data(args);
-        printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
-        time=what_time_is_it_now();
-#ifdef GPU
-        if(ngpus == 1){
-            train_network_fspt(net, train);
-        } else {
-            train_networks_fspt(nets, ngpus, train, 4);
+        pthread_t load_thread = load_data(args);
+        double time;
+        if (ordered) {
+            net->max_batches = plist->size / imgs;
         }
-#else
-        train_network_fspt(net, train);
-#endif
-        i = get_current_batch(net);
-        fprintf(stderr, "%ld: %lf seconds, %d images added to fspt input\n",
-                get_current_batch(net), what_time_is_it_now()-time, i*imgs);
-        free_data(train);
-    }
+        while (get_current_batch(net) < net->max_batches) {
+            time=what_time_is_it_now();
+            pthread_join(load_thread, 0);
+            train = buffer;
+            args.beg = *net->seen;
+            load_thread = load_data(args);
+            printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
+            time=what_time_is_it_now();
 #ifdef GPU
-    if(ngpus != 1) sync_nets(nets, ngpus, 0);
+            if(ngpus == 1){
+                train_network_fspt(net, train);
+            } else {
+                train_networks_fspt(nets, ngpus, train, 4);
+            }
+#else
+            train_network_fspt(net, train);
 #endif
-    fprintf(stderr, "Data extraction done... Fitting FSPTs\n");
-fit:
+            i = get_current_batch(net);
+            fprintf(stderr,
+                    "%ld: %lf seconds, %d images added to fspt input\n",
+                    get_current_batch(net), what_time_is_it_now()-time,
+                    i*imgs);
+            free_data(train);
+        }
+#ifdef GPU
+        if(ngpus != 1) sync_nets(nets, ngpus, 0);
+#endif
+        fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
+        char buff[256];
+        sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
+        save_weights(net, buff);
+    }
     fit_fspts(net, classes, refit, one_thread, merge);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
