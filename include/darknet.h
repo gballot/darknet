@@ -305,6 +305,8 @@ struct layer{
     int *fspt_n_training_data;
     int *fspt_n_max_training_data;
     criterion_args fspt_criterion_args;
+    int save_samples;
+    int load_samples;
 
     struct layer *input_layer;
     struct layer *self_layer;

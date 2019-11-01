@@ -144,18 +144,21 @@ extern void fspt_fit(int n_samples, float *X, criterion_args *args,
  *
  * \param filename The path of the file to save.
  * \param fspt The feature space partitioning tree.
+ * \param save_samples If true, the samples will be saved.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_save(const char *filename, fspt_t fspt, int *succ);
+extern void fspt_save(const char *filename, fspt_t fspt, int save_samples,
+        int *succ);
 
 /**
  * Save the fspt to an open file.
  *
  * \param fp A file pointer. Should be open and closed by the caller.
  * \param fspt The feature space partitioning tree.
+ * \param save_samples If true, the samples will be saved.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_save_file(FILE *fp, fspt_t fspt, int *succ);
+extern void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ);
 
 /**
  * Load the fspt from a file.
@@ -165,9 +168,12 @@ extern void fspt_save_file(FILE *fp, fspt_t fspt, int *succ);
  *
  * \param filename The path of the file to save.
  * \param fspt The feature space partitioning tree parsed from config file.
+ * \param load_samples If true, it will load the samples if they are
+ *                     registered.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_load(const char *filename, fspt_t *fspt, int *succ);
+extern void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
+        int *succ);
 
 /**
  * Load the fspt from an open file.
@@ -177,9 +183,12 @@ extern void fspt_load(const char *filename, fspt_t *fspt, int *succ);
  *
  * \param fp A file pointer. Should be open and closed by the caller.
  * \param fspt The feature space partitioning tree parsed from config file.
+ * \param load_samples If true, it will load the samples if they are
+ *                     registered.
  * \param succ Output parameter. True if succes, false otherwise.
  */
-extern void fspt_load_file(FILE *fp, fspt_t *fspt, int *succ);
+extern void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples,
+        int *succ);
 
 /**
  * Friendly prints a fspt to the terminal.

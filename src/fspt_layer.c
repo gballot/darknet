@@ -404,30 +404,40 @@ void forward_fspt_layer_gpu(const layer l, network net) {
 void save_fspt_trees(layer l, FILE *fp) {
     for (int i = 0; i < l.classes; ++i) {
         int succ = 1;
-        fspt_save_file(fp, *l.fspts[i], &succ);
+        fspt_save_file(fp, *l.fspts[i], l.save_samples, &succ);
     }
 }
 
 void load_fspt_trees(layer l, FILE *fp) {
     for (int i = 0; i < l.classes; ++i) {
         int succ = 1;
-        fspt_load_file(fp, l.fspts[i], &succ);
+        fspt_load_file(fp, l.fspts[i], l.load_samples, &succ);
     }
 }
 
-void fspt_layer_fit_class(layer l, int class, int refit) {
+void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
         if (fspt->root) free_fspt_nodes(fspt->root);
         int n = l.fspt_n_training_data[class];
+        if (merge) {
+            int size_base = fspt->n_samples;
+            int max = l.fspt_n_max_training_data[class];
+            if (n + size_base > max) {
+                realloc_fspt_data(l, class, n + size_base, 0);
+            }
+            copy_cpu(size_base * l.total, fspt->samples, 1,
+                    l.fspt_training_data[class] + n * l.total, 1);
+            n += size_base;
+        }
         float *X = l.fspt_training_data[class];
         criterion_args *args = calloc(1, sizeof(criterion_args)); 
         *args = l.fspt_criterion_args;
-        fprintf(stderr, "Start fitting with n_samples = %d, class = %d,\
-                layer = %s... ", n, class, l.ref);
-        fflush(stderr);
+        fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %d...\n",
+                l.ref, class, n);
         fspt_fit(n, X, args, fspt);
-        fprintf(stderr, "fspt %s:%d: Fit successful n_nodes = %d, depth = %d\n",
+        fprintf(stderr,
+                "[Fspt %s:%d]: fit successful n_nodes = %d, depth = %d\n",
                 l.ref, class, fspt->n_nodes, fspt->depth);
         free(args);
     }
@@ -437,9 +447,9 @@ void fspt_layer_fit_class(layer l, int class, int refit) {
 #endif
 }
 
-void fspt_layer_fit(layer l, int refit) {
+void fspt_layer_fit(layer l, int refit, int merge) {
     for (int class = 0; class < l.classes; ++class) {
-        fspt_layer_fit_class(l, class, refit);
+        fspt_layer_fit_class(l, class, refit, merge);
     }
 }
 
@@ -451,7 +461,7 @@ void merge_training_data(layer l, layer base) {
         if (size_l + size_base > max_base) {
             realloc_fspt_data(base, class, size_l, 1);
         }
-        copy_cpu(size_l, l.fspt_training_data[class], 1,
-                base.fspt_training_data[class] + size_base, 1);
+        copy_cpu(size_l * l.total, l.fspt_training_data[class], 1,
+                base.fspt_training_data[class] + size_base * l.total, 1);
     }
 }

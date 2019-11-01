@@ -838,6 +838,8 @@ layer parse_fspt(list *options, size_params params)
             criterion, score, params.batch, args, activation);
     fspt_layer.projection = params.projection;
     fspt_layer.prod_strides = params.prod_strides;
+    fspt_layer.load_samples = option_find_int_quiet(options, "load_samples",1);
+    fspt_layer.save_samples = option_find_int_quiet(options, "save_samples",1);
     return fspt_layer;
 }
 

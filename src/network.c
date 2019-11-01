@@ -805,33 +805,35 @@ typedef struct{
     layer l;
     int class;
     int refit;
+    int merge;
 } fspt_fit_args;
 
 static void *fit_fspt_thread(void *ptr) {
     fspt_fit_args args = *(fspt_fit_args *)ptr;
-    fspt_layer_fit_class(args.l, args.class, args.refit);
+    fspt_layer_fit_class(args.l, args.class, args.refit, args.merge);
     free(ptr);
     return 0;
 }
 
-static pthread_t fit_fspt_in_thread(layer l, int class, int refit) {
+static pthread_t fit_fspt_in_thread(layer l, int class, int refit, int merge) {
     pthread_t thread;
     fspt_fit_args *ptr = (fspt_fit_args *)calloc(1, sizeof(fspt_fit_args));
     ptr->l= l;
     ptr->class = class;
     ptr->refit = refit;
+    ptr->merge = merge;
     if(pthread_create(&thread, 0, fit_fspt_thread, ptr)) error("Thread creation failed");
     return thread;
 }
 
-void fit_fspts(network *net, int classes, int refit, int one_thread) {
+void fit_fspts(network *net, int classes, int refit, int one_thread, int merge) {
     int n = net->n;
     int n_fspt_layers = 0;
     if (one_thread) {
         for (int i = 0; i < n; ++i) {
             layer l = net->layers[i];
             if (l.type == FSPT) {
-                fspt_layer_fit(l, refit);
+                fspt_layer_fit(l, refit, merge);
             }
         }
     } else {
@@ -841,7 +843,7 @@ void fit_fspts(network *net, int classes, int refit, int one_thread) {
             if (l.type == FSPT) {
                 for (int class = 0; class < classes; ++class) {
                     threads[classes * n_fspt_layers + class] =
-                        fit_fspt_in_thread(l, class, refit);
+                        fit_fspt_in_thread(l, class, refit, merge);
                 }
                 ++n_fspt_layers;
             }
