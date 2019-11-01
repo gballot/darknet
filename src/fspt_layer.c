@@ -415,6 +415,27 @@ void load_fspt_trees(layer l, FILE *fp) {
     }
 }
 
+void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
+    fspt_t *fspt = l.fspts[class];
+    if (refit || !fspt->root) {
+        if (fspt->root) free_fspt_nodes(fspt->root);
+        int n = l.fspt_n_training_data[class];
+        if (merge) {
+            int size_base = fspt->n_samples;
+            int max = l.fspt_n_max_training_data[class];
+            if (n + size_base > max) {
+                realloc_fspt_data(l, class, n + size_base, 0);
+            }
+            copy_cpu(size_base * l.total, fspt->samples, 1,
+                    l.fspt_training_data[class] + n * l.total, 1);
+            n += size_base;
+        }
+        float *X = l.fspt_training_data[class];
+        fspt->n_samples = n;
+        fspt->samples = X;
+    }
+}
+
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
@@ -450,6 +471,12 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
 void fspt_layer_fit(layer l, int refit, int merge) {
     for (int class = 0; class < l.classes; ++class) {
         fspt_layer_fit_class(l, class, refit, merge);
+    }
+}
+
+void fspt_layer_set_samples(layer l, int refit, int merge) {
+    for (int class = 0; class < l.classes; ++class) {
+        fspt_layer_set_samples_class(l, class, refit, merge);
     }
 }
 

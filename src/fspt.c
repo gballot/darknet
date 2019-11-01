@@ -300,10 +300,12 @@ void fspt_save(const char *filename, fspt_t fspt, int save_samples, int *succ){
  * \param fp A file pointer. Open and close file is caller's responsibility.
  * \param succ Output parameter. Will contain 1 if successfully load,
  *             0 otherwise.
+ * \param n_samples The number of samples in samples.
  * \param samples A pointer to already existing and orderer samples or NULL.
  * \return Pointer to the newly created fspt_node.
  */
-static fspt_node * pre_order_node_load(FILE *fp, float *samples, int *succ) {
+static fspt_node * pre_order_node_load(FILE *fp, int n_samples, float *samples,
+        int *succ) {
     /* load node */
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
@@ -317,9 +319,12 @@ static fspt_node * pre_order_node_load(FILE *fp, float *samples, int *succ) {
     node->feature_limit = feature_limit;
     /* point on samples */
     node->samples = samples;
+    node->n_samples = n_samples;
     /* load children */
     float *samples_r = NULL;
     float *samples_l = NULL;
+    int n_samples_r = 0;
+    int n_samples_l = 0;
     if (samples) {
         int split_index = 0;
         while (samples[split_index * node->n_features + node->split_feature]
@@ -327,9 +332,13 @@ static fspt_node * pre_order_node_load(FILE *fp, float *samples, int *succ) {
             ++split_index;
         samples_l = samples;
         samples_r = samples + split_index * node->n_features;
+        n_samples_l = split_index;
+        n_samples_r = n_samples - split_index;
     }
-    if (node->left) node->left = pre_order_node_load(fp, samples_l, succ);
-    if (node->right) node->right = pre_order_node_load(fp, samples_r, succ);
+    if (node->left)
+        node->left = pre_order_node_load(fp, n_samples_l, samples_l, succ);
+    if (node->right)
+        node->right = pre_order_node_load(fp, n_samples_r, samples_r, succ);
     return node;
 }
 
@@ -370,7 +379,7 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
             fseek(fp, size *sizeof(float), SEEK_CUR);
         }
     }
-    fspt->root = pre_order_node_load(fp, fspt->samples, succ);
+    fspt->root = pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
     fspt->vol = volume(fspt->n_features, fspt->feature_limit);
 }
 

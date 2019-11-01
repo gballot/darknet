@@ -188,10 +188,11 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
 #ifdef GPU
         if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
-        fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
+        fspt_layers_set_samples(net, refit, merge);
         char buff[256];
         sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
         save_weights(net, buff);
+        fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
     }
     fit_fspts(net, classes, refit, one_thread, merge);
     char buff[256];

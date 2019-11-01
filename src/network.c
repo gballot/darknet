@@ -822,11 +822,23 @@ static pthread_t fit_fspt_in_thread(layer l, int class, int refit, int merge) {
     ptr->class = class;
     ptr->refit = refit;
     ptr->merge = merge;
-    if(pthread_create(&thread, 0, fit_fspt_thread, ptr)) error("Thread creation failed");
+    if(pthread_create(&thread, 0, fit_fspt_thread, ptr))
+        error("Thread creation failed");
     return thread;
 }
 
-void fit_fspts(network *net, int classes, int refit, int one_thread, int merge) {
+void fspt_layers_set_samples(network *net, int refit, int merge) {
+    int n = net->n;
+    for (int i = 0; i < n; ++i) {
+        layer l = net->layers[i];
+        if (l.type == FSPT) {
+            fspt_layer_set_samples(l, refit, merge);
+        }
+    }
+}
+
+void fit_fspts(network *net, int classes, int refit, int one_thread,
+        int merge) {
     int n = net->n;
     int n_fspt_layers = 0;
     if (one_thread) {
