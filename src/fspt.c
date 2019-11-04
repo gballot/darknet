@@ -331,7 +331,7 @@ static fspt_node * pre_order_node_load(FILE *fp, int n_samples, float *samples,
         if (samples && n_samples) {
             int split_index = 0;
             while(samples[split_index * node->n_features + node->split_feature]
-                    < node->split_value) {
+                    <= node->split_value) {
                 ++split_index;
                 if (split_index == n_samples) break;
             }
