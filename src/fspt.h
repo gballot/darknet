@@ -36,8 +36,8 @@ typedef struct fspt_node {
     int n_samples;
     float *samples;     // training samples
     int split_feature;  // splits on feature SPLIT_FEATURE
-    float split_value;   // go to right child if feature[i] >= split_value
-                         // to the left chil otherwise.
+    float split_value;   // go to right child if feature[i] > split_value
+                         // to the left chil if feature[i] <= split_value.
     struct fspt_node *right;   // right child
     struct fspt_node *left;    // left child
     int depth;

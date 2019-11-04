@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "fspt.h"
 #include "fspt_criterion.h"
+#include "fspt_score.h"
 
 static float volume(int n_features, const float *feature_limit)
 {
@@ -184,6 +185,11 @@ void uni_test() {
     float feat_lim2[] = {0.f, 1.f, -1.f, 1.5f};
     float feat_lim_left[] = {0.f, 0.5f, -1.f, 1.5f};
     float feat_lim_right[] = {0.5f, 1.f, -1.f, 1.5f};
+    float samples[] = {
+        0.1f, 1.f,
+        0.2f, 0.5f,
+        0.8f, -0.5f
+    };
     int split_index = 0;
     float split_value = 0.5;
     float feat_imp[] = {1.f, 2.f};
@@ -192,6 +198,8 @@ void uni_test() {
     int succ = 1;
 
     fspt_t *fspt = make_fspt(2, feat_lim, feat_imp, NULL, NULL);
+    fspt->samples = samples;
+    fspt->n_samples = 3;
     /* Builds left */
     fspt_node *left = calloc(1, sizeof(fspt_node));
     left->type = LEAF;
@@ -199,6 +207,8 @@ void uni_test() {
     left->feature_limit = feat_lim_left;
     left->depth = 2;
     left->vol = volume(left->n_features, left->feature_limit);
+    left->samples = samples;
+    left->n_samples = 2;
     /* Builds right */
     fspt_node *right = calloc(1, sizeof(fspt_node));
     right->type = LEAF;
@@ -206,6 +216,8 @@ void uni_test() {
     right->feature_limit = feat_lim_right;
     right->depth = 2;
     right->vol = volume(right->n_features, right->feature_limit);
+    right->samples = samples + 2 * fspt->n_features;
+    right->n_samples = fspt->n_samples - left->n_samples;
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = INNER;
@@ -217,13 +229,15 @@ void uni_test() {
     root->left = left;
     root->right = right;
     root->vol = volume(root->n_features, root->feature_limit);
+    root->samples = samples;
+    root->n_samples = 3;
     /* Update fspt */
     fspt->n_nodes = 3;
     fspt->root = root;
     fspt->depth = 2;
 
     /* save */
-    fspt_save(filename, *fspt, &succ);
+    fspt_save(filename, *fspt, 1, &succ);
     print_fspt(fspt);
 
     if (!succ) {
@@ -233,7 +247,8 @@ void uni_test() {
 
     /* load */
     fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL);
-    fspt_load(filename, fspt_loaded, &succ);
+    fspt_load(filename, fspt_loaded, 1, &succ);
+    print_fspt(fspt_loaded);
 
     if (!succ) {
         fprintf(stderr, "FSPT_LOAD FAILD\n");
@@ -245,6 +260,31 @@ void uni_test() {
         error("UNI-TEST FAILD");
     }
 
+
+    /***********************/
+    /* Test fspt fit       */
+    /***********************/
+    
+    float feat_lim_fit[] = {0.f, 1.f, -1.f, 0.f};
+    float samples_fit[] = {
+        0.2f, -0.8f,
+        0.1f, -0.9f,
+        0.2f, -0.9f,
+        0.1f, -0.8f
+    };
+    float feat_imp_fit[] = {1.f, 1.f};
+    int n_samples = 4;
+    fspt_t *fspt_fitted = make_fspt(2, feat_lim_fit, feat_imp_fit,
+            gini_criterion, euristic_score);
+    criterion_args args = {0};
+    args.fspt = fspt_fitted;
+    args.max_tries_p = 1.f;
+    args.max_features_p = 1.f;
+    args.gini_gain_thresh = 0.1f;
+    args.max_depth = 10;
+    args.min_samples = 1;
+    fspt_fit(n_samples, samples_fit, &args, fspt_fitted);
+    print_fspt(fspt_fitted);
 
     /***********************/
     /* Test hist           */

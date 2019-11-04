@@ -43,8 +43,10 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     int n_features = node->n_features;
     qsort_float_on_index(index, node->n_samples, n_features, X);
     int split_index = 0;
-    while (X[split_index * n_features + index] < s)
+    while (X[split_index * n_features + index] <= s) {
         ++split_index;
+        if (split_index == node->n_samples) break;
+    }
     /* fill right node */
     right->type = LEAF;
     right->n_features = n_features;
@@ -120,7 +122,7 @@ static void print2DUtil(fspt_node *root, int space)
 void print_fspt(fspt_t *fspt)
 {
     fprintf(stderr,
-            "fspt %p: %d featrues, %d nodes, %d samples, %d depth\n",
+            "fspt %p: %d features, %d nodes, %d samples, %d depth\n",
             fspt, fspt->n_features, fspt->n_nodes, fspt->n_samples,
             fspt->depth);
     print2DUtil(fspt->root, 0);
@@ -261,6 +263,7 @@ static void pre_order_node_save(FILE *fp, fspt_node node, int *succ) {
 }
 
 void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
+    /* save n_features */
     *succ &= fwrite(&fspt.n_features, sizeof(int), 1, fp);
     /* save feature_limit */
     size_t size = 2 * fspt.n_features;
@@ -277,8 +280,8 @@ void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
     /* to know if the file contains samples */
     *succ &= fwrite(&save_samples, sizeof(int), 1, fp);
     /* save samples if requested */
-    size = fspt.n_samples;
-    if (save_samples) {
+    size = fspt.n_samples * fspt.n_features;
+    if (save_samples && size) {
         *succ &= (fwrite(fspt.samples, sizeof(float), size, fp) == size);
     }
     if (fspt.root)
@@ -310,7 +313,6 @@ static fspt_node * pre_order_node_load(FILE *fp, int n_samples, float *samples,
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
     if (!*succ) return NULL;
-    node->samples = 0;
     /* load feature_limit */
     size_t lim_size = 2 * node->n_features;
     float *feature_limit = malloc(lim_size * sizeof(float));
@@ -325,15 +327,19 @@ static fspt_node * pre_order_node_load(FILE *fp, int n_samples, float *samples,
     float *samples_l = NULL;
     int n_samples_r = 0;
     int n_samples_l = 0;
-    if (samples) {
-        int split_index = 0;
-        while (samples[split_index * node->n_features + node->split_feature]
-                < node->split_value)
-            ++split_index;
-        samples_l = samples;
-        samples_r = samples + split_index * node->n_features;
-        n_samples_l = split_index;
-        n_samples_r = n_samples - split_index;
+    if (node->left) {
+        if (samples && n_samples) {
+            int split_index = 0;
+            while(samples[split_index * node->n_features + node->split_feature]
+                    < node->split_value) {
+                ++split_index;
+                if (split_index == n_samples) break;
+            }
+            samples_l = samples;
+            samples_r = samples + split_index * node->n_features;
+            n_samples_l = split_index;
+            n_samples_r = n_samples - split_index;
+        }
     }
     if (node->left)
         node->left = pre_order_node_load(fp, n_samples_l, samples_l, succ);
@@ -370,8 +376,8 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
     if (load_samples && !contains_samples)
         fprintf(stderr, "This file does not contain samples... continuing\n");
     if (contains_samples) {
-        size = fspt->n_samples;
-        if (load_samples) {
+        size = fspt->n_samples * fspt->n_features;
+        if (load_samples && size) {
             float *samples = malloc(size * sizeof(float));
             *succ &= (fread(samples, sizeof(float), size, fp) == size);
             fspt->samples = samples;
