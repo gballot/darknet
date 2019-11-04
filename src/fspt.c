@@ -23,7 +23,7 @@ static float volume(int n_features, const float *feature_limit)
     return vol;
 }
 
-float *get_feature_limit(fspt_node *node) {
+float *get_feature_limit(const fspt_node *node) {
     float *feature_limit;
     if (node->parent) {
         int lim_index;
@@ -80,6 +80,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->n_empty = right->n_samples;
     right->depth = node->depth + 1;
     right->parent = node;
+    right->fspt = fspt;
     right->score = fspt->score(fspt, right);
     /* fill left node */
     left->type = LEAF;
@@ -94,6 +95,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->n_empty = left->n_samples;
     left->depth = node->depth + 1;
     left->parent = node;
+    left->fspt = fspt;
     left->score = fspt->score(fspt, left);
     /* fill parent node */
     node->type = INNER;
@@ -145,12 +147,12 @@ void print_fspt(fspt_t *fspt)
 }
 
 fspt_t *make_fspt(int n_features, const float *feature_limit,
-                  float *feature_importance, criterion_func criterion,
+                  const float *feature_importance, criterion_func criterion,
                   score_func score)
 {
     if (!feature_importance) {
         feature_importance = malloc(n_features * sizeof(float));
-        float *ptr = feature_importance;
+        float *ptr = (float *) feature_importance;
         while (ptr < feature_importance + n_features) {
             *ptr = 1.;
             ptr++;
@@ -219,6 +221,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     root->n_empty = (float)n_samples; //Arbitray initialize s.t. Density=0.5
     root->samples = X;
     root->depth = 1;
+    root->fspt = fspt;
     /* Update fspt */
     fspt->n_nodes = 1;
     fspt->n_samples = n_samples;

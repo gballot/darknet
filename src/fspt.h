@@ -97,9 +97,16 @@ typedef struct criterion_args {
 extern fspt_t *make_fspt(
         int n_features,
         const float *feature_limit,
-        float *feature_importance,
+        const float *feature_importance,
         criterion_func criterion,
         score_func score);
+
+/**
+ * Computes recursively the feature limit of the node `node`.
+ *
+ * \param node The node to compute the feature_limit.
+ */
+extern float *get_feature_limit(const fspt_node *node);
 
 /**
  * Gives the nodes containing each input X. The output parameter nodes
