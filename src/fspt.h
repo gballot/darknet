@@ -29,6 +29,7 @@ typedef float (*score_func) (const struct fspt_t *fspt,
 typedef struct fspt_node {
     FSTP_NODE_TYPE type;  // LEAF or INNER
     int n_features;
+    struct fspt_t *fspt;   // the fspt that contains this node
     const float *feature_limit; // size 2*n_feature:
                           // feature_limit[2*i] = min feature(i) include
                           // feature_limite[2*i+1] = max feature(i) exclude
@@ -42,8 +43,6 @@ typedef struct fspt_node {
     struct fspt_node *left;    // left child
     struct fspt_node *parent;  // the parent node
     int depth;
-    float vol;          // volume of the node (=prod length of each dimension)
-    float density;      // density = n_samples/(n_samples + n_empty)
     float score;
 } fspt_node;
 
@@ -62,7 +61,6 @@ typedef struct fspt_t {
     fspt_node *root;
     criterion_func criterion; // spliting criterion
     score_func score;    // score_function
-    float vol;           // volume of the tree
     int depth;
     int count;          // keeps the successive violation of gain threshold
 } fspt_t;

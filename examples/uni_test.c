@@ -8,14 +8,6 @@
 #include "fspt_criterion.h"
 #include "fspt_score.h"
 
-static float volume(int n_features, const float *feature_limit)
-{
-    float vol = 1;
-    for (int i = 0; i < n_features; i+=2)
-        vol *= feature_limit[i+1] - feature_limit[i];
-    return vol;
-}
-
 static int eq_float_array(int n, const float *X, const float *Y) {
     for (int i = 0; i < n; ++i) {
         if (X[i] != Y[i])
@@ -52,10 +44,6 @@ static int eq_nodes(fspt_node a, fspt_node b) {
         eq &= eq_nodes(*a.left, *b.left);
     if ((!a.left) != (!b.left)) eq = 0;
     if (!eq) fprintf(stderr, "node left differ...\n");
-    eq &= (a.vol == b.vol);
-    if (!eq) fprintf(stderr, "node vol differ...\n");
-    eq &= (a.density == b.density);
-    if (!eq) fprintf(stderr, "node density differ...\n");
     eq &= (a.score == b.score);
     if (!eq) fprintf(stderr, "node score differ...\n");
     return eq;
@@ -83,8 +71,6 @@ static int eq_fspts(fspt_t a, fspt_t b) {
     if (!eq) fprintf(stderr, "fspt criterion differ...\n");
     eq &= (a.score == b.score);
     if (!eq) fprintf(stderr, "fspt score differ...\n");
-    eq &= (a.vol == b.vol);
-    if (!eq) fprintf(stderr, "fspt vol differ...\n");
     eq &= (a.count == b.count);
     if (!eq) fprintf(stderr, "fspt count differ...\n");
     return eq;
@@ -206,7 +192,6 @@ void uni_test() {
     left->n_features = fspt->n_features;
     left->feature_limit = feat_lim_left;
     left->depth = 2;
-    left->vol = volume(left->n_features, left->feature_limit);
     left->samples = samples;
     left->n_samples = 2;
     /* Builds right */
@@ -215,7 +200,6 @@ void uni_test() {
     right->n_features = fspt->n_features;
     right->feature_limit = feat_lim_right;
     right->depth = 2;
-    right->vol = volume(right->n_features, right->feature_limit);
     right->samples = samples + 2 * fspt->n_features;
     right->n_samples = fspt->n_samples - left->n_samples;
     /* Builds the root */
@@ -228,7 +212,6 @@ void uni_test() {
     root->depth = 1;
     root->left = left;
     root->right = right;
-    root->vol = volume(root->n_features, root->feature_limit);
     root->samples = samples;
     root->n_samples = 3;
     /* Update fspt */
@@ -244,7 +227,7 @@ void uni_test() {
         fprintf(stderr, "FSPT_SAVE FAILD\n");
         error("UNI-TEST FAILD");
     }
-    fprintf(stderr, "sizeof(fspt_node) = %d\n", sizeof(fspt_node));
+    fprintf(stderr, "sizeof(fspt_node) = %ld\n", sizeof(fspt_node));
 
     /* load */
     fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL);

@@ -24,16 +24,23 @@ static float volume(int n_features, const float *feature_limit)
 }
 
 float *get_feature_limit(fspt_node *node) {
-    float *feature_limit = malloc(2 * node->n_features * sizeof(float));
-    list *heap = make_list();
-    fspt_node *tmp_node = node;
-    while(tmp_node->parent) {
-        list_insert(heap, node->parent);
-        tmp_node = node->parent;
+    float *feature_limit;
+    if (node->parent) {
+        int lim_index;
+        if (node == node->parent->left) {
+            lim_index = 2 * node->parent->split_feature + 1;
+        } else {
+            lim_index = 2 * node->parent->split_feature;
+        }
+        feature_limit = get_feature_limit(node->parent);
+        feature_limit[lim_index] = node->parent->split_value;
+    } else {
+        feature_limit = malloc(2 * node->n_features * sizeof(float));
+        copy_cpu(2 * node->fspt->n_features,
+                (float *) node->fspt->feature_limit, 1,
+                feature_limit, 1);
     }
-    while(heap->size > 0) {
-        tmp_node = (fspt_node *) list_pop(heap);
-    }
+    return feature_limit;
 }
 
 
@@ -72,9 +79,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->samples = X + split_index * n_features;
     right->n_empty = right->n_samples;
     right->depth = node->depth + 1;
-    right->vol = node->vol * (node->feature_limit[2*index + 1] - s)
-        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
-    right->density = right->n_samples / (right->n_samples + right->n_empty);
     right->parent = node;
     right->score = fspt->score(fspt, right);
     /* fill left node */
@@ -89,9 +93,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->samples = X;
     left->n_empty = left->n_samples;
     left->depth = node->depth + 1;
-    left->vol = node->vol * (s - node->feature_limit[2*index])
-        / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
-    left->density = left->n_samples / (left->n_samples + left->n_empty);
     left->parent = node;
     left->score = fspt->score(fspt, left);
     /* fill parent node */
@@ -161,7 +162,6 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     fspt->feature_importance = feature_importance;
     fspt->criterion = criterion;
     fspt->score = score;
-    fspt->vol = volume(n_features, feature_limit);
     return fspt;
 }
 
@@ -219,7 +219,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     root->n_empty = (float)n_samples; //Arbitray initialize s.t. Density=0.5
     root->samples = X;
     root->depth = 1;
-    root->vol = volume(root->n_features, root->feature_limit);
     /* Update fspt */
     fspt->n_nodes = 1;
     fspt->n_samples = n_samples;
@@ -402,7 +401,6 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
         }
     }
     fspt->root = pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
-    fspt->vol = volume(fspt->n_features, fspt->feature_limit);
 }
 
 void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
