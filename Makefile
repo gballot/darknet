@@ -2,7 +2,7 @@ GPU=1
 CUDNN=1
 OPENCV=0
 OPENMP=0
-DEBUG=0
+DEBUG=1
 TRAIN=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -35,7 +35,7 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP= -ordered -one_thread -only_fit
+FSPT_OP= -ordered -only_fit -refit
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data

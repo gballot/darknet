@@ -849,7 +849,8 @@ void fit_fspts(network *net, int classes, int refit, int one_thread,
             }
         }
     } else {
-        pthread_t *threads = (pthread_t *) calloc(n * classes, sizeof(pthread_t));
+        pthread_t *threads =
+            (pthread_t *) calloc(n * classes, sizeof(pthread_t));
         for (int i = 0; i < n; ++i) {
             layer l = net->layers[i];
             if (l.type == FSPT) {
@@ -860,7 +861,8 @@ void fit_fspts(network *net, int classes, int refit, int one_thread,
                 ++n_fspt_layers;
             }
         }
-        threads = realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
+        threads =
+            realloc(threads, classes * n_fspt_layers * sizeof(pthread_t));
         for (int i = 0; i < classes * n_fspt_layers; ++i) {
             pthread_join(threads[i], 0);
         }

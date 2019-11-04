@@ -40,6 +40,7 @@ typedef struct fspt_node {
                          // to the left chil if feature[i] <= split_value.
     struct fspt_node *right;   // right child
     struct fspt_node *left;    // left child
+    struct fspt_node *parent;  // the parent node
     int depth;
     float vol;          // volume of the node (=prod length of each dimension)
     float density;      // density = n_samples/(n_samples + n_empty)

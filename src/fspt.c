@@ -23,6 +23,19 @@ static float volume(int n_features, const float *feature_limit)
     return vol;
 }
 
+float *get_feature_limit(fspt_node *node) {
+    float *feature_limit = malloc(2 * node->n_features * sizeof(float));
+    list *heap = make_list();
+    fspt_node *tmp_node = node;
+    while(tmp_node->parent) {
+        list_insert(heap, node->parent);
+        tmp_node = node->parent;
+    }
+    while(heap->size > 0) {
+        tmp_node = (fspt_node *) list_pop(heap);
+    }
+}
+
 
 /**
  * Make a new split in the FSPT.
@@ -62,6 +75,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->vol = node->vol * (node->feature_limit[2*index + 1] - s)
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
     right->density = right->n_samples / (right->n_samples + right->n_empty);
+    right->parent = node;
     right->score = fspt->score(fspt, right);
     /* fill left node */
     left->type = LEAF;
@@ -78,6 +92,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->vol = node->vol * (s - node->feature_limit[2*index])
         / (node->feature_limit[2*index + 1] - node->feature_limit[2*index]);
     left->density = left->n_samples / (left->n_samples + left->n_empty);
+    left->parent = node;
     left->score = fspt->score(fspt, left);
     /* fill parent node */
     node->type = INNER;
@@ -237,6 +252,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
             list_insert_front(fifo, left);
         }
     }
+    free_list(fifo);
 }
 
 /**

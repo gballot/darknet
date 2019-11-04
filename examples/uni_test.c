@@ -244,6 +244,7 @@ void uni_test() {
         fprintf(stderr, "FSPT_SAVE FAILD\n");
         error("UNI-TEST FAILD");
     }
+    fprintf(stderr, "sizeof(fspt_node) = %d\n", sizeof(fspt_node));
 
     /* load */
     fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL);

@@ -157,6 +157,7 @@ static void best_split_on_feature(int feat, fspt_node node,
             *forbidden_split = 0;
         }
     }
+    free(random_index);
     *best_gain = local_best_gain;
     *best_index = local_best_gain_index;
 }
