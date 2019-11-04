@@ -70,11 +70,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill right node */
     right->type = LEAF;
     right->n_features = n_features;
-    float * right_feature_limit = malloc(2 * n_features * sizeof(float));
-    memcpy(right_feature_limit, node->feature_limit,
-            2 * n_features * sizeof(float));
-    right_feature_limit[2*index] = s;
-    right->feature_limit = right_feature_limit;
     right->n_samples = node->n_samples - split_index;
     right->samples = X + split_index * n_features;
     right->n_empty = right->n_samples;
@@ -85,11 +80,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     /* fill left node */
     left->type = LEAF;
     left->n_features = n_features;
-    float * left_feature_limit = malloc(2 * n_features * sizeof(float));
-    memcpy(left_feature_limit, node->feature_limit,
-            2 * n_features * sizeof(float));
-    left_feature_limit[2*index + 1] = s;
-    left->feature_limit = left_feature_limit;
     left->n_samples = split_index;
     left->samples = X;
     left->n_empty = left->n_samples;
@@ -216,7 +206,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = LEAF;
     root->n_features = fspt->n_features;
-    root->feature_limit = fspt->feature_limit;
     root->n_samples = n_samples;
     root->n_empty = (float)n_samples; //Arbitray initialize s.t. Density=0.5
     root->samples = X;
@@ -267,14 +256,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
  */
 static void pre_order_node_save(FILE *fp, fspt_node node, int *succ) {
     /* save node */
-    const float *feature_limit = node.feature_limit;
-    node.feature_limit = NULL;
     node.samples = NULL;
     *succ &= fwrite(&node, sizeof(fspt_node), 1, fp);
-    /* save feature_limit */
-    size_t lim_size = 2 * node.n_features;
-    *succ &=
-        (fwrite(feature_limit, sizeof(float), lim_size, fp) == lim_size);
     /* save children */
     if (node.left) pre_order_node_save(fp, *node.left, succ);
     if (node.right) pre_order_node_save(fp, *node.right, succ);
@@ -331,12 +314,6 @@ static fspt_node * pre_order_node_load(FILE *fp, int n_samples, float *samples,
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
     if (!*succ) return NULL;
-    /* load feature_limit */
-    size_t lim_size = 2 * node->n_features;
-    float *feature_limit = malloc(lim_size * sizeof(float));
-    *succ &=
-        (fread(feature_limit, sizeof(float), lim_size, fp) == lim_size);
-    node->feature_limit = feature_limit;
     /* point on samples */
     node->samples = samples;
     node->n_samples = n_samples;
@@ -420,7 +397,6 @@ void free_fspt_nodes(fspt_node *node) {
     if (!node) return;
     free_fspt_nodes(node->right);
     free_fspt_nodes(node->left);
-    free((float *) node->feature_limit);
     free(node);
 }
 

@@ -134,8 +134,10 @@ static void best_split_on_feature(int feat, fspt_node node,
         const float *bins, const size_t *cdf, float *best_gain,
         int *best_index, int *forbidden_split) {
     *forbidden_split = 1;
-    float node_min = node.feature_limit[2*feat];
-    float node_max = node.feature_limit[2*feat + 1];
+    float *feature_limit = get_feature_limit(&node);
+    float node_min = feature_limit[2*feat];
+    float node_max = feature_limit[2*feat + 1];
+    free(feature_limit);
     int local_best_gain_index = -1;
     float local_best_gain = 0.;
     int *random_index = random_index_order(0, n_bins);
@@ -180,10 +182,11 @@ void gini_criterion(criterion_args *args) {
     int forbidden_split = 1;
     float current_score = gini(node->n_samples, node->n_empty);
     int max_features = floor(fspt->n_features * args->max_features_p);
+    float *feature_limit = get_feature_limit(node);
     for (int i = 0; i < max_features; ++i) {
         int feat = random_features[i];
-        float node_min = node->feature_limit[2*feat];
-        float node_max = node->feature_limit[2*feat + 1];
+        float node_min = feature_limit[2*feat];
+        float node_max = feature_limit[2*feat + 1];
         size_t n_bins = 0;
         qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
         hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
@@ -220,6 +223,7 @@ void gini_criterion(criterion_args *args) {
     }
     free(bins);
     free(cdf);
+    free(feature_limit);
     if (forbidden_split) {
         debug_print("forbidden split at depth %d and n_samples %d",
                 node->depth, node->n_samples);

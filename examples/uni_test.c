@@ -23,8 +23,6 @@ static int eq_nodes(fspt_node a, fspt_node b) {
     eq &= (a.n_features == b.n_features);
     if (!eq) fprintf(stderr, "node n_features differ...\n");
     if (!eq) return 0;
-    eq &= eq_float_array(2*a.n_features, a.feature_limit, b.feature_limit);
-    if (!eq) fprintf(stderr, "node feature_limit differ...\n");
     eq &= (a.n_empty == b.n_empty);
     if (!eq) fprintf(stderr, "node n_empty differ...\n");
     eq &= (a.n_samples == b.n_samples);
@@ -169,8 +167,6 @@ void uni_test() {
     
     float feat_lim[] = {0.f, 1.f, -1.f, 1.5f};
     float feat_lim2[] = {0.f, 1.f, -1.f, 1.5f};
-    float feat_lim_left[] = {0.f, 0.5f, -1.f, 1.5f};
-    float feat_lim_right[] = {0.5f, 1.f, -1.f, 1.5f};
     float samples[] = {
         0.1f, 1.f,
         0.2f, 0.5f,
@@ -190,7 +186,6 @@ void uni_test() {
     fspt_node *left = calloc(1, sizeof(fspt_node));
     left->type = LEAF;
     left->n_features = fspt->n_features;
-    left->feature_limit = feat_lim_left;
     left->depth = 2;
     left->samples = samples;
     left->n_samples = 2;
@@ -198,7 +193,6 @@ void uni_test() {
     fspt_node *right = calloc(1, sizeof(fspt_node));
     right->type = LEAF;
     right->n_features = fspt->n_features;
-    right->feature_limit = feat_lim_right;
     right->depth = 2;
     right->samples = samples + 2 * fspt->n_features;
     right->n_samples = fspt->n_samples - left->n_samples;
@@ -206,7 +200,6 @@ void uni_test() {
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = INNER;
     root->n_features = fspt->n_features;
-    root->feature_limit = fspt->feature_limit;
     root->split_feature = split_index;
     root->split_value = split_value;
     root->depth = 1;
