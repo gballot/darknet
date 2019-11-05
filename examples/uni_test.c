@@ -237,22 +237,30 @@ void uni_test() {
         error("UNI-TEST FAILD");
     }
 
-    free_fspt(fspt);
+    free(fspt);
+    free(root);
+    free(right);
+    free(left);
     free_fspt(fspt_loaded);
 
     /***********************/
     /* Test fspt fit       */
     /***********************/
     
-    float feat_lim_fit[] = {0.f, 1.f, -1.f, 0.f};
-    float samples_fit[] = {
+    int n_samples = 4;
+    float *feat_lim_fit = malloc(2*2 * sizeof(float));
+    memcpy(feat_lim_fit, (float []) {0.f, 1.f, -1.f, 0.f}, 4 * sizeof(float));
+    float * samples_fit = malloc(n_samples * 2 *sizeof(float));
+    float samples_init[] = {
         0.2f, -0.8f,
         0.1f, -0.9f,
         0.2f, -0.9f,
         0.1f, -0.8f
     };
-    float feat_imp_fit[] = {1.f, 1.f};
-    int n_samples = 4;
+    memcpy(samples_fit, samples_init, n_samples * 2 * sizeof(float));
+    float *feat_imp_fit = malloc(2 * sizeof(float));
+    memcpy(feat_imp_fit, (float []) {1.f, 1.f}, 2 * sizeof(float));
+
     fspt_t *fspt_fitted = make_fspt(2, feat_lim_fit, feat_imp_fit,
             gini_criterion, euristic_score);
     criterion_args args = {0};
@@ -271,8 +279,10 @@ void uni_test() {
     /* Test get_feat_limit */
     /***********************/
 
-    float feat_lim_lim[] = {0.f, 1.f, 0.f, 1.f};
-    float feat_imp_lim[] = {1.f, 1.f};
+    float *feat_lim_lim = malloc(2*2 * sizeof(float));
+    memcpy(feat_lim_lim, (float []) {0.f, 1.f, 0.f, 1.f}, 4 * sizeof(float));
+    float *feat_imp_lim = malloc(2 * sizeof(float));
+    memcpy(feat_imp_lim, (float []) {1.f, 1.f}, 2 * sizeof(float));
     /* alloc */
     fspt_node *root_lim = calloc(1,sizeof(fspt_node));
     fspt_node *left1 = calloc(1,sizeof(fspt_node));

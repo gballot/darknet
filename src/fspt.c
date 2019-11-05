@@ -403,10 +403,10 @@ void free_fspt_nodes(fspt_node *node) {
 }
 
 void free_fspt(fspt_t *fspt) {
-    free((float *) fspt->feature_limit);
-    free((float *) fspt->feature_importance);
+    if (fspt->feature_limit) free((float *) fspt->feature_limit);
+    if (fspt->feature_importance) free((float *) fspt->feature_importance);
     free_fspt_nodes(fspt->root);
-    free(fspt->samples);
+    if (fspt->samples) free(fspt->samples);
     free(fspt);
 }
 

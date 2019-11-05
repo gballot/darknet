@@ -14,5 +14,4 @@ netcfg='cfg/fspt-waymo.cfg'
 weightfile='weights/yolov3-waymo.weights'
 options='-clear'
 
-#/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose /home/gballot/NTU/FSPT\ Yolo/darknet/darknet uni_test
