@@ -20,6 +20,7 @@ float euristic_score(const fspt_t *fspt,const fspt_node *node) {
         cum += fspt->feature_importance[i] / (1. + c);
         cum2 += fspt->feature_importance[i];
     }
+    free(feature_limit);
     return cum / cum2;
 }
 

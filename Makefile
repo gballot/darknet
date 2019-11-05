@@ -35,12 +35,13 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP= -ordered -only_fit -refit
+FSPT_OP= -one_thread -clear
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
+WEIGHTS=weights/yolov3-waymo.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else

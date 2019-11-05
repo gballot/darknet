@@ -53,6 +53,17 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
     float total_left = n_left + n_empty_left;
     float total_right = n_right + n_empty_right;
     float total = total_right + total_left;
+    // TO DELETE ONCE FIXED
+    if (gini_left * total_left / total + gini_right * total_right / total < 0) {
+        fprintf(stderr, "error negative gain = %f, min/max = (%f,%f), s = %f, n_empty_l/r = (%f/%f), gini_l/r = (%f/%f), total_l/r = (%f,%f), total = %f\n",
+                gini_left * total_left / total + gini_right * total_right / total,
+                min, max,
+                s,
+                n_empty_left, n_empty_right,
+                gini_left, gini_right,
+                total_left, total_right,
+                total);
+    }
     return gini_left * total_left / total + gini_right * total_right / total;
 }
 
@@ -80,6 +91,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
     size_t last_cdf = 0;
     /* Special case for X[0] */
     float x_0 = X[0];
+    debug_assert(x_0 >= lower_bond);
     if (x_0 > lower_bond) {
         float eps = EPS;
         while(x_0 - eps < lower_bond) {
@@ -105,7 +117,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
     float last_x = x_0;
     for (size_t i = 1; i < n ; ++i) {
         float x = X[i*step];
-        assert(x >= last_x);
+        debug_assert(x >= last_x);
         if (x > last_x) {
             float eps = EPS;
             while(x - eps < last_x) {
@@ -146,6 +158,7 @@ static void best_split_on_feature(int feat, fspt_node node,
     for (size_t j = 0; j < max_bins; ++j) {
         int index = random_index[j];
         float bin = bins[index];
+        debug_assert((node_min <= bin) && (bin <= node_max));
         size_t n_left = cdf[index];
         size_t n_right = node.n_samples - cdf[index];
         int local_forbidden_split = 0;
@@ -180,7 +193,7 @@ void gini_criterion(criterion_args *args) {
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     int forbidden_split = 1;
-    float current_score = gini(node->n_samples, node->n_empty);
+    float current_score = 0.5f;
     int max_features = floor(fspt->n_features * args->max_features_p);
     float *feature_limit = get_feature_limit(node);
     for (int i = 0; i < max_features; ++i) {

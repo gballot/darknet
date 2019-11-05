@@ -35,7 +35,7 @@ float *get_feature_limit(const fspt_node *node) {
         feature_limit = get_feature_limit(node->parent);
         feature_limit[lim_index] = node->parent->split_value;
     } else {
-        feature_limit = malloc(2 * node->n_features * sizeof(float));
+        feature_limit = malloc(2 * node->fspt->n_features * sizeof(float));
         copy_cpu(2 * node->fspt->n_features,
                 (float *) node->fspt->feature_limit, 1,
                 feature_limit, 1);
@@ -229,7 +229,9 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         float *gain = &args->gain;
         /* fills the values of *args */
         fspt->criterion(args);
-        assert(*gain <= 0.5f);
+        // TO DELETE ONCE PROBLEM FIXED
+        if (*gain > 0.5f) fprintf(stderr, "error : gain = %f\n", *gain);
+        debug_assert((*gain <= 0.5f) && (0.f <= *gain));
         if (args->forbidden_split) {
             debug_print("forbidden split node %p", current_node);
             current_node->score = fspt->score(fspt, current_node);

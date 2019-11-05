@@ -7,9 +7,9 @@
 
 #define TIME(a) \
     do { \
-    double start = what_time_is_it_now(); \
-    a; \
-    printf("%s took: %f seconds\n", #a, what_time_is_it_now() - start); \
+        double start = what_time_is_it_now(); \
+        a; \
+        printf("%s took: %f seconds\n", #a, what_time_is_it_now() - start); \
     } while (0)
 
 #define TWO_PI 6.2831853071795864769252866f
@@ -21,11 +21,17 @@
 #endif
 
 #define debug_print(fmt, ...) \
-  do { \
-    if(DEBUG_TEST) \
-      fprintf(stderr, "[%s:%d:%s()]  " fmt "\n", __FILE__, \
-          __LINE__, __func__, __VA_ARGS__); \
-  } while (0)
+    do { \
+        if(DEBUG_TEST) \
+            fprintf(stderr, "[%s:%d:%s()]  " fmt "\n", __FILE__, \
+                    __LINE__, __func__, __VA_ARGS__); \
+    } while (0)
+
+#define debug_assert(bool) \
+    do { \
+        if (DEBUG_TEST) \
+            assert(bool); \
+    } while (0)
 
 extern double what_time_is_it_now();
 extern void shuffle(void *arr, size_t n, size_t size);
