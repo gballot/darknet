@@ -141,15 +141,11 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
 /**
  * Finds the best split point on feature feat.
  */
-static void best_split_on_feature(int feat, fspt_node node,
-        float current_score, int min_samples, float max_tries_p, int n_bins,
-        const float *bins, const size_t *cdf, float *best_gain,
+static void best_split_on_feature(int feat, float node_min, float node_max,
+        float n_samples, float n_empty, int min_samples, float max_tries_p,
+        int n_bins, const float *bins, const size_t *cdf, float *best_gain,
         int *best_index, int *forbidden_split) {
     *forbidden_split = 1;
-    float *feature_limit = get_feature_limit(&node);
-    float node_min = feature_limit[2*feat];
-    float node_max = feature_limit[2*feat + 1];
-    free(feature_limit);
     int local_best_gain_index = -1;
     float local_best_gain = 0.;
     int *random_index = random_index_order(0, n_bins);
@@ -160,12 +156,12 @@ static void best_split_on_feature(int feat, fspt_node node,
         float bin = bins[index];
         debug_assert((node_min <= bin) && (bin <= node_max));
         size_t n_left = cdf[index];
-        size_t n_right = node.n_samples - cdf[index];
+        size_t n_right = n_samples - cdf[index];
         int local_forbidden_split = 0;
         float score = gini_after_split(node_min, node_max, bin, n_left,
-                n_right, node.n_empty, min_samples, &local_forbidden_split);
+                n_right, n_empty, min_samples, &local_forbidden_split);
         if (local_forbidden_split) continue;
-        float tmp_gain = current_score - score;
+        float tmp_gain = 0.5 - score;
         if (tmp_gain > local_best_gain) {
             local_best_gain = tmp_gain;
             local_best_gain_index = index;
@@ -193,7 +189,6 @@ void gini_criterion(criterion_args *args) {
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     int forbidden_split = 1;
-    float current_score = 0.5f;
     int max_features = floor(fspt->n_features * args->max_features_p);
     float *feature_limit = get_feature_limit(node);
     for (int i = 0; i < max_features; ++i) {
@@ -212,7 +207,8 @@ void gini_criterion(criterion_args *args) {
         int local_best_gain_index = 0;
         float local_best_gain = 0.f;
         int local_forbidden_split = 1;
-        best_split_on_feature(feat, *node, current_score, args->min_samples,
+        best_split_on_feature(feat, node_min, node_max, node->n_samples,
+                node->n_empty, args->min_samples,
                 args->max_tries_p, n_bins, bins, cdf, &local_best_gain,
                 &local_best_gain_index, &local_forbidden_split);
 

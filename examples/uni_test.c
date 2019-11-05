@@ -237,6 +237,8 @@ void uni_test() {
         error("UNI-TEST FAILD");
     }
 
+    free_fspt(fspt);
+    free_fspt(fspt_loaded);
 
     /***********************/
     /* Test fspt fit       */
@@ -262,6 +264,77 @@ void uni_test() {
     args.min_samples = 1;
     fspt_fit(n_samples, samples_fit, &args, fspt_fitted);
     print_fspt(fspt_fitted);
+
+    free_fspt(fspt_fitted);
+
+    /***********************/
+    /* Test get_feat_limit */
+    /***********************/
+
+    float feat_lim_lim[] = {0.f, 1.f, 0.f, 1.f};
+    float feat_imp_lim[] = {1.f, 1.f};
+    /* alloc */
+    fspt_node *root_lim = calloc(1,sizeof(fspt_node));
+    fspt_node *left1 = calloc(1,sizeof(fspt_node));
+    fspt_node *right1 = calloc(1,sizeof(fspt_node));
+    fspt_node *left2 = calloc(1,sizeof(fspt_node));
+    fspt_node *right2 = calloc(1,sizeof(fspt_node));
+    fspt_node *left3 = calloc(1,sizeof(fspt_node));
+    fspt_node *right3 = calloc(1,sizeof(fspt_node));
+    /* fspt */
+    fspt_t *fspt_lim = make_fspt(2, feat_lim_lim, feat_imp_lim,
+            gini_criterion, euristic_score);
+    /* rigth3 */
+    right3->fspt = fspt_lim;
+    right3->parent = right2;
+    /* left3 */
+    left3->fspt = fspt_lim;
+    left3->parent = right2;
+    /* right2 */
+    right2->fspt = fspt_lim;
+    right2->split_feature = 1;
+    right2->split_value = 0.75f;
+    right2->left = left3;
+    right2->right = right3;
+    right2->parent = left1;
+    /* left2 */
+    left2->fspt = fspt_lim;
+    left2->parent = left1;
+    /* right1 */
+    right1->fspt = fspt_lim;
+    right1->parent = root_lim;
+    /* left1 */
+    left1->fspt = fspt_lim;
+    left1->split_feature = 1;
+    left1->split_value = 0.5f;
+    left1->left = left2;
+    left1->right = right2;
+    left1->parent = root_lim;
+    /* root */
+    root_lim->fspt = fspt_lim;
+    root_lim->split_feature = 0;
+    root_lim->split_value = 0.5f;
+    root_lim->left = left1;
+    root_lim->right = right1;
+
+    fspt_lim->root = root_lim;
+
+    float *feature_limit_l3 = get_feature_limit(left3);
+    float real_feature_limit_l3[] = {
+        0.f, 0.5f,
+        0.5f, 0.75f
+    };
+    if (!eq_float_array(4, feature_limit_l3, real_feature_limit_l3)) {
+        fprintf(stderr, "feature_limit_l3 =\n");
+        print_array(2, 2, feature_limit_l3);
+        fprintf(stderr, "instead of :\n");
+        print_array(2, 2, real_feature_limit_l3);
+        fprintf(stderr, "GET_FEATURE_LIMIT TEST FAILED.\n");
+        error("UNI-TEST FAILED");
+    }
+    free_fspt(fspt_lim);
+    free(feature_limit_l3);
+
 
     /***********************/
     /* Test hist           */
@@ -297,6 +370,8 @@ void uni_test() {
     print_array(1, n_bins, bins);
     fprintf(stderr, "cdf = \n");
     print_size_t_array(1, n_bins, cdf);
+    free(cdf);
+    free(bins);
 
     fprintf(stderr, "ALL TESTS OK!\n");
 }

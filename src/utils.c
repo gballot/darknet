@@ -769,7 +769,10 @@ static int partition(size_t index, size_t n, size_t size, float *base) {
     while(1) {
         do { ++i; } while (base[i*size + index] < pivot[index]);
         do { --j; } while (base[j*size + index] > pivot[index]);
-        if (i >= j) return j + 1;
+        if (i >= j) {
+            free(pivot);
+            return j + 1;
+        }
         /* Swap i and j. */
         for (size_t k = 0; k < size; ++k) {
             float swap = base[i*size + k];
@@ -777,7 +780,6 @@ static int partition(size_t index, size_t n, size_t size, float *base) {
             base[j*size + k] = swap;
         }
     }
-    free(pivot);
 }
 
 void qsort_float_on_index(size_t index, size_t n, size_t size,
