@@ -520,6 +520,7 @@ float *network_predict(network *net, float *input)
     net->input = input;
     net->truth = 0;
     net->train = 0;
+    net->train_fspt = 0;
     net->delta = 0;
     forward_network(net);
     float *out = net->output;

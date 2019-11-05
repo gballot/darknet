@@ -3,7 +3,7 @@ CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=1
-TRAIN=1
+TRAIN=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -34,20 +34,20 @@ CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -
 CONF=waymo
 VERSION=
 MAINCMD=fspt
-BREAKPOINTS=
-FSPT_OP= -one_thread -clear
+BREAKPOINTS=get_fspt_predictions
+FSPT_OP=
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
-WEIGHTS=weights/yolov3-waymo.weights
+WEIGHTS=weights/fspt-waymo-day.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
 NETCMD=test
-#FILE= waymo/Day/images/training_00017972.jpg
-FILE=
+FILE= waymo/Day/images/training_00029.jpg
+#FILE=
 endif
 
 ifeq ($(OPENMP), 1) 
@@ -138,7 +138,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex \"b , $(BREAKPOINTS)), \") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
+	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex "b , $(BREAKPOINTS)), ") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
 
 run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP) 
