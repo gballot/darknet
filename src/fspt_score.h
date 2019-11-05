@@ -22,10 +22,9 @@ extern score_func string_to_fspt_score(char *s);
  * and E is the ratio between training samples in the tree and number of
  * feature.
  *
- * \param fspt The fspt.
  * \param node The node wich we want to give a score. Note that the score is
  *             note affected to the node by this function.
  */
-extern float euristic_score(const fspt_t *fspt,const fspt_node *node);
+extern float euristic_score(const fspt_node *node);
 
 #endif /* FSPT_SCORE_H */

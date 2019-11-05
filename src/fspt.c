@@ -15,9 +15,9 @@
  * \param feature_limit values at index i and i+1 are respectively
  *                      the min and max of feature i.
  */
-static float volume(int n_features, const float *feature_limit)
+static double volume(int n_features, const float *feature_limit)
 {
-    float vol = 1;
+    double vol = 1;
     for (int i = 0; i < n_features; i+=2)
         vol *= feature_limit[i+1] - feature_limit[i];
     return vol;
@@ -41,6 +41,26 @@ float *get_feature_limit(const fspt_node *node) {
                 feature_limit, 1);
     }
     return feature_limit;
+}
+
+
+static void add_nodes_to_list(list *nodes, fspt_node *node,
+        FSPT_TRAVERSAL traversal) {
+    if (!node) return;
+    if (traversal == PRE_ORDER)
+        list_insert_front(nodes, node);
+    add_nodes_to_list(nodes, node->left, traversal);
+    if (traversal == IN_ORDER)
+        list_insert_front(nodes, node);
+    add_nodes_to_list(nodes, node->right, traversal);
+    if (traversal == POST_ORDER)
+        list_insert_front(nodes, node);
+}
+
+static list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal) {
+    list *nodes = make_list();
+    add_nodes_to_list(nodes, fspt->root, traversal);
+    return nodes;
 }
 
 
@@ -76,7 +96,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->depth = node->depth + 1;
     right->parent = node;
     right->fspt = fspt;
-    right->score = fspt->score(fspt, right);
+    right->score = fspt->score(right);
     /* fill left node */
     left->type = LEAF;
     left->n_features = n_features;
@@ -86,7 +106,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->depth = node->depth + 1;
     left->parent = node;
     left->fspt = fspt;
-    left->score = fspt->score(fspt, left);
+    left->score = fspt->score(left);
     /* fill parent node */
     node->type = INNER;
     node->split_value = s;
@@ -154,7 +174,24 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     fspt->feature_importance = feature_importance;
     fspt->criterion = criterion;
     fspt->score = score;
+    fspt->volume = volume(n_features, feature_limit);
     return fspt;
+}
+
+double get_fspt_volume_score_above(float thresh, fspt_t *fspt) {
+    list *nodes = fspt_nodes_to_list(fspt, PRE_ORDER);
+    double vol = 0;
+    fspt_node *current_node;
+    while(nodes->size > 0) {
+        current_node = list_pop(nodes);
+        if ((current_node->type == INNER) && (current_node->score > thresh)) {
+            float *feature_limit = get_feature_limit(current_node);
+            vol += volume(current_node->fspt->n_features, feature_limit);
+            free(feature_limit);
+        }
+    }
+    free_list(nodes);
+    return vol;
 }
 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
@@ -165,18 +202,22 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
         const float *x = X + i * n_features;
         fspt_node *tmp_node = fspt->root;
         if (!tmp_node) {
-            nodes[i] = 0;
+            nodes[i] = NULL;
             continue;
         }
         while (tmp_node->type != LEAF) {
+            debug_print("---> dept = %d, score = %f, n_samples = %d",
+                    tmp_node->depth, tmp_node->score, tmp_node->n_samples);
             int split_feature = tmp_node->split_feature;
-            if (x[split_feature] < tmp_node->split_value) {
+            if (x[split_feature] <= tmp_node->split_value) {
                 tmp_node = tmp_node->left;
-            } else if (x[split_feature] >= tmp_node->split_value) {
+            } else {
                 tmp_node = tmp_node->right;
             }
         }
         if (tmp_node->type == LEAF) {
+            debug_print("---> dept = %d, score = %f, n_samples = %d",
+                    tmp_node->depth, tmp_node->score, tmp_node->n_samples);
             nodes[i] = tmp_node;
         }
     }
@@ -211,12 +252,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     root->samples = X;
     root->depth = 1;
     root->fspt = fspt;
+    root->parent = NULL;
     /* Update fspt */
     fspt->n_nodes = 1;
     fspt->n_samples = n_samples;
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
+    root->score = fspt->score(root);
     if (!n_samples) return;
 
     list *fifo = make_list(); // fifo of the nodes to examine
@@ -234,7 +277,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
         debug_assert((*gain <= 0.5f) && (0.f <= *gain));
         if (args->forbidden_split) {
             debug_print("forbidden split node %p", current_node);
-            current_node->score = fspt->score(fspt, current_node);
+            current_node->score = fspt->score(current_node);
         } else {
             debug_print("best_index=%d, best_split=%f, gain=%f",
                     *index, *s, *gain);
@@ -356,6 +399,7 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
     *succ &=
         (fread(feature_limit, sizeof(float), size, fp) == size);
     fspt->feature_limit = feature_limit;
+    fspt->volume = volume(fspt->n_features, feature_limit);
     /* load feature_importance */
     size = fspt->n_features;
     float *feature_importance = malloc(size * sizeof(float));

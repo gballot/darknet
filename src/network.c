@@ -188,6 +188,15 @@ network *make_network(int n)
     return net;
 }
 
+list *get_network_layers_by_type(network *net, LAYER_TYPE type) {
+    list *layers = make_list();
+    for (int i = 0; i < net->n; ++i) {
+        if (net->layers[i].type == type)
+            list_insert_front(layers, net->layers + i);
+    }
+    return layers;
+}
+
 void forward_network(network *netp)
 {
 #ifdef GPU

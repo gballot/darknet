@@ -27,6 +27,30 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
     }
 }
 
+static void print_info(char *datacfg, char *cfgfile, char *weightfile,
+        float yolo_thresh, float fspt_thresh) {
+    list *options = read_data_cfg(datacfg);
+    char *name_list = option_find_str(options, "names", "data/names.list");
+    char **names = get_labels(name_list);
+
+    srand(time(0));
+    char *base = basecfg(cfgfile);
+    printf("%s\n", base);
+
+    network *net = load_network(cfgfile, weightfile, 0);
+
+    list *fspt_layers = get_network_layers_by_type(net, FSPT);
+    while (fspt_layers->size > 0) {
+        layer *l = (layer *) list_pop(fspt_layers);
+        for (int i = 0; i < l->classes; ++i) {
+            fspt_t *fspt = l->fspts[i];
+            double vol = get_fspt_volume_score_above(fspt_thresh, fspt);
+            fprintf(stderr, "(aera with score > %f) / (total area) = %lf",
+                    fspt_thresh, vol / fspt->volume);
+        }
+    }
+}
+
 void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile,
         int fullscreen)
@@ -96,9 +120,9 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
     }
 }
 
-void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
-        int ngpus, int clear, int refit, int ordered, int one_thread,
-        int merge, int only_fit) {
+static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
+        int *gpus, int ngpus, int clear, int refit, int ordered,
+        int one_thread, int merge, int only_fit) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -201,7 +225,7 @@ void train_fspt(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     fprintf(stderr, "End of FSPT training\n");
 }
 
-void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
+static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         float yolo_thresh, float fspt_thresh, float hier_thresh,
         char *outfile) {
     //TODO
@@ -346,7 +370,7 @@ void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             what_time_is_it_now() - start);
 }
 
-void validate_fspt_recall(char *cfgfile, char *weightfile) {
+static void validate_fspt_recall(char *cfgfile, char *weightfile) {
     //TODO
     error("TODO");
 }
@@ -435,4 +459,6 @@ Options are :\n\
                 hier_thresh, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
+    else if (0 == strcmp(argv[2], "info"))
+        print_info(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
 }

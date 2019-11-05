@@ -5,7 +5,8 @@
 #include "fspt.h"
 #include "utils.h"
 
-float euristic_score(const fspt_t *fspt,const fspt_node *node) {
+float euristic_score(const fspt_node *node) {
+    fspt_t *fspt = node->fspt;
     if (node->n_samples == 0) return 0.f;
     float E = fspt->n_samples / fspt->n_features;
     float cum = 0;

@@ -14,14 +14,14 @@
 #include <stdio.h>
 
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
+typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
 
 
 struct fspt_node;
 struct fspt_t;
 struct criterion_args;
 typedef void (*criterion_func) (struct criterion_args *args);
-typedef float (*score_func) (const struct fspt_t *fspt,
-        const struct fspt_node *node);
+typedef float (*score_func) (const struct fspt_node *node);
 
 /**
  * Node of the FSPT.
@@ -60,6 +60,7 @@ typedef struct fspt_t {
     score_func score;    // score_function
     int depth;
     int count;          // keeps the successive violation of gain threshold
+    double volume;      // total volume of the fspt
 } fspt_t;
 
 
@@ -104,6 +105,16 @@ extern fspt_t *make_fspt(
  * \param node The node to compute the feature_limit.
  */
 extern float *get_feature_limit(const fspt_node *node);
+
+/**
+ * Computes the total volume of the leaf nodes with score higher
+ * than `thresh`.
+ *
+ * \param thresh The thresh to consider the nodes
+ * \param fspt The fspt we want to compute volume.
+ * \return The volume.
+ */
+extern double get_fspt_volume_score_above(float thresh, fspt_t *fspt);
 
 /**
  * Gives the nodes containing each input X. The output parameter nodes

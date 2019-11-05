@@ -13,6 +13,7 @@
 extern void pull_network_output(network *net);
 #endif
 
+extern list *get_network_layers_by_type(network *net, LAYER_TYPE type);
 extern void compare_networks(network *n1, network *n2, data d);
 extern char *get_layer_string(LAYER_TYPE a);
 extern network *make_network(int n);

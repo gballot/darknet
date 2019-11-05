@@ -217,35 +217,6 @@ static void copy_fspt_input_to_data(layer l, int classe) {
     l.fspt_n_training_data[classe] += 1;
 }
 
-/* useless : creates fspt from predicted data */
-static void add_fspt_data(layer l, network net, float yolo_thresh) {
-    int netw = net.w;
-    int neth = net.h;
-    layer yolo_layer = net.layers[l.yolo_layer];
-    float *predictions = l.output;
-    //if (l.batch == 2) avg_flipped_yolo(l);
-    for (int i = 0; i < l.w*l.h; ++i){
-        int row = i / l.w;
-        int col = i % l.w;
-        for(int n = 0; n < l.n; ++n){
-            int obj_index  = entry_index(l, 0, n*l.w*l.h + i, 4);
-            float objectness = predictions[obj_index];
-            if(objectness <= yolo_thresh) continue;
-            int box_index  = entry_index(l, 0, n*l.w*l.h + i, 0);
-            box bbox = get_yolo_box(predictions, yolo_layer.biases,
-                    yolo_layer.mask[n], box_index, col, row,
-                    l.w, l.h, netw, neth, l.w*l.h);
-            for(int j = 0; j < l.classes; ++j){
-                int class_index = entry_index(l, 0, n*l.w*l.h + i, 4 + 1 + j);
-                float prob = objectness*predictions[class_index];
-                if(prob > yolo_thresh) {
-                    update_fspt_input(l, &net, bbox.x, bbox.y, /*batch=*/0);
-                    copy_fspt_input_to_data(l, j);
-                }
-            }
-        }
-    }
-}
 
 int get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
