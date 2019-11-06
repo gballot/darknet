@@ -178,20 +178,38 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     return fspt;
 }
 
-double get_fspt_volume_score_above(float thresh, fspt_t *fspt) {
-    list *nodes = fspt_nodes_to_list(fspt, PRE_ORDER);
-    double vol = 0;
+fspt_infos *get_fspt_infos(fspt_infos *infos) {
+    fspt_t *fspt = infos->fspt;
+    int n_thresh = infos->n_thresh;
+    float *fspt_thresh = infos->fspt_thresh;
+    int n_nodes = fspt->n_nodes;
+    /* basic statistics */
+    infos->volume = fspt->volume;
+    infos->n_samples = fspt->n_samples;
+    infos->min_samples_param = fspt->min_samples;
+    infos->max_depth = fspt->max_depth;
+    infos->depth = fspt->depth;
+    infos->balanced_index = 1 - (2 * fspt->depth - 1) / n_nodes;
     fspt_node *current_node;
+    /* nodes lists and arrays */
+    list *nodes = fspt_nodes_to_list(fspt, PRE_ORDER);
+    fspt_node **nodes_array = list_to_array(nodes);
+    list *leaves = make_list();
+    for (int i = 0; i < n_nodes; ++i) {
+
+    }
+
+    double vol = 0;
     while(nodes->size > 0) {
         current_node = list_pop(nodes);
-        if ((current_node->type == INNER) && (current_node->score > thresh)) {
+        if ((current_node->type == INNER) && (current_node->score > *fspt_thresh)) {
             float *feature_limit = get_feature_limit(current_node);
             vol += volume(current_node->fspt->n_features, feature_limit);
             free(feature_limit);
         }
     }
     free_list(nodes);
-    return vol;
+    return NULL;
 }
 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
@@ -259,6 +277,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt)
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
+    fspt->min_samples = args->min_samples;
+    fspt->max_depth = args->max_depth;
     root->score = fspt->score(root);
     if (!n_samples) return;
 

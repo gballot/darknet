@@ -34,8 +34,8 @@ CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -
 CONF=waymo
 VERSION=
 MAINCMD=fspt
-BREAKPOINTS=get_fspt_predictions
-FSPT_OP=
+BREAKPOINTS=
+FSPT_OP= -clear 
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
@@ -47,6 +47,7 @@ NETCMD=train
 else
 NETCMD=test
 FILE= waymo/Day/images/training_00029.jpg
+FILE= waymo/Day/images/training_000223988.jpg
 #FILE=
 endif
 
@@ -81,7 +82,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV1003q,PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb

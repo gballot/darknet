@@ -31,9 +31,12 @@ static inline float hardtan_activate(float x)
 static inline float linear_activate(float x){return x;}
 static inline float logistic_activate(float x){return 1./(1. + exp(-x));}
 static inline float loggy_activate(float x){return 2./(1. + exp(-x)) - 1;}
+static inline float half_loggy_activate(float x){return 1./(1.+exp(-x)) - 0.5;}
 static inline float relu_activate(float x){return x*(x>0);}
 static inline float elu_activate(float x){return (x >= 0)*x + (x < 0)*(exp(x)-1);}
-static inline float selu_activate(float x){return (x >= 0)*1.0507*x + (x < 0)*1.0507*1.6732*(exp(x)-1);}
+static inline float selu_activate(float x) {
+    return (x >= 0)*1.0507*x + (x < 0)*1.0507*1.6732*(exp(x)-1);
+}
 static inline float relie_activate(float x){return (x>0) ? x : .01*x;}
 static inline float ramp_activate(float x){return x*(x>0)+.1*x;}
 static inline float leaky_activate(float x){return (x>0) ? x : .1*x;}
@@ -68,6 +71,11 @@ static inline float loggy_gradient(float x)
 {
     float y = (x+1.)/2.;
     return 2*(1-y)*y;
+}
+static inline float half_loggy_gradient(float x)
+{
+    float y = (x+1.)/2.;
+    return (1-y)*y;
 }
 static inline float stair_gradient(float x)
 {

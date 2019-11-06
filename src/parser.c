@@ -785,8 +785,8 @@ layer parse_fspt(list *options, size_params params)
         }
     } else {
         for (int j = 0; j < n_features; ++j) {
-            feature_limit[2*j] = -1.f;
-            feature_limit[2*j + 1] = 1.f;
+            feature_limit[2*j] = -0.5f;
+            feature_limit[2*j + 1] = 0.5f;
         }
     }
     /* feature_importance */
@@ -820,7 +820,7 @@ layer parse_fspt(list *options, size_params params)
     char *score_string = option_find_str(options, "score", "euristic");
     score_func score = string_to_fspt_score(score_string);
     /* activation */
-    char *activation_s = option_find_str(options, "activation", "loggy");
+    char *activation_s = option_find_str(options, "activation", "half_loggy");
     ACTIVATION activation = get_activation(activation_s);
     /* criterion args */
     criterion_args args = {0};

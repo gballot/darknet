@@ -29,6 +29,7 @@ __device__ float hardtan_activate_kernel(float x)
 __device__ float linear_activate_kernel(float x){return x;}
 __device__ float logistic_activate_kernel(float x){return 1.f/(1.f + expf(-x));}
 __device__ float loggy_activate_kernel(float x){return 2.f/(1.f + expf(-x)) - 1;}
+__device__ float half_loggy_activate_kernel(float x){return 1.f/(1.f + expf(-x)) - 0.5;}
 __device__ float relu_activate_kernel(float x){return x*(x>0);}
 __device__ float elu_activate_kernel(float x){return (x >= 0)*x + (x < 0)*(expf(x)-1);}
 __device__ float selu_activate_kernel(float x){return (x >= 0)*1.0507f*x + (x < 0)*1.0507f*1.6732f*(expf(x)-1);}
@@ -62,6 +63,11 @@ __device__ float loggy_gradient_kernel(float x)
     float y = (x+1)/2;
     return 2*(1-y)*y;
 }
+__device__ float half_loggy_gradient_kernel(float x)
+{
+    float y = (x+1)/2;
+    return (1-y)*y;
+}
 __device__ float relu_gradient_kernel(float x){return (x>0);}
 __device__ float elu_gradient_kernel(float x){return (x >= 0) + (x < 0)*(x + 1);}
 __device__ float selu_gradient_kernel(float x){return (x >= 0)*1.0507 + (x < 0)*(x + 1.0507*1.6732);}
@@ -85,6 +91,8 @@ __device__ float activate_kernel(float x, ACTIVATION a)
             return logistic_activate_kernel(x);
         case LOGGY:
             return loggy_activate_kernel(x);
+        case HALF_LOGGY:
+            return half_loggy_activate_kernel(x);
         case RELU:
             return relu_activate_kernel(x);
         case ELU:
@@ -120,6 +128,8 @@ __device__ float gradient_kernel(float x, ACTIVATION a)
             return logistic_gradient_kernel(x);
         case LOGGY:
             return loggy_gradient_kernel(x);
+        case HALF_LOGGY:
+            return half_loggy_gradient_kernel(x);
         case RELU:
             return relu_gradient_kernel(x);
         case ELU:

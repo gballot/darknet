@@ -44,9 +44,9 @@ static void print_info(char *datacfg, char *cfgfile, char *weightfile,
         layer *l = (layer *) list_pop(fspt_layers);
         for (int i = 0; i < l->classes; ++i) {
             fspt_t *fspt = l->fspts[i];
-            double vol = get_fspt_volume_score_above(fspt_thresh, fspt);
-            fprintf(stderr, "(aera with score > %f) / (total area) = %lf",
-                    fspt_thresh, vol / fspt->volume);
+            //double vol = get_fspt_volume_score_above(fspt_thresh, fspt);
+            //fprintf(stderr, "(aera with score > %f) / (total area) = %lf",
+            //        fspt_thresh, vol / fspt->volume);
         }
     }
 }
