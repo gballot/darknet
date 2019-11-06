@@ -241,20 +241,13 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     int n_nodes = fspt->n_nodes;
     int n_features = fspt->n_features;
 
-    /** Initialize statistics **/
+    /** Allocate arrays **/
     /* Volume */
-    stats->volume = fspt->volume;
     stats->volume_above_thresh = calloc(n_thresh, sizeof(double));
     stats->volume_above_thresh_p = calloc(n_thresh, sizeof(double));
     /* Samples */
-    stats->n_samples = fspt->n_samples;
-    stats->min_samples_param = fspt->min_samples;
     stats->n_samples_above_thresh = calloc(n_thresh, sizeof(int));
     stats->n_samples_above_thresh_p = calloc(n_thresh, sizeof(int));
-    /* Depth */
-    stats->max_depth = fspt->max_depth;
-    stats->depth = fspt->depth;
-    stats->balanced_index = 1 - (2 * fspt->depth - 1) / n_nodes;
     /* Splits */
     stats->split_features_count = calloc(n_features, sizeof(int));
     stats->min_split_values = calloc(n_features, sizeof(float));
@@ -310,40 +303,93 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             }
         }
     }
-    stats->volume_above_thresh_p[j] = node->volume;
-    stats->n_samples_above_thresh[j] += 1;
+    stats->mean_volume_p = stats->mean_volume / fspt->volume;
+    stats->mean_samples_leaves_p = stats->mean_samples_leaves / n_samples;
+    stats->mean_depth_leaves_p = stats->mean_depth_leaves / fspt->depth;
+    for (int j = 0; j < n_thresh; ++j) {
+        stats->volume_above_thresh_p[j] =
+            stats->volume_above_thresh[j] / fspt->volume;
+        stats->n_samples_above_thresh_p[j] =
+            ((float) stats->n_samples_above_thresh[j]) / n_samples;
+    }
 
     /** Volume statistics **/
     qsort(leaves_array, leaves->size, sizeof(fspt_node), cmp_volume_nodes);
-    for (int i = 0; i < leaves->size; ++i) {
-        fspt_node *node = nodes_array[i];
-        stats->mean_volume += node->volume;
-        /* Thresholds */
-        for (int j = 0; j < n_thresh; ++j) {
-            float thresh = fspt_thresh[j];
-            if (node->score > thresh) {
-                stats->volume_above_thresh[j] += node->volume;
-                stats->n_samples_above_thresh[j] += 1;
-            }
-        }
-    }
+    stats->volume = fspt->volume;
+    stats->min_volume = leaves_array[0]->volume;
+    stats->max_volume = leaves_array[leaves->size - 1]->volume;
+    stats->median_volume = leaves_array[leaves->size / 2]->volume;
+    stats->first_quartile_volume = leaves_array[leaves->size / 4]->volume;
+    stats->third_quartile_volume = leaves_array[3 * leaves->size / 4]->volume;
+    stats->min_volume_p = stats->min_volume / fspt->volume;
+    stats->max_volume_p = stats->max_volume / fspt->volume;
+    stats->median_volume_p = stats->median_volume / fspt->volume;
+    stats->first_quartile_volume_p =
+        stats->first_quartile_volume / fspt->volume;
+    stats->third_quartile_volume_p =
+        stats->third_quartile_volume / fspt->volume;
 
-    // Still sorted by depth
-    fspt_node **leaves_array = (fspt_node **) list_to_array(leaves);
+    /** Number of samples statistics **/
+    qsort(leaves_array, leaves->size, sizeof(fspt_node), cmp_n_samples_nodes);
+    stats->n_samples = fspt->n_samples;
+    stats->min_samples_param = fspt->min_samples;
+    stats->min_samples_leaves = leaves_array[0]->n_samples;
+    stats->max_samples_leaves = leaves_array[leaves->size - 1]->n_samples;
+    stats->median_samples_leaves = leaves_array[leaves->size / 2]->n_samples;
+    stats->first_quartile_samples_leaves =
+        leaves_array[leaves->size / 4]->n_samples;
+    stats->third_quartile_samples_leaves =
+        leaves_array[3 * leaves->size / 4]->n_samples;
+    stats->min_samples_leaves_p =
+        ((float) stats->min_samples_leaves) / fspt->n_samples;
+    stats->max_samples_leaves_p =
+        ((float) stats->max_samples_leaves) / fspt->n_samples;
+    stats->median_samples_leaves_p =
+        ((float) stats->median_samples_leaves) / fspt->n_samples;
+    stats->first_quartile_samples_leaves_p =
+        ((float) stats->first_quartile_samples_leaves) / fspt->n_samples;
+    stats->third_quartile_samples_leaves_p =
+        ((float) stats->third_quartile_samples_leaves) / fspt->n_samples;
+
+    /** Depth statistics **/
+    qsort(leaves_array, leaves->size, sizeof(fspt_node), cmp_depth_nodes);
+    stats->max_depth = fspt->max_depth;
+    stats->depth = fspt->depth;
+    stats->min_depth_leaves = leaves_array[0]->depth;
+    stats->max_depth_leaves = leaves_array[leaves->size - 1]->depth;
+    stats->median_depth_leaves = leaves_array[leaves->size / 2]->depth;
+    stats->first_quartile_depth_leaves = leaves_array[leaves->size / 4]->depth;
+    stats->third_quartile_depth_leaves =
+        leaves_array[3 * leaves->size / 4]->depth;
+    stats->min_depth_leaves_p =
+        ((float) stats->min_depth_leaves) / fspt->depth;
+    stats->max_depth_leaves_p =
+        ((float) stats->max_depth_leaves) / fspt->depth;
+    stats->median_depth_leaves_p =
+        ((float) stats->median_depth_leaves) / fspt->depth;
+    stats->first_quartile_depth_leaves_p =
+        ((float) stats->first_quartile_depth_leaves) / fspt->depth;
+    stats->third_quartile_depth_leaves_p =
+        ((float) stats->third_quartile_depth_leaves) / fspt->depth;
+    stats->balanced_index = 1 - ((float) (2.f * fspt->depth - 1.f)) / nodes;
+
+    /** Node type statistics **/
     stats->n_leaves = leaves->size;
-    stats->mean_samples_leaves /= leaves->size;
+    stats->n_inner = inner_nodes->size;
+    stats->n_leaves_p = ((float) leaves->size) / n_nodes;
+    stats->n_inner_p = ((float) inner_nodes->size) / n_nodes;
 
-    double vol = 0;
-    while(nodes->size > 0) {
-        current_node = list_pop(nodes);
-        if ((current_node->type == INNER) && (current_node->score > *fspt_thresh)) {
-            float *feature_limit = get_feature_limit(current_node);
-            vol += volume(current_node->fspt->n_features, feature_limit);
-            free(feature_limit);
-        }
-    }
+    /** Split statistics **/
+    // TODO
+    
+    /** Score statistics **/
+    // TODO
+
+    /** Free **/
+    // TODO
+
     free_list(nodes);
-    return NULL;
+    return stats;
 }
 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,

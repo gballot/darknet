@@ -114,7 +114,7 @@ typedef struct fspt_stats {
     int n_samples;                // Number of samples of the tree.
     int min_samples_param;        // Parameter of the minimum number of
                                   // sample per nodes.
-    int mean_samples_leaves;      // Mean number of samples per leaves.
+    float mean_samples_leaves;    // Mean number of samples per leaves.
     int min_samples_leaves;       // Minimum number of samples per leaves.
     int max_samples_leaves;       // Maximum number of samples per leaves.
     int median_samples_leaves;    // Median number of samples per leaves.
@@ -122,36 +122,48 @@ typedef struct fspt_stats {
     int third_quartile_samples_leaves; // Thid Q number of samples per leaves.
     int *n_samples_above_thresh;  // Number of samples in leaves with score
                                   // above each thresholds.
-    int mean_samples_leaves_p;      // Proportional mean number of samples per
+    float mean_samples_leaves_p;    // Proportional mean number of samples per
                                     // leaves.
-    int min_samples_leaves_p;       // Proportional minimum number of samples
+    float min_samples_leaves_p;     // Proportional minimum number of samples
                                     // per leaves.
-    int max_samples_leaves_p;       // Proportional maximum number of samples
+    float max_samples_leaves_p;     // Proportional maximum number of samples
                                     // per leaves.
-    int median_samples_leaves_p;    // Proportional median number of samples
+    float median_samples_leaves_p;  // Proportional median number of samples
                                     // per leaves.
-    int first_quartile_samples_leaves_p; // Proportional first Q number of
-                                         // samples per leaves.
-    int third_quartile_samples_leaves_p; // Proportional thid Q number of
-                                         // samples per leaves.
-    int *n_samples_above_thresh_p; // Proportional number of samples in leaves
-                                   // with score above each thresholds.
+    float first_quartile_samples_leaves_p; // Proportional first Q number of
+                                           // samples per leaves.
+    float third_quartile_samples_leaves_p; // Proportional thid Q number of
+                                           // samples per leaves.
+    float *n_samples_above_thresh_p;// Proportional number of samples in leaves
+                                    // with score above each thresholds.
     /* Depth statistics */
     int max_depth;           // Max depth parameter of the tree.
     int depth;               // Depth of the tree.
     int min_depth_leaves;    // Min depth of the leaves.
-    int mean_depth_leaves;   // Mean depth of the leaves.
+    float mean_depth_leaves; // Mean depth of the leaves.
     int median_depth_leaves; // Median depth of the leaves.
     int first_quartile_depth_leaves;  // First Q of depth of leaves.
     int third_quartile_depth_leaves;  // Third Q of depth of leaves.
+    float min_depth_leaves_p;    // Proportional min depth of the leaves.
+    float mean_depth_leaves_p;   // Proportional mean depth of the leaves.
+    float median_depth_leaves_p; // Proportional median depth of the leaves.
+    float first_quartile_depth_leaves_p;  // Proportional first Q of depth of
+                                          // leaves.
+    float third_quartile_depth_leaves_p;  // Proportional third Q of depth of
+                                          // leaves.
     float balanced_index;    // Score between 0 and 1. 0 if line tree,
                              // 1 if balanced. (1 - (2*depth-1)/n_nodes).
     /* Node type statistics */
-    int n_leaves;   // Number of leaves.
-    int n_inner;    // Number of inner nodes.
+    int n_leaves;       // Number of leaves.
+    int n_inner;        // Number of inner nodes.
+    float n_leaves_p;   // Proportional number of leaves.
+    float n_inner_p;    // Proportional number of inner nodes.
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.
+    int *split_features_count_p;  // Size n_features. Value at index i
+                                  // is the proportional number of split on
+                                  // feature i.
     float *min_split_values;      // Size n_features. Min split value by
                                   // features.
     float *max_split_values;      // Size n_features. Max split value by
