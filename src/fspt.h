@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+
+
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
 
@@ -41,6 +43,7 @@ typedef struct fspt_node {
     struct fspt_node *parent;  // the parent node
     int depth;
     float score;
+    double volume;
 } fspt_node;
 
 /**
@@ -81,15 +84,29 @@ typedef struct criterion_args {
     int end_of_fitting;
 } criterion_args;
 
-typedef struct fspt_infos {
+typedef struct fspt_stats {
     /* Inputs */
-    fspt_t *fspt;                 // Fspt related to this infos.
+    fspt_t *fspt;                 // Fspt related to this statistics.
     int n_thresh;                 // Number of thresholds.
     float *fspt_thresh;           // Score thresholds for some statistics.
     /* Volume statistics */
     double volume;                // Volume of the fspt.
+    double mean_volume;           // Mean volume of leaves.
+    double min_volume;            // Min volume of leaves.
+    double max_volume;            // Max volume of leaves.
+    double median_volume;         // Median volume of leaves.
+    double first_quartile_volume; // First quartile volume of leaves.
+    double third_quartile_volume; // Third quartile volume of leaves.
     double *volume_above_thresh;  // Size n_thresh. Sum volume of leaves with
                                   // score above each thresholds.
+    double mean_volume_p;         // Proportional mean volume of leaves.
+    double min_volume_p;          // Proportional min volume of leaves.
+    double max_volume_p;          // Proportional max volume of leaves.
+    double median_volume_p;       // Proportional median volume of leaves.
+    double first_quartile_volume_p; // Proportional first quartile volume of
+                                    // leaves.
+    double third_quartile_volume_p; // Proportional third quartile volume of
+                                    // leaves.
     double *volume_above_thresh_p;  // Size n_thresh. Proportion of the sum of
                                     // the volume of the leaves with score
                                     // above each thresholds.
@@ -97,21 +114,33 @@ typedef struct fspt_infos {
     int n_samples;                // Number of samples of the tree.
     int min_samples_param;        // Parameter of the minimum number of
                                   // sample per nodes.
+    int mean_samples_leaves;      // Mean number of samples per leaves.
     int min_samples_leaves;       // Minimum number of samples per leaves.
     int max_samples_leaves;       // Maximum number of samples per leaves.
-    int mean_samples_leaves;      // Mean number of samples per leaves.
     int median_samples_leaves;    // Median number of samples per leaves.
     int first_quartile_samples_leaves; // First Q number of samples per leaves.
     int third_quartile_samples_leaves; // Thid Q number of samples per leaves.
     int *n_samples_above_thresh;  // Number of samples in leaves with score
                                   // above each thresholds.
+    int mean_samples_leaves_p;      // Proportional mean number of samples per
+                                    // leaves.
+    int min_samples_leaves_p;       // Proportional minimum number of samples
+                                    // per leaves.
+    int max_samples_leaves_p;       // Proportional maximum number of samples
+                                    // per leaves.
+    int median_samples_leaves_p;    // Proportional median number of samples
+                                    // per leaves.
+    int first_quartile_samples_leaves_p; // Proportional first Q number of
+                                         // samples per leaves.
+    int third_quartile_samples_leaves_p; // Proportional thid Q number of
+                                         // samples per leaves.
     int *n_samples_above_thresh_p; // Proportional number of samples in leaves
                                    // with score above each thresholds.
     /* Depth statistics */
     int max_depth;           // Max depth parameter of the tree.
     int depth;               // Depth of the tree.
-    int mean_depth_leaves;   // Mean depth of the leaves.
     int min_depth_leaves;    // Min depth of the leaves.
+    int mean_depth_leaves;   // Mean depth of the leaves.
     int median_depth_leaves; // Median depth of the leaves.
     int first_quartile_depth_leaves;  // First Q of depth of leaves.
     int third_quartile_depth_leaves;  // Third Q of depth of leaves.
@@ -123,20 +152,26 @@ typedef struct fspt_infos {
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.
-    float *min_split_values;      // Min split value by features.
-    float *max_split_values;      // Max split value by features.
-    float *mean_split_values;     // Mean split value by features.
-    float *median_split_values;   // Median split value by features.
-    float *first_quartile_split_values; // Fist Q split value by features.
-    float *third_quartile_split_values; // Third Q split value by features.
+    float *min_split_values;      // Size n_features. Min split value by
+                                  // features.
+    float *max_split_values;      // Size n_features. Max split value by
+                                  // features.
+    float *mean_split_values;     // Size n_features. Mean split value by
+                                  // features.
+    float *median_split_values;   // Size n_features. Median split value by
+                                  // features.
+    float *first_quartile_split_values; // Size n_features. Fist Q split value
+                                        // by features.
+    float *third_quartile_split_values; // Size n_features. Third Q split value
+                                        // by features.
     /* Score statistics */
-    float min_sore;      // Min score of leaves.
-    float max_score;     // Max score of leaves.
     float mean_score;    // Mean score of leaves.
+    float min_score;      // Min score of leaves.
+    float max_score;     // Max score of leaves.
     float median_score;  // Median score of leaves.
     float first_quartile_score;  // Fist Q score of leaves.
     float third_quartile_score;  // Third Q score of leaves.
-} fspt_infos;
+} fspt_stats;
 
 /**
  * Builds an empty feature space partitioning tree.
