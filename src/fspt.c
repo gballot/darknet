@@ -9,6 +9,8 @@
 #include "utils.h"
 
 #define N_THRESH_STATS_FSPT 10
+#define FLTFORM "% 9.8g"
+#define INTFORM "% 9d"
 
 /**
  * Computes the volume of a feature space.
@@ -292,7 +294,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             (fspt_node **) list_to_array(inner_nodes_by_split_feat[i]);
     }
 
-    /** Means and thresholds statistics */
+    /** Means, nodes by depth, and thresholds statistics */
     for (int i = 0; i < leaves->size; ++i) {
         fspt_node *node = leaves_array[i];
         stats->mean_volume += node->volume;
@@ -431,6 +433,94 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     }
 
     return stats;
+}
+
+void print_fspt_stats(FILE *stream, fspt_stats *s) {
+    /** Volume **/
+    fprintf(stream, "\n*** Volume Statistics ***\n");
+    fprintf(stream, "Only the volumes of thleaves are considerated.\n");
+    fprintf(stream, "The relative value are computed relatively \
+            to the total volume.\n");
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|        |  total  |  mean   |   min   |   max   |  median |1st quart|3rd quart|\n");
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|   value|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+        s->volume, s->mean_volume, s->min_volume, s->max_volume,
+        s->median_volume, s->first_quartile_volume, s->third_quartile_volume);
+    fprintf(stream,
+"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+        1.f, s->mean_volume_p, s->min_volume_p, s->max_volume_p,
+        s->median_volume_p, s->first_quartile_volume_p,
+        s->third_quartile_volume_p);
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream, "\n");
+    fprintf(stream,
+"|  fspt   | volume  |relative |\n");
+    fprintf(stream,
+"| thresh  |  above  | volume  |\n");
+    fprintf(stream,
+"|         |  thresh |  above  |\n");
+    fprintf(stream,
+"|-----------------------------|\n");
+    for (int i = 0; i < s->n_thresh; ++i) {
+        fprintf(stream,
+"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+            s->fspt_thresh[i], s->volume_above_thresh[i],
+            s->volume_above_thresh_p[i]);
+    }
+    fprintf(stream,
+"|-----------------------------|\n");
+    /** Number of samples **/
+    fprintf(stream, "\n*** Number of Samples Statistics ***\n");
+    fprintf(stream, "The relative value are computed relatively to the total\n");
+    fprintf(stream, "number of samples.\n");
+    fprintf(stream, "The minimum number of samples set by the fit parameters\n");
+    fprintf(stream, "is %d.\n", s->min_samples_param);
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|        |  total  |  mean   |   min   |   max   |  median |1st quart|3rd quart|\n");
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|   value|"INTFORM"|"FLTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+        s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
+        s->max_samples_leaves, s->median_samples_leaves,
+        s->first_quartile_samples_leaves, s->third_quartile_samples_leaves);
+    fprintf(stream,
+"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+        1.f, s->mean_samples_leaves_p, s->min_samples_leaves_p,
+        s->max_samples_leaves_p, s->median_samples_leaves_p,
+        s->first_quartile_samples_leaves_p,
+        s->third_quartile_samples_leaves_p);
+    fprintf(stream,
+"|------------------------------------------------------------------------------|\n");
+    fprintf(stream, "\n");
+    fprintf(stream,
+"|  fspt   |n_samples|relative |\n");
+    fprintf(stream,
+"| thresh  |  above  |n_samples|\n");
+    fprintf(stream,
+"|         |  thresh |  above  |\n");
+    fprintf(stream,
+"|-----------------------------|\n");
+    for (int i = 0; i < s->n_thresh; ++i) {
+        fprintf(stream,
+"|"FLTFORM"|"INTFORM"|"FLTFORM"|\n",
+            s->fspt_thresh[i], s->n_samples_above_thresh[i],
+            s->n_samples_above_thresh_p[i]);
+    }
+    fprintf(stream,
+"|-----------------------------|\n");
+}
+
+void free_fspt_stats(fspt_stats *stats) {
+
 }
 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
@@ -696,3 +786,4 @@ void free_fspt(fspt_t *fspt) {
     free(fspt);
 }
 
+#undef FLTFORM

@@ -273,6 +273,8 @@ void uni_test() {
     fspt_fit(n_samples, samples_fit, &args, fspt_fitted);
     print_fspt(fspt_fitted);
 
+    fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL);
+
     free_fspt(fspt_fitted);
 
     /***********************/

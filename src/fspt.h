@@ -336,4 +336,32 @@ extern void free_fspt_nodes(fspt_node *node);
  */
 extern void free_fspt(fspt_t *fspt);
 
+/**
+ * Prints the stats in a friendly format to stream.
+ * @see get_fspt_stats().
+ *
+ * \param stream the output stream.
+ * \param stats The fspt statistics.
+ */
+extern void print_fspt_stats(FILE *stream, fspt_stats *stats);
+
+/**
+ * Extract a bunch of statistics about an fspt. @see fspt_stats.
+ * The fspt_stats returned must be freed by the caller @see free_fspt_stats().
+ * 
+ * \param fspt The fspt to analyse.
+ * \param n_thresh The number of thresholds in fspt_thresh or 0 for automatic
+ *                 fspt_thresh. @see N_THRESH_STATS_FSPT.
+ * \param fspt_thresh Array of thresholds for stats or NULL for automatic.
+ */
+extern fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh,
+        float *fspt_thresh);
+
+/**
+ * Frees the fspt_stats except the fspt himself.
+ *
+ * \param stats The fspt statistics to free.
+ */
+extern void free_fspt_stats(fspt_stats *stats);
+
 #endif /* FSPT_H */
