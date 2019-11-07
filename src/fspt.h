@@ -153,6 +153,9 @@ typedef struct fspt_stats {
                                           // leaves.
     float balanced_index;    // Score between 0 and 1. 0 if line tree,
                              // 1 if balanced. (1 - (2*depth-1)/n_nodes).
+    int *n_nodes_by_depth;   // Size depth. Number of nodes by depth.
+    double *n_nodes_by_depth_p; // Size depth. Number of nodes by depth divided
+                                // by 2^(depth-1).
     /* Node type statistics */
     int n_leaves;       // Number of leaves.
     int n_inner;        // Number of inner nodes.

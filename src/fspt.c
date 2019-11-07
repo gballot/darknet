@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <float.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include "list.h"
@@ -240,6 +241,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     fspt_thresh = stats->fspt_thresh;
     int n_nodes = fspt->n_nodes;
     int n_features = fspt->n_features;
+    int n_samples = fspt->n_samples;
 
     /** Allocate arrays **/
     /* Volume */
@@ -248,6 +250,9 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     /* Samples */
     stats->n_samples_above_thresh = calloc(n_thresh, sizeof(int));
     stats->n_samples_above_thresh_p = calloc(n_thresh, sizeof(int));
+    /* Depth */
+    stats->n_nodes_by_depth = calloc(fspt->depth, (sizeof(int)));
+    stats->n_nodes_by_depth_p = calloc(fspt->depth, (sizeof(double)));
     /* Splits */
     stats->split_features_count = calloc(n_features, sizeof(int));
     stats->min_split_values = calloc(n_features, sizeof(float));
@@ -289,7 +294,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
 
     /** Means and thresholds statistics */
     for (int i = 0; i < leaves->size; ++i) {
-        fspt_node *node = nodes_array[i];
+        fspt_node *node = leaves_array[i];
         stats->mean_volume += node->volume;
         stats->mean_samples_leaves += node->n_samples;
         stats->mean_depth_leaves += node->depth;
@@ -303,6 +308,10 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             }
         }
     }
+    stats->mean_volume /= leaves->size;
+    stats->mean_samples_leaves /= leaves->size;
+    stats->mean_depth_leaves /= leaves->size;
+    stats->mean_score /= leaves->size;
     stats->mean_volume_p = stats->mean_volume / fspt->volume;
     stats->mean_samples_leaves_p = stats->mean_samples_leaves / n_samples;
     stats->mean_depth_leaves_p = stats->mean_depth_leaves / fspt->depth;
@@ -312,6 +321,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         stats->n_samples_above_thresh_p[j] =
             ((float) stats->n_samples_above_thresh[j]) / n_samples;
     }
+    for (int i = 0; i < nodes->size; ++i) {
+        fspt_node *node = nodes_array[i];
+        stats->n_nodes_by_depth[node->depth] += 1;
+    }
+    for (int i = 0; i < fspt->depth; ++i) {
+        stats->n_nodes_by_depth_p[i] = 
+            ((double) stats->n_nodes_by_depth[i]) / pow(2,(fspt->depth - 1));
+    }
+
 
     /** Volume statistics **/
     qsort(leaves_array, leaves->size, sizeof(fspt_node), cmp_volume_nodes);
@@ -356,22 +374,19 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->max_depth = fspt->max_depth;
     stats->depth = fspt->depth;
     stats->min_depth_leaves = leaves_array[0]->depth;
-    stats->max_depth_leaves = leaves_array[leaves->size - 1]->depth;
     stats->median_depth_leaves = leaves_array[leaves->size / 2]->depth;
     stats->first_quartile_depth_leaves = leaves_array[leaves->size / 4]->depth;
     stats->third_quartile_depth_leaves =
         leaves_array[3 * leaves->size / 4]->depth;
     stats->min_depth_leaves_p =
         ((float) stats->min_depth_leaves) / fspt->depth;
-    stats->max_depth_leaves_p =
-        ((float) stats->max_depth_leaves) / fspt->depth;
     stats->median_depth_leaves_p =
         ((float) stats->median_depth_leaves) / fspt->depth;
     stats->first_quartile_depth_leaves_p =
         ((float) stats->first_quartile_depth_leaves) / fspt->depth;
     stats->third_quartile_depth_leaves_p =
         ((float) stats->third_quartile_depth_leaves) / fspt->depth;
-    stats->balanced_index = 1 - ((float) (2.f * fspt->depth - 1.f)) / nodes;
+    stats->balanced_index = 1 - ((float) (2.f * fspt->depth - 1.f)) / n_nodes;
 
     /** Node type statistics **/
     stats->n_leaves = leaves->size;
@@ -380,15 +395,41 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->n_inner_p = ((float) inner_nodes->size) / n_nodes;
 
     /** Split statistics **/
-    // TODO
+    for (int feat = 0; feat < n_features; ++feat) {
+        int n = inner_nodes_by_split_feat[feat]->size;
+        fspt_node **nodes_on_feat = inner_nodes_by_split_feat_arrays[feat];
+        stats->split_features_count[feat] = n;
+        stats->split_features_count_p[feat] = n / stats->n_inner;
+        qsort(nodes_on_feat, n, sizeof(fspt_node), cmp_split_value_nodes);
+        stats->min_split_values[feat] = nodes_on_feat[0]->split_value;
+        stats->max_split_values[feat] = nodes_on_feat[n - 1]->split_value;
+        stats->median_split_values[feat] = nodes_on_feat[n / 2]->split_value;
+        stats->first_quartile_split_values[feat] =
+            nodes_on_feat[n / 4]->split_value;
+        stats->third_quartile_split_values[feat] =
+            nodes_on_feat[3 * n / 4]->split_value;
+    }
     
     /** Score statistics **/
-    // TODO
+    qsort(leaves_array, leaves->size, sizeof(fspt_node), cmp_score_nodes);
+    stats->min_score = leaves_array[0]->score;
+    stats->max_score = leaves_array[leaves->size - 1]->score;
+    stats->median_score = leaves_array[leaves->size / 2]->score;
+    stats->first_quartile_score = leaves_array[leaves->size / 4]->score;
+    stats->third_quartile_score = leaves_array[3 * leaves->size / 4]->score;
 
     /** Free **/
-    // TODO
-
     free_list(nodes);
+    free(nodes_array);
+    free_list(leaves);
+    free(leaves_array);
+    free_list(inner_nodes);
+    free(inner_nodes_array);
+    for (int feat = 0; feat < n_features; ++feat) {
+        free_list(inner_nodes_by_split_feat[feat]);
+        free(inner_nodes_by_split_feat_arrays[feat]);
+    }
+
     return stats;
 }
 
