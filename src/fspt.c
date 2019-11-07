@@ -438,7 +438,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
 void print_fspt_stats(FILE *stream, fspt_stats *s) {
     /** Volume **/
     fprintf(stream, "\n*** Volume Statistics ***\n");
-    fprintf(stream, "Only the volumes of thleaves are considerated.\n");
+    fprintf(stream, "Only the volumes of the leaves are considerated.\n");
     fprintf(stream, "The relative value are computed relatively \
             to the total volume.\n");
     fprintf(stream,
@@ -517,6 +517,38 @@ void print_fspt_stats(FILE *stream, fspt_stats *s) {
     }
     fprintf(stream,
 "|-----------------------------|\n");
+    /** Depth **/
+    fprintf(stream, "\n*** Depth Statistics ***\n");
+    fprintf(stream, "Only the depths of the leaves are considerated.\n");
+    fprintf(stream, "The relative value are computed relatively \
+            to the total depth.\n");
+    fprintf(stream, "The maximum depth set by the fit parameters is %d.\n",
+            s->max_depth);
+    fprintf(stream,
+"|--------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|        |  total  |  mean   |   min   |  median |1st quart|3rd quart|\n");
+    fprintf(stream,
+"|--------------------------------------------------------------------|\n");
+    fprintf(stream,
+"|   value|"INTFORM"|"FLTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+        s->depth, s->mean_depth_leaves, s->min_depth_leaves,
+        s->median_depth_leaves, s->first_quartile_depth_leaves,
+        s->third_quartile_depth_leaves);
+    fprintf(stream,
+"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+        1.f, s->mean_depth_leaves_p, s->min_depth_leaves_p,
+        s->median_depth_leaves_p, s->first_quartile_depth_leaves_p,
+        s->third_quartile_depth_leaves_p);
+    fprintf(stream,
+"|--------------------------------------------------------------------|\n");
+    fprintf(stream, "\nThe following graph shows the filling of the tree\n");
+    fprintf(stream, "depth by depth. A full line is a full filling at\n");
+    fprintf(stream, "the corresponding depth.\n");
+    for (int d = 0; d < s->depth; ++d) {
+        fprintf(stream,
+"% 4d|--------------------------------------------------------------------------|\n", d + 1);
+    }
 }
 
 void free_fspt_stats(fspt_stats *stats) {
