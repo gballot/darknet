@@ -97,6 +97,7 @@ void free_list_contents(list *l)
 
 void **list_to_array(list *l)
 {
+    if (!l->size) return NULL;
     void **a = calloc(l->size, sizeof(void*));
     int count = 0;
     node *n = l->front;
