@@ -10,7 +10,7 @@
 
 #define N_THRESH_STATS_FSPT 10
 #define FLTFORM "% 7.6f"
-#define BIGFLTF "% 7.3e"
+#define BIGFLTF "% 4.2e"
 #define INTFORM "% 9d"
 
 /**
@@ -660,6 +660,41 @@ to the total depth.\n");
         fprintf(stream, "% 5d|%s|\n", d + 1, depth_string);
     }
 
+    /** Node Types **/
+    fprintf(stream, "\n    ******************************\n");
+    fprintf(stream, "    *** Nodes Types Statistics ***\n");
+    fprintf(stream, "    ******************************\n\n");
+    fprintf(stream, "         |-------------------|\n");
+    fprintf(stream, "         | leaves  |  inner  |\n");
+    fprintf(stream, "|----------------------------|\n");
+    fprintf(stream, "| n_nodes|"INTFORM"|"INTFORM"|\n",s->n_leaves,s->n_inner);
+    fprintf(stream, "|relative|"FLTFORM"|"FLTFORM"|\n", s->n_leaves_p,
+            s->n_inner_p);
+    fprintf(stream, "|----------------------------|\n");
+
+    /** Splits **/
+    fprintf(stream, "\n    *************************\n");
+    fprintf(stream, "    *** Splits Statistics ***\n");
+    fprintf(stream, "    *************************\n\n");
+    fprintf(stream, "Missing features means there are no split on them.\n");
+    fprintf(stream,
+"     |---------------------------------------------------------------------|\n");
+    fprintf(stream,
+"     |  count  | count_p |   min   |   max   |  median |1st quart|3rd quart|\n");
+    fprintf(stream,
+"|--------------------------------------------------------------------------|\n");
+    for (int feat = 0; feat < n_features; ++feat) {
+        if (!split_features_count[feat]) continue;
+        fprintf(stream,
+"|% 3d|"INTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+            s->split_features_count[feat], s->split_features_count_p[feat],
+            s->min_split_values[feat], s->max_split_values[feat],
+            s->mean_split_values[feat], s->median_split_values[feat],
+            s->first_quartile_split_values[feat],
+            s->third_quartile_split_values[feat]);
+    }
+    fprintf(stream,
+"|--------------------------------------------------------------------------|\n");
     //TODO
 }
 
