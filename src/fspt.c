@@ -538,7 +538,7 @@ to the total volume.\n");
     fprintf(stream,
 "         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"│──────────────────────────────────────────────────────────────────────────────│\n");
+"┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
 "│   value│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
         s->volume, s->mean_volume, s->min_volume, s->max_volume,
@@ -549,10 +549,10 @@ to the total volume.\n");
         s->median_volume_p, s->first_quartile_volume_p,
         s->third_quartile_volume_p);
     fprintf(stream,
-"│──────────────────────────────────────────────────────────────────────────────│\n");
+"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\n");
     fprintf(stream,
-"│-----------------------------│\n");
+"┌─────────┬─────────┬─────────┐\n");
     fprintf(stream,
 "│  fspt   │ volume  │relative │\n");
     fprintf(stream,
@@ -560,7 +560,7 @@ to the total volume.\n");
     fprintf(stream,
 "│         │  thresh │  above  │\n");
     fprintf(stream,
-"│-----------------------------│\n");
+"├─────────┼─────────┼─────────┤\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
 "│"FLTFORM"│"BIGFLTF"│"FLTFORM"│\n",
@@ -568,7 +568,7 @@ to the total volume.\n");
             s->volume_above_thresh_p[i]);
     }
     fprintf(stream,
-"│-----------------------------│\n");
+"└─────────┴─────────┴─────────┘\n");
     /** Number of samples **/
     fprintf(stream, "\n    ************************************\n");
     fprintf(stream, "    *** Number of Samples Statistics ***\n");
@@ -578,11 +578,11 @@ to the total volume.\n");
     fprintf(stream, "The minimum number of samples set by the fit parameters\n");
     fprintf(stream, "is %d.\n", s->min_samples_param);
     fprintf(stream,
-"         │---------------------------------------------------------------------│\n");
+"         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
 "         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"│------------------------------------------------------------------------------│\n");
+"┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
 "│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
@@ -595,10 +595,10 @@ to the total volume.\n");
         s->first_quartile_samples_leaves_p,
         s->third_quartile_samples_leaves_p);
     fprintf(stream,
-"│------------------------------------------------------------------------------│\n");
+"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\n");
     fprintf(stream,
-"│-----------------------------│\n");
+"┌─────────┬─────────┬─────────┐\n");
     fprintf(stream,
 "│  fspt   │n_samples│relative │\n");
     fprintf(stream,
@@ -606,7 +606,7 @@ to the total volume.\n");
     fprintf(stream,
 "│         │  thresh │  above  │\n");
     fprintf(stream,
-"│-----------------------------│\n");
+"├─────────┼─────────┼─────────┤\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
 "│"FLTFORM"│"INTFORM"│"FLTFORM"│\n",
@@ -614,7 +614,7 @@ to the total volume.\n");
             s->n_samples_above_thresh_p[i]);
     }
     fprintf(stream,
-"│-----------------------------│\n");
+"└─────────┴─────────┴─────────┘\n");
     /** Depth **/
     fprintf(stream, "\n    ************************\n");
     fprintf(stream, "    *** Depth Statistics ***\n");
@@ -625,11 +625,11 @@ to the total depth.\n");
     fprintf(stream, "The maximum depth set by the fit parameters is %d.\n",
             s->max_depth);
     fprintf(stream,
-"         │-----------------------------------------------------------│\n");
+"         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
 "         │  total  │  mean   │   min   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"│--------------------------------------------------------------------│\n");
+"┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
 "│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->depth, s->mean_depth_leaves, s->min_depth_leaves,
@@ -641,15 +641,19 @@ to the total depth.\n");
         s->median_depth_leaves_p, s->first_quartile_depth_leaves_p,
         s->third_quartile_depth_leaves_p);
     fprintf(stream,
-"│--------------------------------------------------------------------│\n");
+"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\nThe following graph shows the filling of the tree\n");
     fprintf(stream, "depth by depth. A full line is a full filling at\n");
     fprintf(stream, "the corresponding depth.\n");
     fprintf(stream,
-"depth│_________________________________________________________________________\n");
+"┌─────┬───────────────────────────────────────────────────────────────────────┐\n");
+    fprintf(stream,
+"│depth│100%    75%     50%      25%      0%      25%     50%      75%     100%│\n");
+    fprintf(stream,
+"┌─────┼┬────────────────┬────────────────┬────────────────┬──────────────────┬┤\n");
     for (int d = 0; d < s->depth; ++d) {
         double prop = s->n_nodes_by_depth_p[d];
-        const int half = 36;
+        const int half = 35;
         const int length = 2 * half + 1;
         int half_prop = floor(half * prop);
         char depth_string[length + 1];
@@ -659,10 +663,10 @@ to the total depth.\n");
         for (int i = half + half_prop + 1; i < length; ++i)
             depth_string[i] = ' ';
         depth_string[length] = '\0';
-        fprintf(stream, "% 5d│%s│\n", d + 1, depth_string);
+        fprintf(stream, "│% 5d│%s│\n", d + 1, depth_string);
     }
     fprintf(stream,
-"     │_________________________________________________________________________│\n");
+"└────┴─────────────────────────────────────────────────────────────────────────┘\n");
 
     /** Node Types **/
     fprintf(stream, "\n    ******************************\n");
