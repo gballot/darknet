@@ -10,6 +10,7 @@
 
 #define N_THRESH_STATS_FSPT 10
 #define FLTFORM "% 7.6f"
+#define BIGFLTF "% 7.3e"
 #define INTFORM "% 9d"
 
 /**
@@ -399,7 +400,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     }
     for (int i = 0; i < fspt->depth; ++i) {
         stats->n_nodes_by_depth_p[i] = 
-            ((double) stats->n_nodes_by_depth[i]) / pow(2,i);
+            ((double) stats->n_nodes_by_depth[i]) / pow(2, i);
     }
 
 
@@ -539,7 +540,7 @@ to the total volume.\n");
     fprintf(stream,
 "|------------------------------------------------------------------------------|\n");
     fprintf(stream,
-"|   value|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"|   value|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|\n",
         s->volume, s->mean_volume, s->min_volume, s->max_volume,
         s->median_volume, s->first_quartile_volume, s->third_quartile_volume);
     fprintf(stream,
@@ -562,7 +563,7 @@ to the total volume.\n");
 "|-----------------------------|\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
-"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"|"FLTFORM"|"BIGFLTF"|"FLTFORM"|\n",
             s->fspt_thresh[i], s->volume_above_thresh[i],
             s->volume_above_thresh_p[i]);
     }
@@ -583,7 +584,7 @@ to the total volume.\n");
     fprintf(stream,
 "|------------------------------------------------------------------------------|\n");
     fprintf(stream,
-"|   value|"INTFORM"|"FLTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+"|   value|"INTFORM"|"BIGFLTF"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
         s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
         s->max_samples_leaves, s->median_samples_leaves,
         s->first_quartile_samples_leaves, s->third_quartile_samples_leaves);
@@ -630,7 +631,7 @@ to the total depth.\n");
     fprintf(stream,
 "|--------------------------------------------------------------------|\n");
     fprintf(stream,
-"|   value|"INTFORM"|"FLTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+"|   value|"INTFORM"|"BIGFLTF"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
         s->depth, s->mean_depth_leaves, s->min_depth_leaves,
         s->median_depth_leaves, s->first_quartile_depth_leaves,
         s->third_quartile_depth_leaves);
@@ -663,7 +664,43 @@ to the total depth.\n");
 }
 
 void free_fspt_stats(fspt_stats *stats) {
-    //TODO
+    /* Volume */
+    if (stats->volume_above_thresh)
+        free(stats->volume_above_thresh);
+    if (stats->volume_above_thresh_p)
+        free(stats->volume_above_thresh_p);
+    /* Samples */
+    if (stats->n_samples_above_thresh)
+        free(stats->n_samples_above_thresh);
+    if (stats->n_samples_above_thresh_p)
+        free(stats->n_samples_above_thresh_p);
+    /* Depth */
+    if (stats->n_nodes_by_depth)
+        free(stats->n_nodes_by_depth);
+    if (stats->n_nodes_by_depth_p)
+        free(stats->n_nodes_by_depth_p);
+    /* Splits */
+    if (stats->split_features_count)
+        free(stats->split_features_count);
+    if (stats->split_features_count_p)
+        free(stats->split_features_count_p);
+    if (stats->min_split_values)
+        free(stats->min_split_values);
+    if (stats->max_split_values)
+        free(stats->max_split_values);
+    if (stats->mean_split_values)
+        free(stats->mean_split_values);
+    if (stats->median_split_values)
+        free(stats->median_split_values);
+    if (stats->first_quartile_split_values)
+        free(stats->first_quartile_split_values);
+    if (stats->third_quartile_split_values)
+        free(stats->third_quartile_split_values);
+    /* Thresholds */
+    if (stats->fspt_thresh)
+        free(stats->fspt_thresh);
+    /* Stats */
+    free(stats);
 }
 
 void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
