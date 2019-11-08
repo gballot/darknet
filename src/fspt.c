@@ -672,13 +672,13 @@ to the total depth.\n");
     fprintf(stream, "\n    ******************************\n");
     fprintf(stream, "    *** Nodes Types Statistics ***\n");
     fprintf(stream, "    ******************************\n\n");
-    fprintf(stream, "         │-------------------│\n");
+    fprintf(stream, "         ┌─────────┬─────────┐\n");
     fprintf(stream, "         │ leaves  │  inner  │\n");
-    fprintf(stream, "│----------------------------│\n");
+    fprintf(stream, "┌────────┼─────────┼─────────┤\n");
     fprintf(stream, "│ n_nodes│"INTFORM"│"INTFORM"│\n",s->n_leaves,s->n_inner);
     fprintf(stream, "│relative│"FLTFORM"│"FLTFORM"│\n", s->n_leaves_p,
             s->n_inner_p);
-    fprintf(stream, "│----------------------------│\n");
+    fprintf(stream, "└────────┴─────────┴─────────┘\n");
 
     /** Splits **/
     fprintf(stream, "\n    *************************\n");
@@ -686,23 +686,23 @@ to the total depth.\n");
     fprintf(stream, "    *************************\n\n");
     fprintf(stream, "Missing features means there are no split on them.\n");
     fprintf(stream,
-"│--------------------------------------------------------------------------│\n");
+"┌────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"│feat│  count  │ count_p │   min   │   max   │  median │1st quart│3rd quart│\n");
+"│feat│  count  │ count_p │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"│--------------------------------------------------------------------------│\n");
+"├────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     for (int feat = 0; feat < s->fspt->n_features; ++feat) {
         if (!s->split_features_count[feat]) continue;
         fprintf(stream,
-"│% 4d│"INTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
+"│% 4d│"INTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
             feat, s->split_features_count[feat], s->split_features_count_p[feat],
-            s->min_split_values[feat], s->max_split_values[feat],
-            s->mean_split_values[feat], s->median_split_values[feat],
+            s->mean_split_values[feat], s->min_split_values[feat],
+            s->max_split_values[feat], s->median_split_values[feat],
             s->first_quartile_split_values[feat],
             s->third_quartile_split_values[feat]);
     }
     fprintf(stream,
-"│--------------------------------------------------------------------------│\n");
+"└────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     //TODO
 }
 
