@@ -529,32 +529,13 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     /** Title **/
     if (title) {
         int len = strlen(title);
-        char up[4 + 2 +len + 2 + 1];
-        char mid[4 + 2 +len + 2 + 1];
-        char down[4 + 2 +len + 2 + 1];
-        for (int i = 0; i < 4; ++i) {
-            up[i] = ' ';
-            mid[i] = ' ';
-            down[i] = ' ';
-        }
-        up[4] = '╔';
-        mid[4] = '║';
-        down[4] = '╚';
-        up[5] = '═';
-        down[5] = '═';
-        for (int i = 6; i < 6 + len; ++i) {
-            up[i] = '═';
-            mid[i] = title[i - 6];
-            down[i] = '═';
-        }
-        up[len + 7] = '═';
-        down[len +7] = '═';
-        up[len + 8] = '╗';
-        mid[len + 8] = '║';
-        down[len + 8] = '╝';
-        up[len + 9] = '\0';
-        mid[len + 9] = '\0';
-        down[len + 9] = '\0';
+        fprintf(stream, "    ╔═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╗\n");
+        fprintf(stream, "    ║ %s ║\n", title);
+        fprintf(stream, "    ╚═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╝\n");
     }
     /** Volume **/
     fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━┓\n");
