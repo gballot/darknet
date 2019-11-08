@@ -342,8 +342,9 @@ extern void free_fspt(fspt_t *fspt);
  *
  * \param stream the output stream.
  * \param stats The fspt statistics.
+ * \param title An optional title for the stats. can be NULL.
  */
-extern void print_fspt_stats(FILE *stream, fspt_stats *stats);
+extern void print_fspt_stats(FILE *stream, fspt_stats *stats, char *title);
 
 /**
  * Extract a bunch of statistics about an fspt. @see fspt_stats.

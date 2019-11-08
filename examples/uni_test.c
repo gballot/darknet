@@ -274,7 +274,7 @@ void uni_test() {
     print_fspt(fspt_fitted);
 
     fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL);
-    print_fspt_stats(stderr, stats);
+    print_fspt_stats(stderr, stats, "Fitted FSPT Statistics");
     free_fspt_stats(stats);
 
     free_fspt(fspt_fitted);

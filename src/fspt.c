@@ -525,11 +525,41 @@ free_arrays:
 }
 
 
-void print_fspt_stats(FILE *stream, fspt_stats *s) {
+void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
+    /** Title **/
+    if (title) {
+        int len = strlen(title);
+        char up[4 + 2 +len + 2 + 1];
+        char mid[4 + 2 +len + 2 + 1];
+        char down[4 + 2 +len + 2 + 1];
+        for (int i = 0; i < 4; ++i) {
+            up[i] = ' ';
+            mid[i] = ' ';
+            down[i] = ' ';
+        }
+        up[4] = '╔';
+        mid[4] = '║';
+        down[4] = '╚';
+        up[5] = '═';
+        down[5] = '═';
+        for (int i = 6; i < 6 + len; ++i) {
+            up[i] = '═';
+            mid[i] = title[i - 6];
+            down[i] = '═';
+        }
+        up[len + 7] = '═';
+        down[len +7] = '═';
+        up[len + 8] = '╗';
+        mid[len + 8] = '║';
+        down[len + 8] = '╝';
+        up[len + 9] = '\0';
+        mid[len + 9] = '\0';
+        down[len + 9] = '\0';
+    }
     /** Volume **/
-    fprintf(stream, "\n    *************************\n");
-    fprintf(stream, "    *** Volume Statistics ***\n");
-    fprintf(stream, "    *************************\n\n");
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Volume Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━━┛\n\n");
     fprintf(stream, "Only the volumes of the leaves are considerated.\n");
     fprintf(stream, "The relative value are computed relatively \
 to the total volume.\n");
@@ -570,9 +600,9 @@ to the total volume.\n");
     fprintf(stream,
 "└─────────┴─────────┴─────────┘\n");
     /** Number of samples **/
-    fprintf(stream, "\n    ************************************\n");
-    fprintf(stream, "    *** Number of Samples Statistics ***\n");
-    fprintf(stream, "    ************************************\n\n");
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Number of Samples Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n");
     fprintf(stream, "The relative value are computed relatively to the total\n");
     fprintf(stream, "number of samples.\n");
     fprintf(stream, "The minimum number of samples set by the fit parameters\n");
@@ -616,9 +646,9 @@ to the total volume.\n");
     fprintf(stream,
 "└─────────┴─────────┴─────────┘\n");
     /** Depth **/
-    fprintf(stream, "\n    ************************\n");
-    fprintf(stream, "    *** Depth Statistics ***\n");
-    fprintf(stream, "    ************************\n\n");
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Depth Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━┛\n\n");
     fprintf(stream, "Only the depths of the leaves are considerated.\n");
     fprintf(stream, "The relative value are computed relatively \
 to the total depth.\n");
@@ -666,12 +696,16 @@ to the total depth.\n");
         fprintf(stream, "│% 5d│%s│\n", d + 1, depth_string);
     }
     fprintf(stream,
+"├─────┼┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴┼\n");
+    fprintf(stream,
+"│depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│\n");
+    fprintf(stream,
 "└─────┴─────────────────────────────────────────────────────────────────────────┘\n");
 
     /** Node Types **/
-    fprintf(stream, "\n    ******************************\n");
-    fprintf(stream, "    *** Nodes Types Statistics ***\n");
-    fprintf(stream, "    ******************************\n\n");
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Nodes Types Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n");
     fprintf(stream, "         ┌─────────┬─────────┐\n");
     fprintf(stream, "         │ leaves  │  inner  │\n");
     fprintf(stream, "┌────────┼─────────┼─────────┤\n");
@@ -681,9 +715,9 @@ to the total depth.\n");
     fprintf(stream, "└────────┴─────────┴─────────┘\n");
 
     /** Splits **/
-    fprintf(stream, "\n    *************************\n");
-    fprintf(stream, "    *** Splits Statistics ***\n");
-    fprintf(stream, "    *************************\n\n");
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Splits Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━━┛\n\n");
     fprintf(stream, "Missing features means there are no split on them.\n");
     fprintf(stream,
 "┌────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
@@ -703,7 +737,24 @@ to the total depth.\n");
     }
     fprintf(stream,
 "└────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
-    //TODO
+
+    /** Score **/
+    fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ Score Statistics ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━━━━━━━━┛\n\n");
+    fprintf(stream,
+"         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
+    fprintf(stream,
+"         │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
+    fprintf(stream,
+"┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
+        
+    fprintf(stream,
+"│  score │"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
+        s->mean_score, s->min_score, s->max_score, s->median_score,
+        s->first_quartile_score, s->third_quartile_score);
+    fprintf(stream,
+"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
 }
 
 void free_fspt_stats(fspt_stats *stats) {
