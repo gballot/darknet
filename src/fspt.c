@@ -534,41 +534,41 @@ void print_fspt_stats(FILE *stream, fspt_stats *s) {
     fprintf(stream, "The relative value are computed relatively \
 to the total volume.\n");
     fprintf(stream,
-"         |---------------------------------------------------------------------|\n");
+"         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"         |  total  |  mean   |   min   |   max   |  median |1st quart|3rd quart|\n");
+"         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"|------------------------------------------------------------------------------|\n");
+"│──────────────────────────────────────────────────────────────────────────────│\n");
     fprintf(stream,
-"|   value|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|"BIGFLTF"|\n",
+"│   value│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
         s->volume, s->mean_volume, s->min_volume, s->max_volume,
         s->median_volume, s->first_quartile_volume, s->third_quartile_volume);
     fprintf(stream,
-"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         1.f, s->mean_volume_p, s->min_volume_p, s->max_volume_p,
         s->median_volume_p, s->first_quartile_volume_p,
         s->third_quartile_volume_p);
     fprintf(stream,
-"|------------------------------------------------------------------------------|\n");
+"│──────────────────────────────────────────────────────────────────────────────│\n");
     fprintf(stream, "\n");
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     fprintf(stream,
-"|  fspt   | volume  |relative |\n");
+"│  fspt   │ volume  │relative │\n");
     fprintf(stream,
-"| thresh  |  above  | volume  |\n");
+"│ thresh  │  above  │ volume  │\n");
     fprintf(stream,
-"|         |  thresh |  above  |\n");
+"│         │  thresh │  above  │\n");
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
-"|"FLTFORM"|"BIGFLTF"|"FLTFORM"|\n",
+"│"FLTFORM"│"BIGFLTF"│"FLTFORM"│\n",
             s->fspt_thresh[i], s->volume_above_thresh[i],
             s->volume_above_thresh_p[i]);
     }
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     /** Number of samples **/
     fprintf(stream, "\n    ************************************\n");
     fprintf(stream, "    *** Number of Samples Statistics ***\n");
@@ -578,43 +578,43 @@ to the total volume.\n");
     fprintf(stream, "The minimum number of samples set by the fit parameters\n");
     fprintf(stream, "is %d.\n", s->min_samples_param);
     fprintf(stream,
-"         |---------------------------------------------------------------------|\n");
+"         │---------------------------------------------------------------------│\n");
     fprintf(stream,
-"         |  total  |  mean   |   min   |   max   |  median |1st quart|3rd quart|\n");
+"         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"|------------------------------------------------------------------------------|\n");
+"│------------------------------------------------------------------------------│\n");
     fprintf(stream,
-"|   value|"INTFORM"|"BIGFLTF"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+"│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
         s->max_samples_leaves, s->median_samples_leaves,
         s->first_quartile_samples_leaves, s->third_quartile_samples_leaves);
     fprintf(stream,
-"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         1.f, s->mean_samples_leaves_p, s->min_samples_leaves_p,
         s->max_samples_leaves_p, s->median_samples_leaves_p,
         s->first_quartile_samples_leaves_p,
         s->third_quartile_samples_leaves_p);
     fprintf(stream,
-"|------------------------------------------------------------------------------|\n");
+"│------------------------------------------------------------------------------│\n");
     fprintf(stream, "\n");
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     fprintf(stream,
-"|  fspt   |n_samples|relative |\n");
+"│  fspt   │n_samples│relative │\n");
     fprintf(stream,
-"| thresh  |  above  |n_samples|\n");
+"│ thresh  │  above  │n_samples│\n");
     fprintf(stream,
-"|         |  thresh |  above  |\n");
+"│         │  thresh │  above  │\n");
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
-"|"FLTFORM"|"INTFORM"|"FLTFORM"|\n",
+"│"FLTFORM"│"INTFORM"│"FLTFORM"│\n",
             s->fspt_thresh[i], s->n_samples_above_thresh[i],
             s->n_samples_above_thresh_p[i]);
     }
     fprintf(stream,
-"|-----------------------------|\n");
+"│-----------------------------│\n");
     /** Depth **/
     fprintf(stream, "\n    ************************\n");
     fprintf(stream, "    *** Depth Statistics ***\n");
@@ -625,26 +625,28 @@ to the total depth.\n");
     fprintf(stream, "The maximum depth set by the fit parameters is %d.\n",
             s->max_depth);
     fprintf(stream,
-"         |-----------------------------------------------------------|\n");
+"         │-----------------------------------------------------------│\n");
     fprintf(stream,
-"         |  total  |  mean   |   min   |  median |1st quart|3rd quart|\n");
+"         │  total  │  mean   │   min   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"|--------------------------------------------------------------------|\n");
+"│--------------------------------------------------------------------│\n");
     fprintf(stream,
-"|   value|"INTFORM"|"BIGFLTF"|"INTFORM"|"INTFORM"|"INTFORM"|"INTFORM"|\n",
+"│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->depth, s->mean_depth_leaves, s->min_depth_leaves,
         s->median_depth_leaves, s->first_quartile_depth_leaves,
         s->third_quartile_depth_leaves);
     fprintf(stream,
-"|relative|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         1.f, s->mean_depth_leaves_p, s->min_depth_leaves_p,
         s->median_depth_leaves_p, s->first_quartile_depth_leaves_p,
         s->third_quartile_depth_leaves_p);
     fprintf(stream,
-"|--------------------------------------------------------------------|\n");
+"│--------------------------------------------------------------------│\n");
     fprintf(stream, "\nThe following graph shows the filling of the tree\n");
     fprintf(stream, "depth by depth. A full line is a full filling at\n");
     fprintf(stream, "the corresponding depth.\n");
+    fprintf(stream,
+"depth│_________________________________________________________________________\n");
     for (int d = 0; d < s->depth; ++d) {
         double prop = s->n_nodes_by_depth_p[d];
         const int half = 36;
@@ -657,20 +659,22 @@ to the total depth.\n");
         for (int i = half + half_prop + 1; i < length; ++i)
             depth_string[i] = ' ';
         depth_string[length] = '\0';
-        fprintf(stream, "% 5d|%s|\n", d + 1, depth_string);
+        fprintf(stream, "% 5d│%s│\n", d + 1, depth_string);
     }
+    fprintf(stream,
+"     │_________________________________________________________________________│\n");
 
     /** Node Types **/
     fprintf(stream, "\n    ******************************\n");
     fprintf(stream, "    *** Nodes Types Statistics ***\n");
     fprintf(stream, "    ******************************\n\n");
-    fprintf(stream, "         |-------------------|\n");
-    fprintf(stream, "         | leaves  |  inner  |\n");
-    fprintf(stream, "|----------------------------|\n");
-    fprintf(stream, "| n_nodes|"INTFORM"|"INTFORM"|\n",s->n_leaves,s->n_inner);
-    fprintf(stream, "|relative|"FLTFORM"|"FLTFORM"|\n", s->n_leaves_p,
+    fprintf(stream, "         │-------------------│\n");
+    fprintf(stream, "         │ leaves  │  inner  │\n");
+    fprintf(stream, "│----------------------------│\n");
+    fprintf(stream, "│ n_nodes│"INTFORM"│"INTFORM"│\n",s->n_leaves,s->n_inner);
+    fprintf(stream, "│relative│"FLTFORM"│"FLTFORM"│\n", s->n_leaves_p,
             s->n_inner_p);
-    fprintf(stream, "|----------------------------|\n");
+    fprintf(stream, "│----------------------------│\n");
 
     /** Splits **/
     fprintf(stream, "\n    *************************\n");
@@ -678,15 +682,15 @@ to the total depth.\n");
     fprintf(stream, "    *************************\n\n");
     fprintf(stream, "Missing features means there are no split on them.\n");
     fprintf(stream,
-"|--------------------------------------------------------------------------|\n");
+"│--------------------------------------------------------------------------│\n");
     fprintf(stream,
-"|feat|  count  | count_p |   min   |   max   |  median |1st quart|3rd quart|\n");
+"│feat│  count  │ count_p │   min   │   max   │  median │1st quart│3rd quart│\n");
     fprintf(stream,
-"|--------------------------------------------------------------------------|\n");
+"│--------------------------------------------------------------------------│\n");
     for (int feat = 0; feat < s->fspt->n_features; ++feat) {
         if (!s->split_features_count[feat]) continue;
         fprintf(stream,
-"|% 4d|"INTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+"│% 4d│"INTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
             feat, s->split_features_count[feat], s->split_features_count_p[feat],
             s->min_split_values[feat], s->max_split_values[feat],
             s->mean_split_values[feat], s->median_split_values[feat],
@@ -694,7 +698,7 @@ to the total depth.\n");
             s->third_quartile_split_values[feat]);
     }
     fprintf(stream,
-"|--------------------------------------------------------------------------|\n");
+"│--------------------------------------------------------------------------│\n");
     //TODO
 }
 
