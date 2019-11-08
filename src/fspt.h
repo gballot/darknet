@@ -164,8 +164,8 @@ typedef struct fspt_stats {
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.
-    int *split_features_count_p;  // Size n_features. Value at index i
-                                  // is the proportional number of split on
+    float *split_features_count_p;  // Size n_features. Value at index i
+                                    // is the proportional number of split on
                                   // feature i.
     float *min_split_values;      // Size n_features. Min split value by
                                   // features.
