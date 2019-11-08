@@ -529,11 +529,11 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     /** Title **/
     if (title) {
         int len = strlen(title);
-        fprintf(stream, "    ╔═");
+        fprintf(stream, "      ╔═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╗\n");
-        fprintf(stream, "    ║ %s ║\n", title);
-        fprintf(stream, "    ╚═");
+        fprintf(stream, "      ║ %s ║\n", title);
+        fprintf(stream, "      ╚═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n");
     }
