@@ -678,16 +678,16 @@ to the total depth.\n");
     fprintf(stream, "    *************************\n\n");
     fprintf(stream, "Missing features means there are no split on them.\n");
     fprintf(stream,
-"     |---------------------------------------------------------------------|\n");
+"|--------------------------------------------------------------------------|\n");
     fprintf(stream,
-"     |  count  | count_p |   min   |   max   |  median |1st quart|3rd quart|\n");
+"|feat|  count  | count_p |   min   |   max   |  median |1st quart|3rd quart|\n");
     fprintf(stream,
 "|--------------------------------------------------------------------------|\n");
-    for (int feat = 0; feat < n_features; ++feat) {
-        if (!split_features_count[feat]) continue;
+    for (int feat = 0; feat < s->fspt->n_features; ++feat) {
+        if (!s->split_features_count[feat]) continue;
         fprintf(stream,
-"|% 3d|"INTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
-            s->split_features_count[feat], s->split_features_count_p[feat],
+"|% 4d|"INTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|"FLTFORM"|\n",
+            feat, s->split_features_count[feat], s->split_features_count_p[feat],
             s->min_split_values[feat], s->max_split_values[feat],
             s->mean_split_values[feat], s->median_split_values[feat],
             s->first_quartile_split_values[feat],
