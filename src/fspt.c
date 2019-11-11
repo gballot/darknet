@@ -222,7 +222,7 @@ static int cmp_volume_nodes(const void *n1, const void *n2) {
  */
 static float acc_volume(const void *n) {
     fspt_node *node = *(fspt_node **) n;
-    return (float) n->volume;
+    return (float) node->volume;
 }
 
 /**
@@ -247,7 +247,7 @@ static int cmp_n_samples_nodes(const void *n1, const void *n2) {
  */
 static float acc_n_samples(const void *n) {
     fspt_node *node = *(fspt_node **) n;
-    return (float) n->n_samples;
+    return (float) node->n_samples;
 }
 
 /**
@@ -272,7 +272,7 @@ static int cmp_depth_nodes(const void *n1, const void *n2) {
  */
 static float acc_depth(const void *n) {
     fspt_node *node = *(fspt_node **) n;
-    return (float) n->depth;
+    return (float) node->depth;
 }
 
 /**
@@ -297,7 +297,7 @@ static int cmp_split_value_nodes(const void *n1, const void *n2) {
  */
 static float acc_split_value(const void *n) {
     fspt_node *node = *(fspt_node **) n;
-    return (float) n->split_value;
+    return (float) node->split_value;
 }
 
 /**
@@ -322,7 +322,7 @@ static int cmp_score_nodes(const void *n1, const void *n2) {
  */
 static float acc_score(const void *n) {
     fspt_node *node = *(fspt_node **) n;
-    return (float) n->score;
+    return (float) node->score;
 }
 
 fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
@@ -572,9 +572,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     qsort(leaves_array, leaves->size, sizeof(fspt_node *), cmp_score_nodes);
     stats->min_score = leaves_array[0]->score;
     stats->max_score = leaves_array[leaves->size - 1]->score;
-    stats->median_score = leaves_array[leaves->size / 2]->score;
-    stats->first_quartile_score = leaves_array[leaves->size / 4]->score;
-    stats->third_quartile_score = leaves_array[3 * leaves->size / 4]->score;
+    stats->median_score =
+        median((const void *)leaves_array, leaves->size, sizeof(fspt_node *),
+                acc_score);
+    stats->first_quartile_score =
+        first_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_score);
+    stats->third_quartile_score =
+        third_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_score);
 
     /** Free **/
 free_arrays:
