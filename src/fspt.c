@@ -374,7 +374,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         /* Thresholds */
         for (int j = 0; j < n_thresh; ++j) {
             float thresh = fspt_thresh[j];
-            if (node->score > thresh) {
+            if (node->score >= thresh) {
                 stats->volume_above_thresh[j] += node->volume;
                 stats->n_samples_above_thresh[j] += 1;
             }
