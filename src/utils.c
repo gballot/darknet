@@ -806,11 +806,10 @@ float median(const void *a, int n_elem, int size_elem,
     char *b = (char *) a;
     int N = n_elem + 1;
     if (N % 2) {
-        return (accessor((const void *) b + (size_elem * N / 2) - 1)
-                + accessor((const void *) b + (size_elem * N / 2) + 1) - 1)
-                / 2;
+        return (accessor((const void *) b + size_elem * ((N / 2) - 1))
+                + accessor((const void *) b + size_elem * (N / 2))) / 2;
     } else {
-        return accessor((const void *) b + (size_elem * N / 2) - 1);
+        return accessor((const void *) b + size_elem * ((N / 2) - 1));
     }
 }
 
@@ -821,16 +820,16 @@ float first_quartile(const void *a, int n_elem, int size_elem,
     int N = n_elem + 3;
     switch (N % 4) {
         case 0:
-            return accessor((const void *) b + (size_elem * N / 4) - 1);
+            return accessor((const void *) b + size_elem * ((N / 4) - 1));
         case 1:
-            return (3 * accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + accessor((const void *) b + (size_elem * N / 4))) / 4;
+            return (3 * accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + accessor((const void *) b + size_elem * (N / 4))) / 4;
         case 2:
-            return (accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + accessor((const void *) b + (size_elem * N / 4))) / 2;
+            return (accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + accessor((const void *) b + size_elem * (N / 4))) / 2;
         default:
-            return (accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + 3 * accessor((const void *) b + (size_elem * N / 4))) /4;
+            return (accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + 3 * accessor((const void *) b + size_elem * (N / 4))) /4;
     }
 }
 
@@ -841,15 +840,15 @@ float third_quartile(const void *a, int n_elem, int size_elem,
     int N = 3 * n_elem + 1;
     switch (N % 4) {
         case 0:
-            return accessor((const void *) b + (size_elem * N / 4) - 1);
+            return accessor((const void *) b + size_elem * ((N / 4) - 1));
         case 1:
-            return (3 * accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + accessor((const void *) b + (size_elem * N / 4))) / 4;
+            return (3 * accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + accessor((const void *) b + size_elem * (N / 4))) / 4;
         case 2:
-            return (accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + accessor((const void *) b + (size_elem * N / 4))) / 2;
+            return (accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + accessor((const void *) b + size_elem * (N / 4))) / 2;
         default:
-            return (accessor((const void *) b + (size_elem * N / 4) - 1)
-                    + 3 * accessor((const void *) b + (size_elem * N / 4))) /4;
+            return (accessor((const void *) b + size_elem * ((N / 4) - 1))
+                    + 3 * accessor((const void *) b + size_elem * (N / 4))) /4;
     }
 }
