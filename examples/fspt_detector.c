@@ -27,7 +27,7 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
     }
 }
 
-static void print_info(char *datacfg, char *cfgfile, char *weightfile,
+static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
         float yolo_thresh, float fspt_thresh) {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -46,7 +46,7 @@ static void print_info(char *datacfg, char *cfgfile, char *weightfile,
             fspt_t *fspt = l->fspts[i];
             fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
             char buf[256] = {0};
-            sprintf(buf, "%s class %d", l.ref, i);
+            sprintf(buf, "%s class %d", l->ref, i);
             print_fspt_stats(stderr, stats, buf);
             free_fspt_stats(stats);
         }
@@ -225,6 +225,20 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
     fprintf(stderr, "End of FSPT training\n");
+    // TO REMOVE
+    list *fspt_layers = get_network_layers_by_type(net, FSPT);
+    while (fspt_layers->size > 0) {
+        layer *l = (layer *) list_pop(fspt_layers);
+        for (int i = 0; i < l->classes; ++i) {
+            fspt_t *fspt = l->fspts[i];
+            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+            char buf[256] = {0};
+            sprintf(buf, "%s class %d", l->ref, i);
+            print_fspt_stats(stderr, stats, buf);
+            free_fspt_stats(stats);
+        }
+    }
+    //
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
@@ -461,6 +475,6 @@ Options are :\n\
                 hier_thresh, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
-    else if (0 == strcmp(argv[2], "info"))
-        print_info(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
+    else if (0 == strcmp(argv[2], "stats"))
+        print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
 }
