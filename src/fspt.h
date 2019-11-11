@@ -91,6 +91,7 @@ typedef struct fspt_stats {
     float *fspt_thresh;           // Score thresholds for some statistics.
     /* Volume statistics */
     double volume;                // Volume of the fspt.
+    double leaves_volume;         // Volume of the leaves.
     double mean_volume;           // Mean volume of leaves.
     double min_volume;            // Min volume of leaves.
     double max_volume;            // Max volume of leaves.
@@ -99,6 +100,7 @@ typedef struct fspt_stats {
     double third_quartile_volume; // Third quartile volume of leaves.
     double *volume_above_thresh;  // Size n_thresh. Sum volume of leaves with
                                   // score above each thresholds.
+    double leaves_volume_p;         // Proportional volume of the leaves.
     double mean_volume_p;         // Proportional mean volume of leaves.
     double min_volume_p;          // Proportional min volume of leaves.
     double max_volume_p;          // Proportional max volume of leaves.

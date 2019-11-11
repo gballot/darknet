@@ -800,3 +800,56 @@ void qsort_float_on_index(size_t index, size_t n, size_t size,
     }
 }
 
+float median(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *)) {
+    if (!n_elem) return 0.f;
+    char *b = (char *) a;
+    int N = n_elem + 1;
+    if (N % 2) {
+        return (accessor((const void *) b + (size_elem * N / 2) - 1)
+                + accessor((const void *) b + (size_elem * N / 2) + 1) - 1)
+                / 2;
+    } else {
+        return accessor((const void *) b + (size_elem * N / 2) - 1);
+    }
+}
+
+float first_quartile(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *)) {
+    if (!n_elem) return 0.f;
+    char *b = (char *) a;
+    int N = n_elem + 3;
+    switch (N % 4) {
+        case 0:
+            return accessor((const void *) b + (size_elem * N / 4) - 1);
+        case 1:
+            return (3 * accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + accessor((const void *) b + (size_elem * N / 4))) / 4;
+        case 2:
+            return (accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + accessor((const void *) b + (size_elem * N / 4))) / 2;
+        default:
+            return (accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + 3 * accessor((const void *) b + (size_elem * N / 4))) /4;
+    }
+}
+
+float third_quartile(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *)) {
+    if (!n_elem) return 0.f;
+    char *b = (char *) a;
+    int N = 3 * n_elem + 1;
+    switch (N % 4) {
+        case 0:
+            return accessor((const void *) b + (size_elem * N / 4) - 1);
+        case 1:
+            return (3 * accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + accessor((const void *) b + (size_elem * N / 4))) / 4;
+        case 2:
+            return (accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + accessor((const void *) b + (size_elem * N / 4))) / 2;
+        default:
+            return (accessor((const void *) b + (size_elem * N / 4) - 1)
+                    + 3 * accessor((const void *) b + (size_elem * N / 4))) /4;
+    }
+}

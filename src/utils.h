@@ -81,5 +81,39 @@ extern char *itoa(int val, int base);
 extern void qsort_float_on_index(size_t index, size_t n, size_t size,
         float *base);
 
+/**
+ * Gives the median of an array already sorted.
+ *
+ * \param a The array.
+ * \param n_elem The number of elements in `a`.
+ * \param size_elem The size of the elements in `a`.
+ * \param accessor The function pointer to get the value of an element.
+ */
+extern float median(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *));
+
+/**
+ * Gives the first quartile of an array already sorted.
+ *
+ * \param a The array.
+ * \param n_elem The number of elements in `a`.
+ * \param size_elem The size of the elements in `a`.
+ * \param accessor The function pointer to get the value of an element.
+ */
+extern float first_quartile(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *));
+
+/**
+ * Gives the third quartile of an array already sorted.
+ *
+ * \param a The array.
+ * \param n_elem The number of elements in `a`.
+ * \param size_elem The size of the elements in `a`.
+ * \param accessor The function pointer to get the value of an element.
+ */
+extern float third_quartile(void *a, int n_elem, int size_elem,
+        float (*accessor) (const void *));
+
+
 #endif
 
