@@ -8,7 +8,7 @@
 #include "list.h"
 #include "utils.h"
 
-#define N_THRESH_STATS_FSPT 10
+#define N_THRESH_STATS_FSPT 11
 #define FLTFORM "% 7.6f"
 #define BIGFLTF "% 4.2e"
 #define INTFORM "% 9d"
@@ -215,10 +215,21 @@ static int cmp_volume_nodes(const void *n1, const void *n2) {
 }
 
 /**
+ * Helper function for median, first and third quartiles.
+ *
+ * \param n The pointer to node pointer.
+ * \return the number of samples of the node.
+ */
+static float acc_volume(const void *n) {
+    fspt_node *node = *(fspt_node **) n;
+    return (float) n->volume;
+}
+
+/**
  * Helper function for qsort on number of samples of the nodes.
  *
- * \param n1 The first pointer to a node.
- * \param n2 The second pointer to a node.
+ * \param n1 The first pointer to a node pointer.
+ * \param n2 The second pointer to a node pointer.
  * \return Negative if n1 < n2, positive if n1 > n2, 0 if n1 == n2
  *         according to the number of samples of the nodes.
  */
@@ -229,10 +240,21 @@ static int cmp_n_samples_nodes(const void *n1, const void *n2) {
 }
 
 /**
+ * Helper function for median, first and third quartiles.
+ *
+ * \param n The pointer to node pointer.
+ * \return the number of samples of the node.
+ */
+static float acc_n_samples(const void *n) {
+    fspt_node *node = *(fspt_node **) n;
+    return (float) n->n_samples;
+}
+
+/**
  * Helper function for qsort on depth of the nodes.
  *
- * \param n1 The first pointer to a node.
- * \param n2 The second pointer to a node.
+ * \param n1 The first pointer to a node pointer.
+ * \param n2 The second pointer to a node pointer.
  * \return Negative if n1 < n2, positive if n1 > n2, 0 if n1 == n2
  *         according to the depth of the nodes.
  */
@@ -243,10 +265,21 @@ static int cmp_depth_nodes(const void *n1, const void *n2) {
 }
 
 /**
+ * Helper function for median, first and third quartiles.
+ *
+ * \param n The pointer to node pointer.
+ * \return the number of samples of the node.
+ */
+static float acc_depth(const void *n) {
+    fspt_node *node = *(fspt_node **) n;
+    return (float) n->depth;
+}
+
+/**
  * Helper function for qsort on split value of the nodes.
  *
- * \param n1 The first pointer to a node.
- * \param n2 The second pointer to a node.
+ * \param n1 The first pointer to a node pointer.
+ * \param n2 The second pointer to a node pointer.
  * \return Negative if n1 < n2, positive if n1 > n2, 0 if n1 == n2
  *         according to the split value of the nodes.
  */
@@ -257,10 +290,21 @@ static int cmp_split_value_nodes(const void *n1, const void *n2) {
 }
 
 /**
+ * Helper function for median, first and third quartiles.
+ *
+ * \param n The pointer to node pointer.
+ * \return the number of samples of the node.
+ */
+static float acc_split_value(const void *n) {
+    fspt_node *node = *(fspt_node **) n;
+    return (float) n->split_value;
+}
+
+/**
  * Helper function for qsort on score of the nodes.
  *
- * \param n1 The first pointer to a node.
- * \param n2 The second pointer to a node.
+ * \param n1 The first pointer to a node pointer.
+ * \param n2 The second pointer to a node pointer.
  * \return Negative if n1 < n2, positive if n1 > n2, 0 if n1 == n2
  *         according to the score of the nodes.
  */
@@ -268,6 +312,17 @@ static int cmp_score_nodes(const void *n1, const void *n2) {
     fspt_node *node1 = *(fspt_node **) n1;
     fspt_node *node2 = *(fspt_node **) n2;
     return node1->score - node2->score;
+}
+
+/**
+ * Helper function for median, first and third quartiles.
+ *
+ * \param n The pointer to node pointer.
+ * \return the number of samples of the node.
+ */
+static float acc_score(const void *n) {
+    fspt_node *node = *(fspt_node **) n;
+    return (float) n->score;
 }
 
 fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
@@ -281,16 +336,16 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             stats->fspt_thresh = fspt_thresh;
         } else {
             stats->fspt_thresh = malloc(n_thresh * sizeof(float));
-            for (int i = 1; i <= n_thresh; ++i) {
-                stats->fspt_thresh[i-1] = ((float) i) / ((float) n_thresh);
+            for (int i = 0; i < n_thresh; ++i) {
+                stats->fspt_thresh[i] = ((float) i) / ((float) (n_thresh - 1));
             }
         }
     } else {
         n_thresh = N_THRESH_STATS_FSPT;
         stats->n_thresh = n_thresh;
         stats->fspt_thresh = malloc(n_thresh * sizeof(float));
-        for (int i = 1; i <= n_thresh; ++i) {
-            stats->fspt_thresh[i-1] = ((float) i) / ((float) n_thresh);
+        for (int i = 0; i < n_thresh; ++i) {
+            stats->fspt_thresh[i] = ((float) i) / ((float) (n_thresh - 1));
         }
     }
     fspt_thresh = stats->fspt_thresh;
@@ -410,14 +465,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->volume = fspt->volume;
     stats->min_volume = leaves_array[0]->volume;
     stats->max_volume = leaves_array[leaves->size - 1]->volume;
-    if (leaves->size % 2)  {
-        stats->median_volume = (leaves_array[(leaves->size - 1)/2]->volume
-                + leaves_array[(leaves->size - 1) / 2 + 1]->volume) / 2;
-    } else {
-        stats->median_volume = leaves_array[leaves->size / 2]->volume;
-    }
-    stats->first_quartile_volume = leaves_array[leaves->size / 4]->volume;
-    stats->third_quartile_volume = leaves_array[3 * leaves->size / 4]->volume;
+    stats->median_volume =
+        median((const void *)leaves_array, leaves->size, sizeof(fspt_node *),
+                acc_volume);
+    stats->first_quartile_volume =
+        first_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_volume);
+    stats->third_quartile_volume =
+        third_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_volume);
     stats->min_volume_p = stats->min_volume / fspt->volume;
     stats->max_volume_p = stats->max_volume / fspt->volume;
     stats->median_volume_p = stats->median_volume / fspt->volume;
@@ -432,11 +488,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->min_samples_param = fspt->min_samples;
     stats->min_samples_leaves = leaves_array[0]->n_samples;
     stats->max_samples_leaves = leaves_array[leaves->size - 1]->n_samples;
-    stats->median_samples_leaves = leaves_array[leaves->size / 2]->n_samples;
+    stats->median_samples_leaves =
+        median((const void *)leaves_array, leaves->size, sizeof(fspt_node *),
+                acc_n_samples);
     stats->first_quartile_samples_leaves =
-        leaves_array[leaves->size / 4]->n_samples;
+        first_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_n_samples);
     stats->third_quartile_samples_leaves =
-        leaves_array[3 * leaves->size / 4]->n_samples;
+        third_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_n_samples);
     if (fspt->n_samples) {
         stats->min_samples_leaves_p =
             ((float) stats->min_samples_leaves) / fspt->n_samples;
@@ -461,10 +521,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->max_depth = fspt->max_depth;
     stats->depth = fspt->depth;
     stats->min_depth_leaves = leaves_array[0]->depth;
-    stats->median_depth_leaves = leaves_array[leaves->size / 2]->depth;
-    stats->first_quartile_depth_leaves = leaves_array[leaves->size / 4]->depth;
+    stats->median_depth_leaves =
+        median((const void *)leaves_array, leaves->size, sizeof(fspt_node *),
+                acc_depth);
+    stats->first_quartile_depth_leaves =
+        first_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_depth);
     stats->third_quartile_depth_leaves =
-        leaves_array[3 * leaves->size / 4]->depth;
+        third_quartile((const void *)leaves_array, leaves->size,
+                sizeof(fspt_node *), acc_depth);
     stats->min_depth_leaves_p =
         ((float) stats->min_depth_leaves) / fspt->depth;
     stats->median_depth_leaves_p =
@@ -492,11 +557,15 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         qsort(nodes_on_feat, n, sizeof(fspt_node *), cmp_split_value_nodes);
         stats->min_split_values[feat] = nodes_on_feat[0]->split_value;
         stats->max_split_values[feat] = nodes_on_feat[n - 1]->split_value;
-        stats->median_split_values[feat] = nodes_on_feat[n / 2]->split_value;
+        stats->median_split_values[feat] =
+            median((const void *)nodes_on_feat, n, sizeof(fspt_node *),
+                    acc_split_value);
         stats->first_quartile_split_values[feat] =
-            nodes_on_feat[n / 4]->split_value;
+            first_quartile((const void *)nodes_on_feat, n,
+                    sizeof(fspt_node *), acc_split_value);
         stats->third_quartile_split_values[feat] =
-            nodes_on_feat[3 * n / 4]->split_value;
+            third_quartile((const void *)nodes_on_feat, n,
+                    sizeof(fspt_node *), acc_split_value);
     }
     
     /** Score statistics **/

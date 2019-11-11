@@ -800,7 +800,7 @@ void qsort_float_on_index(size_t index, size_t n, size_t size,
     }
 }
 
-float median(void *a, int n_elem, int size_elem,
+float median(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;
@@ -814,7 +814,7 @@ float median(void *a, int n_elem, int size_elem,
     }
 }
 
-float first_quartile(void *a, int n_elem, int size_elem,
+float first_quartile(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;
@@ -834,7 +834,7 @@ float first_quartile(void *a, int n_elem, int size_elem,
     }
 }
 
-float third_quartile(void *a, int n_elem, int size_elem,
+float third_quartile(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;

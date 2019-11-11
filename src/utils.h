@@ -89,7 +89,7 @@ extern void qsort_float_on_index(size_t index, size_t n, size_t size,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float median(void *a, int n_elem, int size_elem,
+extern float median(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *));
 
 /**
@@ -100,7 +100,7 @@ extern float median(void *a, int n_elem, int size_elem,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float first_quartile(void *a, int n_elem, int size_elem,
+extern float first_quartile(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *));
 
 /**
@@ -111,7 +111,7 @@ extern float first_quartile(void *a, int n_elem, int size_elem,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float third_quartile(void *a, int n_elem, int size_elem,
+extern float third_quartile(const void *a, int n_elem, int size_elem,
         float (*accessor) (const void *));
 
 
