@@ -23,7 +23,7 @@ struct fspt_node;
 struct fspt_t;
 struct criterion_args;
 typedef void (*criterion_func) (struct criterion_args *args);
-typedef float (*score_func) (const struct fspt_node *node);
+typedef float (*score_func) (struct score_args *args);
 
 /**
  * Node of the FSPT.
@@ -83,6 +83,14 @@ typedef struct criterion_args {
     int forbidden_split;
     int end_of_fitting;
 } criterion_args;
+
+typedef struct score_args {
+    fspt_t *fspt;
+    fspt_node *node;
+    int score_during_fit;
+    int compute_euristic_hyperparam;
+    float euristic_hyperparam;
+} score_args;
 
 typedef struct fspt_stats {
     /* Inputs */

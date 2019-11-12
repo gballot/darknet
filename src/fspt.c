@@ -118,7 +118,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     right->depth = node->depth + 1;
     right->parent = node;
     right->fspt = fspt;
-    right->score = fspt->score(right);
     right->volume = node->volume * (feature_limit[2*index+1] - s) / d_feat;
     /* fill left node */
     left->type = LEAF;
@@ -129,7 +128,6 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     left->depth = node->depth + 1;
     left->parent = node;
     left->fspt = fspt;
-    left->score = fspt->score(left);
     left->volume = node->volume * (s - feature_limit[2 * index]) / d_feat;
     /* fill parent node */
     node->type = INNER;
@@ -935,8 +933,10 @@ void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y) {
     free(nodes);
 }
 
-void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt) {
-    args->fspt = fspt;
+void fspt_fit(int n_samples, float *X, criterion_args *c_args,
+        score_args *s_args, fspt_t *fspt) {
+    c_args->fspt = fspt;
+    s_args->fspt = fspt;
     if (fspt->root)
         free_fspt_nodes(fspt->root);
     /* Builds the root */
@@ -956,25 +956,31 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt) {
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
-    fspt->min_samples = args->min_samples;
-    fspt->max_depth = args->max_depth;
-    root->score = fspt->score(root);
+    fspt->min_samples = c_args->min_samples;
+    fspt->max_depth = c_args->max_depth;
+    if (s_args->score_during_fit) {
+        s_args->node = root;
+        root->score = fspt->score(s_args);
+    }
     if (!n_samples) return;
 
     list *fifo = make_list(); // fifo of the nodes to examine
     list_insert(fifo, (void *)root);
     while (fifo->size > 0) {
         fspt_node *current_node = (fspt_node *) list_pop(fifo);
-        args->node = current_node;
-        int *index = &args->best_index;
-        float *s = &args->best_split;
-        float *gain = &args->gain;
-        /* fills the values of *args */
-        fspt->criterion(args);
+        c_args->node = current_node;
+        int *index = &c_args->best_index;
+        float *s = &c_args->best_split;
+        float *gain = &c_args->gain;
+        /* fills the values of *c_args */
+        fspt->criterion(c_args);
         assert((*gain <= 0.5f) && (0.f <= *gain));
-        if (args->forbidden_split) {
+        if (c_args->forbidden_split) {
             debug_print("forbidden split node %p", current_node);
-            current_node->score = fspt->score(current_node);
+            if (s_args->score_during_fit) {
+                s_args->node = current_node;
+                current_node->score = fspt->score(s_args);
+            }
         } else {
             debug_print("best_index=%d, best_split=%f, gain=%f",
                     *index, *s, *gain);
@@ -986,6 +992,14 @@ void fspt_fit(int n_samples, float *X, criterion_args *args, fspt_t *fspt) {
         }
     }
     free_list(fifo);
+    if (!s_args->score_during_fit) {
+        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
+        fspt *current_node;
+        while(current_node = (fspt *) list_pop(node_list)) {
+            s_args->node = current_node;
+            current_node->score = fspt->score(s_args);
+        }
+    }
 }
 
 /**
