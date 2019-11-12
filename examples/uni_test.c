@@ -16,6 +16,11 @@ static int eq_float_array(int n, const float *X, const float *Y) {
     return 1;
 }
 
+static float acc_int(const void *a) {
+    int *pa = (int *)a;
+    return *pa;
+}
+
 static int eq_nodes(fspt_node a, fspt_node b) {
     int eq = 1;
     eq &= (a.type == b.type);
@@ -349,6 +354,16 @@ void uni_test() {
     free_fspt(fspt_lim);
     free(feature_limit_l3);
 
+
+    /***********************/
+    /* Test median & Co.   */
+    /***********************/
+
+    int tab[] = {-2, -1, 3, 5, 8, 16, 36, 89};
+    fprintf(stderr, "median = %f, Q1 = %f, Q3 = %f\n",
+            median(tab, 8, sizeof(int), acc_int),
+            first_quartile(tab, 8, sizeof(int), acc_int),
+            third_quartile(tab, 8, sizeof(int), acc_int));
 
     /***********************/
     /* Test hist           */
