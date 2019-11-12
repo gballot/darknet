@@ -15,7 +15,9 @@ float density_score(score_args *args) {
         return 0.f;
     }
     if (args->normalize_pass) {
-        return node->score / args->max_score;
+        //TODO
+        //return node->score / args->max_score;
+        return node->score;
     }
     float score =
         (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
