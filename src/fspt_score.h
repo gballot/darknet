@@ -12,6 +12,16 @@
 extern score_func string_to_fspt_score(char *s);
 
 /**
+ * A score function called "density".
+ * This score is the density of samples in the node normalized by the
+ * density of the whole fspt.
+ *
+ * \param node The node wich we want to give a score. Note that the score is
+ *             note affected to the node by this function.
+ */
+extern float density_score(const fspt_node *node);
+
+/**
  * An euristic score function called "euristic".
  * This score is :
  * \sum f_i \frac{ R^+ } { R^+ + E \frac{\Delta I(R)} {\Delta I} }

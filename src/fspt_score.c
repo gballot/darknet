@@ -5,6 +5,11 @@
 #include "fspt.h"
 #include "utils.h"
 
+float density_score(const fspt_node *node) {
+    fspt_t *fspt = node->fspt;
+    return (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
+}
+
 float euristic_score(const fspt_node *node) {
     fspt_t *fspt = node->fspt;
     if (node->n_samples == 0) return 0.f;
@@ -28,6 +33,8 @@ float euristic_score(const fspt_node *node) {
 score_func string_to_fspt_score(char *s) {
     if (strcmp(s, "euristic") == 0) {
         return euristic_score;
+    }  else if (strcmp(s, "density") == 0) {
+        return density_score;
     } else {
         return NULL;
     }

@@ -211,7 +211,10 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
 static int cmp_volume_nodes(const void *n1, const void *n2) {
     fspt_node *node1 = *(fspt_node **) n1;
     fspt_node *node2 = *(fspt_node **) n2;
-    return node1->volume - node2->volume;
+    if (node1->volume < node2->volume)
+        return -1;
+    else
+        return (node1->volume > node2->volume);
 }
 
 /**
@@ -286,7 +289,10 @@ static float acc_depth(const void *n) {
 static int cmp_split_value_nodes(const void *n1, const void *n2) {
     fspt_node *node1 = *(fspt_node **) n1;
     fspt_node *node2 = *(fspt_node **) n2;
-    return node1->split_value - node2->split_value;
+    if (node1->split_value < node2->split_value)
+        return -1;
+    else
+        return (node1->split_value > node2->split_value);
 }
 
 /**
@@ -311,7 +317,10 @@ static float acc_split_value(const void *n) {
 static int cmp_score_nodes(const void *n1, const void *n2) {
     fspt_node *node1 = *(fspt_node **) n1;
     fspt_node *node2 = *(fspt_node **) n2;
-    return node1->score - node2->score;
+    if (node1->score < node2->score)
+        return -1;
+    else
+        return (node1->score > node2->score);
 }
 
 /**
