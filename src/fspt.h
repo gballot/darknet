@@ -22,6 +22,7 @@ typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
 struct fspt_node;
 struct fspt_t;
 struct criterion_args;
+struct score_args;
 typedef void (*criterion_func) (struct criterion_args *args);
 typedef float (*score_func) (struct score_args *args);
 
@@ -269,11 +270,12 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
  *
  * \param n_samples The number of samples in X.
  * \param X the samples to fit.
- * \param args Pointer to the criterion args.
+ * \param c_args Pointer to the criterion args.
+ * \param c_args Pointer to the score args.
  * \param fspt The feature space partitioning tree.
  */
-extern void fspt_fit(int n_samples, float *X, criterion_args *args,
-        fspt_t *fspt);
+extern void fspt_fit(int n_samples, float *X, criterion_args *c_args,
+        score_args *s_args, fspt_t *fspt);
 
 
 /**
