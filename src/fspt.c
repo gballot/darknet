@@ -365,8 +365,11 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         fprintf(stderr, "fspt without depth");
         goto free_arrays;
     }
-    stats->n_nodes_by_depth = calloc(fspt->depth, (sizeof(int)));
-    stats->n_nodes_by_depth_p = calloc(fspt->depth, (sizeof(double)));
+    stats->n_nodes_by_depth = calloc(fspt->depth, sizeof(int));
+    stats->n_nodes_by_depth_p = calloc(fspt->depth, sizeof(double));
+    /* Nodes */
+    stats->n_leaves_above_thresh = calloc(n_thresh, sizeof(int));
+    stats->n_leaves_above_thresh_p = calloc(n_thresh, sizeof(float));
     /* Splits */
     if (!fspt->n_features) {
         fprintf(stderr, "fspt without n_features");
@@ -427,7 +430,8 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             float thresh = fspt_thresh[j];
             if (node->score >= thresh) {
                 stats->volume_above_thresh[j] += node->volume;
-                stats->n_samples_above_thresh[j] += 1;
+                stats->n_samples_above_thresh[j] += node->n_samples;
+                stats->n_leaves_above_thresh[j] += 1;
             }
         }
     }
@@ -445,6 +449,8 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
             stats->volume_above_thresh[j] / fspt->volume;
         stats->n_samples_above_thresh_p[j] =
             ((float) stats->n_samples_above_thresh[j]) / n_samples;
+        stats->n_leaves_above_thresh_p[j] =
+            ((float) stats->n_leaves_above_thresh[j]) / leaves->size;
     }
     for (int i = 0; i < nodes->size; ++i) {
         fspt_node *node = nodes_array[i];
@@ -624,18 +630,19 @@ to the total volume.\n");
     fprintf(stream,
 "         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
+"         │  total  │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
 "│   value│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
-        s->leaves_volume, s->mean_volume, s->min_volume, s->max_volume,
-        s->median_volume, s->first_quartile_volume, s->third_quartile_volume);
+        s->leaves_volume, s->mean_volume, s->min_volume,
+        s->first_quartile_volume, s->median_volume, s->third_quartile_volume,
+        s->max_volume);
     fprintf(stream,
 "│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
-        s->leaves_volume_p, s->mean_volume_p, s->min_volume_p, s->max_volume_p,
-        s->median_volume_p, s->first_quartile_volume_p,
-        s->third_quartile_volume_p);
+        s->leaves_volume_p, s->mean_volume_p, s->min_volume_p,
+        s->first_quartile_volume_p, s->median_volume_p, s->third_quartile_volume_p,
+        s->max_volume_p);
     fprintf(stream,
 "└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\n");
@@ -668,20 +675,19 @@ to the total volume.\n");
     fprintf(stream,
 "         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"         │  total  │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
+"         │  total  │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
 "│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
-        s->max_samples_leaves, s->median_samples_leaves,
-        s->first_quartile_samples_leaves, s->third_quartile_samples_leaves);
+        s->first_quartile_samples_leaves, s->median_samples_leaves,
+        s->third_quartile_samples_leaves, s->max_samples_leaves);
     fprintf(stream,
 "│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         1.f, s->mean_samples_leaves_p, s->min_samples_leaves_p,
-        s->max_samples_leaves_p, s->median_samples_leaves_p,
-        s->first_quartile_samples_leaves_p,
-        s->third_quartile_samples_leaves_p);
+        s->first_quartile_samples_leaves_p, s->median_samples_leaves_p,
+        s->third_quartile_samples_leaves_p, s->max_samples_leaves_p);
     fprintf(stream,
 "└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\n");
@@ -715,30 +721,30 @@ to the total depth.\n");
     fprintf(stream,
 "         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"         │  total  │  mean   │   min   │  median │1st quart│3rd quart│\n");
+"         │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
-"│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
-        s->depth, s->mean_depth_leaves, s->min_depth_leaves,
-        s->median_depth_leaves, s->first_quartile_depth_leaves,
-        s->third_quartile_depth_leaves);
+"│   value│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
+        s->mean_depth_leaves, s->min_depth_leaves,
+        s->first_quartile_depth_leaves, s->median_depth_leaves, 
+        s->third_quartile_depth_leaves, s->depth);
     fprintf(stream,
 "│relative│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
-        1.f, s->mean_depth_leaves_p, s->min_depth_leaves_p,
-        s->median_depth_leaves_p, s->first_quartile_depth_leaves_p,
-        s->third_quartile_depth_leaves_p);
+        s->mean_depth_leaves_p, s->min_depth_leaves_p,
+        s->first_quartile_depth_leaves_p, s->median_depth_leaves_p,
+        s->third_quartile_depth_leaves_p, 1.f);
     fprintf(stream,
 "└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
     fprintf(stream, "\nThe following graph shows the filling of the tree\n");
     fprintf(stream, "depth by depth. A full line is a full filling at\n");
     fprintf(stream, "the corresponding depth.\n");
     fprintf(stream,
-"┌─────┬─────────────────────────────────────────────────────────────────────────┐\n");
+"┌─────┬─────────────────────────────────────────────────────────────────────────┬─────┐\n");
     fprintf(stream,
-"│depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│\n");
+"│depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│ tot │\n");
     fprintf(stream,
-"├─────┼┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬┤\n");
+"├─────┼┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬┼─────┤\n");
     for (int d = 0; d < s->depth; ++d) {
         double prop = s->n_nodes_by_depth_p[d];
         const int half = 36;
@@ -751,14 +757,15 @@ to the total depth.\n");
         for (int i = half + half_prop + 1; i < length; ++i)
             depth_string[i] = ' ';
         depth_string[length] = '\0';
-        fprintf(stream, "│% 5d│%s│\n", d + 1, depth_string);
+        fprintf(stream, "│% 5d│%s│% 5d│\n", d + 1, depth_string,
+                s->n_nodes_by_depth[d]);
     }
     fprintf(stream,
-"├─────┼┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴┼\n");
+"├─────┼┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┴┼─────┤\n");
     fprintf(stream,
-"│depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│\n");
+"│depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│ tot │\n");
     fprintf(stream,
-"└─────┴─────────────────────────────────────────────────────────────────────────┘\n");
+"└─────┴─────────────────────────────────────────────────────────────────────────┴─────┘\n");
 
     /** Node Types **/
     fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━━━━━━┓\n");
@@ -771,6 +778,24 @@ to the total depth.\n");
     fprintf(stream, "│relative│"FLTFORM"│"FLTFORM"│\n", s->n_leaves_p,
             s->n_inner_p);
     fprintf(stream, "└────────┴─────────┴─────────┘\n");
+    fprintf(stream,
+"┌─────────┬─────────┬─────────┐\n");
+    fprintf(stream,
+"│  fspt   │ n_nodes │relative │\n");
+    fprintf(stream,
+"│ thresh  │  above  │ n_nodes │\n");
+    fprintf(stream,
+"│         │  thresh │  above  │\n");
+    fprintf(stream,
+"├─────────┼─────────┼─────────┤\n");
+    for (int i = 0; i < s->n_thresh; ++i) {
+        fprintf(stream,
+"│"FLTFORM"│"INTFORM"│"FLTFORM"│\n",
+            s->fspt_thresh[i], s->n_leaves_above_thresh[i],
+            s->n_leaves_above_thresh_p[i]);
+    }
+    fprintf(stream,
+"└─────────┴─────────┴─────────┘\n");
 
     /** Splits **/
     fprintf(stream, "\n    ┏━━━━━━━━━━━━━━━━━━━┓\n");
@@ -780,7 +805,7 @@ to the total depth.\n");
     fprintf(stream,
 "┌────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"│feat│  count  │ count_p │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
+"│feat│  count  │ count_p │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,
 "├────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     for (int feat = 0; feat < s->fspt->n_features; ++feat) {
@@ -789,9 +814,8 @@ to the total depth.\n");
 "│% 4d│"INTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
             feat, s->split_features_count[feat], s->split_features_count_p[feat],
             s->mean_split_values[feat], s->min_split_values[feat],
-            s->max_split_values[feat], s->median_split_values[feat],
-            s->first_quartile_split_values[feat],
-            s->third_quartile_split_values[feat]);
+            s->first_quartile_split_values[feat], s->median_split_values[feat],
+            s->third_quartile_split_values[feat], s->max_split_values[feat]);
     }
     fprintf(stream,
 "└────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
@@ -803,14 +827,14 @@ to the total depth.\n");
     fprintf(stream,
 "         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
-"         │  mean   │   min   │   max   │  median │1st quart│3rd quart│\n");
+"         │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
         
     fprintf(stream,
 "│  score │"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
-        s->mean_score, s->min_score, s->max_score, s->median_score,
-        s->first_quartile_score, s->third_quartile_score);
+        s->mean_score, s->min_score, s->first_quartile_score, s->median_score,
+        s->third_quartile_score, s->max_score);
     fprintf(stream,
 "└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
 }
@@ -826,6 +850,11 @@ void free_fspt_stats(fspt_stats *stats) {
         free(stats->n_samples_above_thresh);
     if (stats->n_samples_above_thresh_p)
         free(stats->n_samples_above_thresh_p);
+    /* Nodes */
+    if (stats->n_leaves_above_thresh)
+        free(stats->n_leaves_above_thresh);
+    if (stats->n_leaves_above_thresh_p)
+        free(stats->n_leaves_above_thresh_p);
     /* Depth */
     if (stats->n_nodes_by_depth)
         free(stats->n_nodes_by_depth);

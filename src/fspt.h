@@ -163,6 +163,10 @@ typedef struct fspt_stats {
     int n_inner;        // Number of inner nodes.
     float n_leaves_p;   // Proportional number of leaves.
     float n_inner_p;    // Proportional number of inner nodes.
+    int *n_leaves_above_thresh;  // Size n_thresh. Number of nodes above each
+                                 //thresholds.
+    float *n_leaves_above_thresh_p;  // Size n_thresh. Proportional number of
+                                     //nodes above each thresholds.
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.
