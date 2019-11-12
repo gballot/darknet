@@ -9,18 +9,34 @@
 float density_score(score_args *args) {
     fspt_node *node = args->node;
     fspt_t *fspt = args->fspt;
-    return (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
+    if (args->discover) {
+        args->discover = 0;
+        args->need_normalize = 1;
+        return 0.f;
+    }
+    if (args->normalize_pass) {
+        return node->score / args->max_score;
+    }
+    float score =
+        (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
+    if (score > args->max_score)
+        args->max_score = score;
+    return score;
 }
 
 float euristic_score(score_args *args) {
-    if (args->discover && !args->euristic_hyperparam) {
-        args->compute_euristic_hyperparam = 1;
+    fspt_node *node = args->node;
+    fspt_t *fspt = args->fspt;
+    if (args->discover) {
+        if (!args->euristic_hyperparam)
+            args->compute_euristic_hyperparam = 1;
         args->discover = 0;
+        args->need_normalize = 0;
         return 0.f;
     }
     if (args->compute_euristic_hyperparam) {
         /* euristic parameter is the average number of samples per leaves */
-        list *node_list = fspt_nodes_to_list(args->fspt, PRE_ORDER);
+        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
         fspt_node *n;
         int n_leaves = 0;
         while ((n = (fspt_node *) list_pop(node_list))) {
@@ -28,12 +44,10 @@ float euristic_score(score_args *args) {
                 ++n_leaves;
             }
         }
-        args->euristic_hyperparam = ((float) args->fspt->n_samples) / n_leaves;
+        args->euristic_hyperparam = ((float) fspt->n_samples) / n_leaves;
         free_list(node_list);
         args->compute_euristic_hyperparam = 0;
     }
-    fspt_node *node = args->node;
-    fspt_t *fspt = args->fspt;
     if (node->n_samples == 0) return 0.f;
     float E = args->euristic_hyperparam;
     float cum = 0;
@@ -49,7 +63,10 @@ float euristic_score(score_args *args) {
         cum2 += fspt->feature_importance[i];
     }
     free(feature_limit);
-    return cum / cum2;
+    float score = cum / cum2;
+    if (score > args->max_score)
+        args->max_score = score;
+    return score;
 }
 
 score_func string_to_fspt_score(char *s) {

@@ -93,6 +93,9 @@ typedef struct score_args {
     int score_during_fit;
     int compute_euristic_hyperparam;
     float euristic_hyperparam;
+    int need_normalize;
+    int normalize_pass;
+    float max_score;
     int discover;
 } score_args;
 
