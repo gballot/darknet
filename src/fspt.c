@@ -1001,6 +1001,17 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
             s_args->node = current_node;
             current_node->score = fspt->score(s_args);
         }
+        free_list(node_list);
+    }
+    if (s_args->need_normalize) {
+        s_args->normalize_pass = 1;
+        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
+        fspt_node *current_node;
+        while ((current_node = (fspt_node *) list_pop(node_list))) {
+            s_args->node = current_node;
+            current_node->score = fspt->score(s_args);
+        }
+        free_list(node_list);
     }
 }
 
