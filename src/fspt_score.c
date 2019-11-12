@@ -4,6 +4,7 @@
 
 #include "fspt.h"
 #include "list.h"
+#include "math.h"
 #include "utils.h"
 
 float density_score(score_args *args) {
@@ -17,8 +18,18 @@ float density_score(score_args *args) {
     if (args->normalize_pass) {
         return node->score / args->max_score;
     }
-    float score =
-        (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
+    if (fspt->n_samples == 0) return 0.f;
+    double min_volume =
+        pow(args->min_feature_length_p, fspt->n_features) * fspt->volume;
+    float score;
+    if (node->volume < min_volume) {
+        score =
+            (node->n_samples / fspt->n_samples) * (fspt->volume / min_volume);
+    } else {
+        score =
+            (node->n_samples / fspt->n_samples)
+            * (fspt->volume / node->volume);
+    }
     if (score > args->max_score)
         args->max_score = score;
     return score;

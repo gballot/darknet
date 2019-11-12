@@ -837,6 +837,8 @@ layer parse_fspt(list *options, size_params params)
         option_find_int_quiet(options, "score_during_fit", 1);
     s_args.compute_euristic_hyperparam =
         option_find_int_quiet(options, "compute_euristic_hyperparam", 0);
+    s_args.min_feature_length_p =
+        option_find_float_quiet(options, "min_feature_length_p", 0);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,

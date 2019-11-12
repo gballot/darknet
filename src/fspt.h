@@ -96,6 +96,7 @@ typedef struct score_args {
     int need_normalize;
     int normalize_pass;
     float max_score;
+    float min_feature_length_p;
     int discover;
 } score_args;
 
