@@ -13,6 +13,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "list.h"
+
 
 
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
@@ -91,6 +93,7 @@ typedef struct score_args {
     int score_during_fit;
     int compute_euristic_hyperparam;
     float euristic_hyperparam;
+    int discover;
 } score_args;
 
 typedef struct fspt_stats {
@@ -361,6 +364,16 @@ extern void free_fspt(fspt_t *fspt);
  * \param title An optional title for the stats. can be NULL.
  */
 extern void print_fspt_stats(FILE *stream, fspt_stats *stats, char *title);
+
+/**
+ * Creates a list with the nodes of a fspt. The traversal mode can be
+ * customized. The caller must free the list.
+ *
+ * \param fspt The fspt/
+ * \param traversal The mode of traversal @see FSPT_TRAVERSAL.
+ * \return The list of all the nodes.
+ */
+extern list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal);
 
 /**
  * Extract a bunch of statistics about an fspt. @see fspt_stats.

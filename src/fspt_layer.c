@@ -19,7 +19,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, float yolo_thresh,
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int batch,
-        criterion_args args_template, ACTIVATION activation) {
+        criterion_args c_args_template, score_args s_args_template,
+        ACTIVATION activation) {
     layer l = {0};
     l.type = FSPT;
     l.noloss = 1;
@@ -57,7 +58,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.fspt_n_max_training_data = calloc(l.classes, sizeof(int));
     l.fspt_training_data = calloc(l.classes, sizeof(float *));
 
-    l.fspt_criterion_args = args_template;
+    l.fspt_criterion_args = c_args_template;
+    l.fspt_score_args = s_args_template;
 
     for (int i = 0; i < l.classes; ++i) {
         l.fspts[i] = make_fspt(l.total, feature_limit, feature_importance,
@@ -423,15 +425,17 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
             n += size_base;
         }
         float *X = l.fspt_training_data[class];
-        criterion_args *args = calloc(1, sizeof(criterion_args)); 
-        *args = l.fspt_criterion_args;
+        criterion_args *c_args = calloc(1, sizeof(criterion_args)); 
+        score_args *s_args = calloc(1, sizeof(score_args)); 
+        *c_args = l.fspt_criterion_args;
+        *s_args = l.fspt_score_args;
         fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %d...\n",
                 l.ref, class, n);
-        fspt_fit(n, X, args, fspt);
+        fspt_fit(n, X, c_args, s_args, fspt);
         fprintf(stderr,
                 "[Fspt %s:%d]: fit successful n_nodes = %d, depth = %d\n",
                 l.ref, class, fspt->n_nodes, fspt->depth);
-        free(args);
+        free(c_args);
     }
 #ifdef DEBUG
     if (fspt->root->type == INNER)

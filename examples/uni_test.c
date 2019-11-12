@@ -275,7 +275,8 @@ void uni_test() {
     args.gini_gain_thresh = 0.1f;
     args.max_depth = 10;
     args.min_samples = 1;
-    fspt_fit(n_samples, samples_fit, &args, fspt_fitted);
+    score_args s_args = {0};
+    fspt_fit(n_samples, samples_fit, &args, &s_args, fspt_fitted);
     print_fspt(fspt_fitted);
 
     fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL);

@@ -76,7 +76,7 @@ static void add_nodes_to_list(list *nodes, fspt_node *node,
  * \param traversal The mode of traversal @see FSPT_TRAVERSAL.
  * \return The list of all the nodes.
  */
-static list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal) {
+list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal) {
     list *nodes = make_list();
     add_nodes_to_list(nodes, fspt->root, traversal);
     return nodes;
@@ -939,6 +939,9 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     s_args->fspt = fspt;
     if (fspt->root)
         free_fspt_nodes(fspt->root);
+    /* discover score args */
+    s_args->discover = 1;
+    fspt->score(s_args);
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = LEAF;
@@ -972,7 +975,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
         int *index = &c_args->best_index;
         float *s = &c_args->best_split;
         float *gain = &c_args->gain;
-        /* fills the values of *c_args */
         fspt->criterion(c_args);
         assert((*gain <= 0.5f) && (0.f <= *gain));
         if (c_args->forbidden_split) {
@@ -994,8 +996,8 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     free_list(fifo);
     if (!s_args->score_during_fit) {
         list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
-        fspt *current_node;
-        while(current_node = (fspt *) list_pop(node_list)) {
+        fspt_node *current_node;
+        while ((current_node = (fspt_node *) list_pop(node_list))) {
             s_args->node = current_node;
             current_node->score = fspt->score(s_args);
         }

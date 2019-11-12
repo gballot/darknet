@@ -823,19 +823,25 @@ layer parse_fspt(list *options, size_params params)
     char *activation_s = option_find_str(options, "activation", "half_loggy");
     ACTIVATION activation = get_activation(activation_s);
     /* criterion args */
-    criterion_args args = {0};
-    args.min_samples = option_find_int_quiet(options, "min_samples", 1);
-    args.max_depth = option_find_int_quiet(options, "max_depth", 10);
-    args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.f);
-    args.max_features_p = option_find_float_quiet(options,
+    criterion_args c_args = {0};
+    c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
+    c_args.max_depth = option_find_int_quiet(options, "max_depth", 10);
+    c_args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.f);
+    c_args.max_features_p = option_find_float_quiet(options,
             "max_features_p", 1.f);
-    args.gini_gain_thresh = option_find_float_quiet(options,
+    c_args.gini_gain_thresh = option_find_float_quiet(options,
             "gini_gain_thresh", 0.01f);
+    /* score args */
+    score_args s_args = {0};
+    s_args.score_during_fit =
+        option_find_int_quiet(options, "score_during_fit", 1);
+    s_args.compute_euristic_hyperparam =
+        option_find_int_quiet(options, "compute_euristic_hyperparam", 0);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
             net, yolo_thresh, feature_limit, feature_importance,
-            criterion, score, params.batch, args, activation);
+            criterion, score, params.batch, c_args, s_args, activation);
     fspt_layer.projection = params.projection;
     fspt_layer.prod_strides = params.prod_strides;
     fspt_layer.load_samples = option_find_int_quiet(options, "load_samples",1);

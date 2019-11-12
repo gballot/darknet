@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include "fspt.h"
+#include "list.h"
 
 #ifdef GPU
     #define BLOCK 512
@@ -306,6 +307,7 @@ struct layer{
     int *fspt_n_training_data;
     int *fspt_n_max_training_data;
     criterion_args fspt_criterion_args;
+    score_args fspt_score_args;
     int save_samples;
     int load_samples;
 
@@ -612,18 +614,6 @@ network *load_network(char *cfg, char *weights, int clear);
 load_args get_base_args(network *net);
 
 void free_data(data d);
-
-typedef struct node{
-    void *val;
-    struct node *next;
-    struct node *prev;
-} node;
-
-typedef struct list{
-    int size;
-    node *front;
-    node *back;
-} list;
 
 pthread_t load_data(load_args args);
 list *read_data_cfg(char *filename);

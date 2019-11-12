@@ -16,10 +16,10 @@ extern score_func string_to_fspt_score(char *s);
  * This score is the density of samples in the node normalized by the
  * density of the whole fspt.
  *
- * \param node The node wich we want to give a score. Note that the score is
- *             note affected to the node by this function.
+ * \param args The score arguments. Should at least contain the node and
+ *             the fspt.
  */
-extern float density_score(const fspt_node *node);
+extern float density_score(score_args *args);
 
 /**
  * An euristic score function called "euristic".
@@ -32,9 +32,9 @@ extern float density_score(const fspt_node *node);
  * and E is the ratio between training samples in the tree and number of
  * feature.
  *
- * \param node The node wich we want to give a score. Note that the score is
- *             note affected to the node by this function.
+ * \param args The score arguments. Should at least contain the node and
+ *             the fspt.
  */
-extern float euristic_score(const fspt_node *node);
+extern float euristic_score(score_args *args);
 
 #endif /* FSPT_SCORE_H */

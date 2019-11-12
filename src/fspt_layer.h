@@ -27,9 +27,12 @@
  * \param criterion Pointer to the criterion function for training.
  * \param score Pointer to the score function for training.
  * \param batch The number of images per batch.
- * \param args_template Argument that will be passed to the criterion function.
- *                      Can specify the max depth of the tree or the minimum
- *                      number of samples per leaves for instance.
+ * \param c_args_template Argument that will be passed to the criterion
+ *                        function. Can specify the max depth of the tree or
+ *                        the number of samples per leaves for instance.
+ * \param s_args_template Argument that will be passed to the score
+ *                        function. Can specify the euristic hyperparameter
+ *                        or if the score can be computed during the fitting.
  * \param activation The activation function applied to the input features
  *                   before storing them as input for fspts. Useful to restrict
  *                   the inputs to feature_limit.
@@ -39,7 +42,8 @@ extern layer make_fspt_layer(int inputs, int *input_layers,
         int yolo_layer, network *net, float yolo_thresh,
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int batch,
-        criterion_args args_template, ACTIVATION activation);
+        criterion_args c_args_template, score_args s_args_template,
+        ACTIVATION activation);
 
 /**
  * Forward for the fspt layer.

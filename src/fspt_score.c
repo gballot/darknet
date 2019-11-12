@@ -3,17 +3,39 @@
 #include <stdlib.h>
 
 #include "fspt.h"
+#include "list.h"
 #include "utils.h"
 
-float density_score(const fspt_node *node) {
-    fspt_t *fspt = node->fspt;
+float density_score(score_args *args) {
+    fspt_node *node = args->node;
+    fspt_t *fspt = args->fspt;
     return (node->n_samples / fspt->n_samples) * (fspt->volume / node->volume);
 }
 
-float euristic_score(const fspt_node *node) {
-    fspt_t *fspt = node->fspt;
+float euristic_score(score_args *args) {
+    if (args->discover && !args->euristic_hyperparam) {
+        args->compute_euristic_hyperparam = 1;
+        args->discover = 0;
+        return 0.f;
+    }
+    if (args->compute_euristic_hyperparam) {
+        /* euristic parameter is the average number of samples per leaves */
+        list *node_list = fspt_nodes_to_list(args->fspt, PRE_ORDER);
+        fspt_node *n;
+        int n_leaves = 0;
+        while ((n = (fspt_node *) list_pop(node_list))) {
+            if (n->type == LEAF) {
+                ++n_leaves;
+            }
+        }
+        args->euristic_hyperparam = ((float) args->fspt->n_samples) / n_leaves;
+        free_list(node_list);
+        args->compute_euristic_hyperparam = 0;
+    }
+    fspt_node *node = args->node;
+    fspt_t *fspt = args->fspt;
     if (node->n_samples == 0) return 0.f;
-    float E = fspt->n_samples / fspt->n_features;
+    float E = args->euristic_hyperparam;
     float cum = 0;
     float cum2 = 0;
     float *feature_limit = get_feature_limit(node);

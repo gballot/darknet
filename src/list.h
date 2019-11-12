@@ -1,6 +1,19 @@
 #ifndef LIST_H
 #define LIST_H
-#include "darknet.h"
+
+
+typedef struct node{
+    void *val;
+    struct node *next;
+    struct node *prev;
+} node;
+
+typedef struct list{
+    int size;
+    node *front;
+    node *back;
+} list;
+
 
 extern list *make_list();
 
