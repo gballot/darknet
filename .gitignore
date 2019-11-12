@@ -29,7 +29,7 @@ coco/
 waymo/
 darknet
 .fuse*
-gpu*.output
+gpu-job*
 
 # OS Generated #
 .DS_Store*
