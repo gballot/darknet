@@ -234,8 +234,6 @@ void gini_criterion(criterion_args *args) {
     free(cdf);
     free(feature_limit);
     if (forbidden_split) {
-        debug_print("forbidden split at depth %d and n_samples %d",
-                node->depth, node->n_samples);
         args->forbidden_split = 1;
     } else {
         int rand_idx = max_index(best_gains, fspt->n_features);
@@ -244,16 +242,16 @@ void gini_criterion(criterion_args *args) {
         args->best_split = best_splits[rand_idx];
         args->forbidden_split = 0;
         if (args->gain < args->gini_gain_thresh) {
+            args->increment_count = 1;
             debug_print("gain thresh violation at depth %d and count %d",
                     node->depth, fspt->count);
-            fspt->count += 1;
+            node->count += 1;
             int v = 10 > fspt->n_samples / 500 ? 10 : fspt->n_samples / 500;
-            if (fspt->count >= v) {
+            if (node->count >= v) {
                 args->forbidden_split = 1;
-                args->end_of_fitting = 1;
             }
         } else {
-            fspt->count = 0;
+            node->count = 0;
         }
     }
     free(best_gains);

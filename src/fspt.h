@@ -47,6 +47,7 @@ typedef struct fspt_node {
     int depth;
     float score;
     double volume;
+    int count;          // keeps the successive violation of gain threshold
 } fspt_node;
 
 /**
@@ -73,19 +74,24 @@ typedef struct fspt_t {
 
 
 typedef struct criterion_args {
+    /* messages to change fit behaviour */
+    int merge_nodes;
+    /* messages between fspt_fit and all the criterion functions */
     fspt_t *fspt;
     fspt_node *node;
-    float max_tries_p;
-    float max_features_p;
-    float gini_gain_thresh;
     int max_depth;
     int min_samples;
     double min_volume_p;
     int best_index;
     float best_split;
-    float gain;
     int forbidden_split;
+    int increment_count;
     int end_of_fitting;
+    /* messages for gini_criterion */
+    float max_tries_p;
+    float max_features_p;
+    float gini_gain_thresh;
+    float gain;
 } criterion_args;
 
 typedef struct score_args {

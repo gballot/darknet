@@ -919,6 +919,85 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
     }
 }
 
+void free_fspt_nodes(fspt_node *node) {
+    if (!node) return;
+    free_fspt_nodes(node->right);
+    free_fspt_nodes(node->left);
+    free(node);
+}
+
+void free_fspt(fspt_t *fspt) {
+    if (fspt->feature_limit) free((float *) fspt->feature_limit);
+    if (fspt->feature_importance) free((float *) fspt->feature_importance);
+    free_fspt_nodes(fspt->root);
+    if (fspt->samples) free(fspt->samples);
+    free(fspt);
+}
+
+/**
+ * Propagates the count of the node `node` to the parents recursively.
+ * If the node has a non nul count, it takes the minimum count of his
+ * children.
+ *
+ * \param fspt The fspt.
+ * \param node The node from where we propagate the counts. Must be a INNER
+ *             node. Note the count of this node and his children must be set
+ *             by the caller.
+ */
+static void propagate_count(fspt_t *fspt, fspt_node *node) {
+    debug_assert(node->type == LEAF);
+    int old_count = node->count;
+    if (node->count) {
+        node->count = node->right->count < node->left->count ?
+            node->right->count : node->left->count;
+    }
+    if ((old_count != node->count) && node->parent)
+        propagate_count(fspt, node->parent);
+}
+
+/**
+ * Helper function to merge subtrees with a non nul count. We assume that the
+ * counts are correctly computed i.e. that all the subtrees with non nul count
+ * have the same count value.
+ * This function does not update the fspt (like depth or n_nodes);
+ *
+ * \param node The node of the subtree to recursively merge if needed.
+ */
+static void recursive_merge_nodes(fspt_node *node) {
+    if (!node) return;
+    if (node->count) {
+        free_fspt_nodes(node->right);
+        free_fspt_nodes(node->left);
+        node->right = NULL;
+        node->left = NULL;
+        node->type = LEAF;
+        node->split_feature = 0;
+        node->split_value = 0.f;
+    } else {
+        recursive_merge_nodes(node->right);
+        recursive_merge_nodes(node->left);
+    }
+}
+
+/**
+ * Merges the subtrees with a non nul count. We assume that the
+ * counts are correctly computed i.e. that all the subtrees with non nul count
+ * have the same count value.
+ *
+ * \param fspt The fspt to merge.
+ */
+static void merge_nodes(fspt_t *fspt) {
+    recursive_merge_nodes(fspt->root);
+    list *nodes = fspt_nodes_to_list(fspt, PRE_ORDER);
+    fspt->n_nodes = nodes->size;
+    fspt_node *current_node;
+    int depth = 0;
+    while ((current_node = (fspt_node *) list_pop(nodes))) {
+        if (current_node->depth > depth) depth = current_node->depth;
+    }
+    fspt->depth = depth;
+}
+
 void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y) {
     fspt_node **nodes = malloc(n * sizeof(fspt_node *));
     fspt_decision_func(n, fspt, X, nodes);
@@ -942,6 +1021,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     /* discover score args */
     s_args->discover = 1;
     fspt->score(s_args);
+    if (c_args->merge_nodes) s_args->score_during_fit = 0;
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = LEAF;
@@ -978,7 +1058,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
         fspt->criterion(c_args);
         assert((*gain <= 0.5f) && (0.f <= *gain));
         if (c_args->forbidden_split) {
-            debug_print("forbidden split node %p", current_node);
+            debug_print(
+                    "forbidden split node %p at depth %d and n_samples = %d",
+                    current_node, current_node->depth,
+                    current_node->n_samples);
             if (s_args->score_during_fit) {
                 s_args->node = current_node;
                 current_node->score = fspt->score(s_args);
@@ -989,17 +1072,28 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);
+            if (c_args->increment_count) {
+                ++current_node->count;
+                left->count = current_node->count;
+                right->count = current_node->count;
+            }
+            propagate_count(fspt, current_node);
             list_insert_front(fifo, right);
             list_insert_front(fifo, left);
         }
     }
     free_list(fifo);
+    if (c_args->merge_nodes) {
+        merge_nodes(fspt);
+    }
     if (!s_args->score_during_fit) {
         list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
         fspt_node *current_node;
         while ((current_node = (fspt_node *) list_pop(node_list))) {
-            s_args->node = current_node;
-            current_node->score = fspt->score(s_args);
+            if (current_node->type == LEAF) {
+                s_args->node = current_node;
+                current_node->score = fspt->score(s_args);
+            }
         }
         free_list(node_list);
     }
@@ -1008,8 +1102,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
         list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
         fspt_node *current_node;
         while ((current_node = (fspt_node *) list_pop(node_list))) {
-            s_args->node = current_node;
-            current_node->score = fspt->score(s_args);
+            if (current_node->type == LEAF) {
+                s_args->node = current_node;
+                current_node->score = fspt->score(s_args);
+            }
         }
         free_list(node_list);
     }
@@ -1161,21 +1257,6 @@ void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
     if(!fp) file_error(filename);
     fspt_load_file(fp, fspt, load_samples, succ);
     fclose(fp);
-}
-
-void free_fspt_nodes(fspt_node *node) {
-    if (!node) return;
-    free_fspt_nodes(node->right);
-    free_fspt_nodes(node->left);
-    free(node);
-}
-
-void free_fspt(fspt_t *fspt) {
-    if (fspt->feature_limit) free((float *) fspt->feature_limit);
-    if (fspt->feature_importance) free((float *) fspt->feature_importance);
-    free_fspt_nodes(fspt->root);
-    if (fspt->samples) free(fspt->samples);
-    free(fspt);
 }
 
 #undef FLTFORM
