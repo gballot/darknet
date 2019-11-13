@@ -279,6 +279,9 @@ void uni_test() {
     args.merge_nodes = 1;
     args.max_consecutive_gain_violations = 4;
     score_args s_args = {0};
+    s_args.calibration_score = 0.5;
+    s_args.calibration_n_samples_p = 0.75;
+    s_args.calibration_volume_p = 0.05;
     fspt_fit(n_samples, samples_fit, &args, &s_args, fspt_fitted);
     print_fspt(fspt_fitted);
 

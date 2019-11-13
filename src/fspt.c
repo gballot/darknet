@@ -1018,10 +1018,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     s_args->fspt = fspt;
     if (fspt->root)
         free_fspt_nodes(fspt->root);
-    /* discover score args */
-    s_args->discover = 1;
-    fspt->score(s_args);
-    if (c_args->merge_nodes) s_args->score_during_fit = 0;
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = LEAF;
@@ -1041,6 +1037,10 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     fspt->depth = 1;
     fspt->min_samples = c_args->min_samples;
     fspt->max_depth = c_args->max_depth;
+    /* discover score args */
+    s_args->discover = 1;
+    fspt->score(s_args);
+    if (c_args->merge_nodes) s_args->score_during_fit = 0;
     if (s_args->score_during_fit) {
         s_args->node = root;
         root->score = fspt->score(s_args);

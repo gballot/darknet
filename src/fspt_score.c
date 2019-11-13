@@ -1,5 +1,6 @@
 #include "fspt_score.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "fspt.h"
@@ -12,29 +13,17 @@ float density_score(score_args *args) {
     fspt_t *fspt = args->fspt;
     if (args->discover) {
         args->discover = 0;
-        args->need_normalize = 1;
+        assert(args->calibration_volume_p);
+        double calibration_full_score =
+            args->calibration_n_samples_p / args->calibration_volume_p;
+        args->calibration_tau =
+            - log(1. - args->calibration_score) / calibration_full_score;
         return 0.f;
     }
-    if (args->normalize_pass) {
-        //TODO
-        //return node->score / args->max_score;
-        return node->score;
-    }
     if (fspt->n_samples == 0) return 0.f;
-    double min_volume =
-        pow(args->min_feature_length_p, fspt->n_features) * fspt->volume;
-    float score;
-    if (node->volume < min_volume) {
-        score =
-            ((float) node->n_samples / fspt->n_samples)
-            * ((float) fspt->volume / min_volume);
-    } else {
-        score =
-            ((float) node->n_samples / fspt->n_samples)
-            * ((float) fspt->volume / node->volume);
-    }
-    if (score > args->max_score)
-        args->max_score = score;
+    float uncalibred_score = ((float) node->n_samples / fspt->n_samples)
+        * ((float) fspt->volume / node->volume);
+    float score = 1. - exp(- args->calibration_tau * uncalibred_score);
     return score;
 }
 
@@ -78,8 +67,6 @@ float euristic_score(score_args *args) {
     }
     free(feature_limit);
     float score = cum / cum2;
-    if (score > args->max_score)
-        args->max_score = score;
     return score;
 }
 

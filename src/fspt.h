@@ -74,7 +74,7 @@ typedef struct fspt_t {
 
 
 typedef struct criterion_args {
-    /* messages to change fit behaviour */
+    /* messages to change fitting behaviour */
     int merge_nodes;
     /* messages between fspt_fit and all the criterion functions */
     fspt_t *fspt;
@@ -96,16 +96,22 @@ typedef struct criterion_args {
 } criterion_args;
 
 typedef struct score_args {
+    /* messages to change fitting behaviour */
+    int score_during_fit;
+    /* messages for all score functions */
     fspt_t *fspt;
     fspt_node *node;
-    int score_during_fit;
-    int compute_euristic_hyperparam;
-    float euristic_hyperparam;
+    int discover;
     int need_normalize;
     int normalize_pass;
-    float max_score;
-    float min_feature_length_p;
-    int discover;
+    /* messages for euristic score */
+    int compute_euristic_hyperparam;
+    float euristic_hyperparam;
+    /* message for density score */
+    float calibration_score;
+    float calibration_n_samples_p;
+    float calibration_volume_p;
+    float calibration_tau;
 } score_args;
 
 typedef struct fspt_stats {
