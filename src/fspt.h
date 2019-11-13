@@ -80,6 +80,7 @@ typedef struct criterion_args {
     float gini_gain_thresh;
     int max_depth;
     int min_samples;
+    double min_volume_p;
     int best_index;
     float best_split;
     float gain;

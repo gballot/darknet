@@ -26,11 +26,12 @@ float density_score(score_args *args) {
     float score;
     if (node->volume < min_volume) {
         score =
-            (node->n_samples / fspt->n_samples) * (fspt->volume / min_volume);
+            ((float) node->n_samples / fspt->n_samples)
+            * ((float) fspt->volume / min_volume);
     } else {
         score =
-            (node->n_samples / fspt->n_samples)
-            * (fspt->volume / node->volume);
+            ((float) node->n_samples / fspt->n_samples)
+            * ((float) fspt->volume / node->volume);
     }
     if (score > args->max_score)
         args->max_score = score;

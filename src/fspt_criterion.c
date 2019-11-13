@@ -34,17 +34,24 @@ static float gini(float x, float y)
  * with the notations from Toward Safe Machine Learning.
  */
 static float gini_after_split(float min, float max, float s, size_t n_left,
-        size_t n_right, float n_empty, int min_samples, int *forbidden_split) {
+        size_t n_right, float n_empty, double node_volume, int min_samples,
+        double min_volume, int *forbidden_split) {
     *forbidden_split = 0;
     float l = max - min;
     if (l == 0.) {
         *forbidden_split = 1;
         return 1.;
     }
-    float n_empty_left = n_empty * (s - min) / l;
-    float n_empty_right = n_empty * (max -s) / l;
+    double prop_left = ((double) (s - min)) / ((double)l);
+    double prop_right = ((double) (max - s)) / ((double) l);
+    float n_empty_left = n_empty * prop_left;
+    float n_empty_right = n_empty * prop_right;
+    double volume_left = node_volume * prop_left;
+    double volume_right = node_volume * prop_right;
     if (n_empty_left + n_left < min_samples
-            || n_empty_right + n_right < min_samples) {
+            || n_empty_right + n_right < min_samples
+            || volume_left < min_volume
+            || volume_right < min_volume) {
         *forbidden_split = 1;
         return 1.;
     }
@@ -53,17 +60,6 @@ static float gini_after_split(float min, float max, float s, size_t n_left,
     float total_left = n_left + n_empty_left;
     float total_right = n_right + n_empty_right;
     float total = total_right + total_left;
-    // TO DELETE ONCE FIXED
-    if (gini_left * total_left / total + gini_right * total_right / total < 0) {
-        fprintf(stderr, "error negative gain = %f, min/max = (%f,%f), s = %f, n_empty_l/r = (%f/%f), gini_l/r = (%f/%f), total_l/r = (%f,%f), total = %f\n",
-                gini_left * total_left / total + gini_right * total_right / total,
-                min, max,
-                s,
-                n_empty_left, n_empty_right,
-                gini_left, gini_right,
-                total_left, total_right,
-                total);
-    }
     return gini_left * total_left / total + gini_right * total_right / total;
 }
 
@@ -142,9 +138,10 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
  * Finds the best split point on feature feat.
  */
 static void best_split_on_feature(int feat, float node_min, float node_max,
-        float n_samples, float n_empty, int min_samples, float max_tries_p,
-        int n_bins, const float *bins, const size_t *cdf, float *best_gain,
-        int *best_index, int *forbidden_split) {
+        float n_samples, float n_empty, double node_volume, int min_samples,
+        double min_volume, float max_tries_p, int n_bins, const float *bins,
+        const size_t *cdf, float *best_gain, int *best_index,
+        int *forbidden_split) {
     *forbidden_split = 1;
     int local_best_gain_index = -1;
     float local_best_gain = 0.;
@@ -159,7 +156,8 @@ static void best_split_on_feature(int feat, float node_min, float node_max,
         size_t n_right = n_samples - cdf[index];
         int local_forbidden_split = 0;
         float score = gini_after_split(node_min, node_max, bin, n_left,
-                n_right, n_empty, min_samples, &local_forbidden_split);
+                n_right, n_empty, node_volume, min_samples, min_volume,
+                &local_forbidden_split);
         if (local_forbidden_split) continue;
         float tmp_gain = 0.5 - score;
         if (tmp_gain > local_best_gain) {
@@ -178,7 +176,8 @@ void gini_criterion(criterion_args *args) {
     fspt_node *node = args->node;
     args->end_of_fitting = 0;
     if (node->n_samples + node->n_empty < 2 * args->min_samples
-            || node->depth >= args->max_depth) {
+            || node->depth >= args->max_depth
+            || node->volume < args->min_volume_p * fspt->volume) {
         args->forbidden_split = 1;
         return;
     }
@@ -208,9 +207,10 @@ void gini_criterion(criterion_args *args) {
         float local_best_gain = 0.f;
         int local_forbidden_split = 1;
         best_split_on_feature(feat, node_min, node_max, node->n_samples,
-                node->n_empty, args->min_samples,
-                args->max_tries_p, n_bins, bins, cdf, &local_best_gain,
-                &local_best_gain_index, &local_forbidden_split);
+                node->n_empty, node->volume, args->min_samples,
+                args->min_volume_p * fspt->volume, args->max_tries_p, n_bins,
+                bins, cdf, &local_best_gain, &local_best_gain_index,
+                &local_forbidden_split);
 
         if (!local_forbidden_split) {
             float fspt_min = fspt->feature_limit[2*feat];
