@@ -824,10 +824,13 @@ layer parse_fspt(list *options, size_params params)
     ACTIVATION activation = get_activation(activation_s);
     /* criterion args */
     criterion_args c_args = {0};
+    c_args.merge_nodes = option_find_int_quiet(options, "merge_nodes", 0);
     c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
     c_args.min_volume_p = option_find_float_quiet(options,
             "min_volume_p", 0.00001);
     c_args.max_depth = option_find_int_quiet(options, "max_depth", 10);
+    c_args.max_consecutive_gain_violations =
+        option_find_int_quiet(options, "max_consecutive_gain_violations", 10);
     c_args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.);
     c_args.max_features_p = option_find_float_quiet(options,
             "max_features_p", 1.);

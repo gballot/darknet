@@ -91,6 +91,7 @@ typedef struct criterion_args {
     float max_tries_p;
     float max_features_p;
     float gini_gain_thresh;
+    int max_consecutive_gain_violations;
     float gain;
 } criterion_args;
 

@@ -945,7 +945,7 @@ void free_fspt(fspt_t *fspt) {
  *             by the caller.
  */
 static void propagate_count(fspt_t *fspt, fspt_node *node) {
-    debug_assert(node->type == LEAF);
+    debug_assert(node->type == INNER);
     int old_count = node->count;
     if (node->count) {
         node->count = node->right->count < node->left->count ?
