@@ -370,7 +370,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     /* Depth */
     if (!fspt->depth) {
         fprintf(stderr, "fspt without depth");
-        goto free_arrays;
+        return stats;
     }
     stats->n_nodes_by_depth = calloc(fspt->depth, sizeof(int));
     stats->n_nodes_by_depth_p = calloc(fspt->depth, sizeof(double));
@@ -380,7 +380,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     /* Splits */
     if (!fspt->n_features) {
         fprintf(stderr, "fspt without n_features");
-        goto free_arrays;
+        return stats;
     }
     stats->split_features_count = calloc(n_features, sizeof(int));
     stats->split_features_count_p = calloc(n_features, sizeof(float));
@@ -414,7 +414,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     }
     if (!leaves->size) {
         fprintf(stderr, "fspt without leaves");
-        goto free_arrays;
+        goto free_no_leaves;
     }
     fspt_node **leaves_array = (fspt_node **) list_to_array(leaves);
     fspt_node **inner_nodes_array = (fspt_node **) list_to_array(inner_nodes);
@@ -597,19 +597,22 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
 
     /** Free **/
 free_arrays:
-    free_list(nodes);
-    if (nodes_array) free(nodes_array);
-    free_list(leaves);
     if (leaves_array) free(leaves_array);
-    free_list(inner_nodes);
     if (inner_nodes_array) free(inner_nodes_array);
     for (int feat = 0; feat < n_features; ++feat) {
-        free_list(inner_nodes_by_split_feat[feat]);
         if (inner_nodes_by_split_feat_arrays[feat])
             free(inner_nodes_by_split_feat_arrays[feat]);
     }
     if (inner_nodes_by_split_feat_arrays)
         free(inner_nodes_by_split_feat_arrays);
+free_no_leaves:
+    free_list(nodes);
+    if (nodes_array) free(nodes_array);
+    free_list(leaves);
+    free_list(inner_nodes);
+    for (int feat = 0; feat < n_features; ++feat) {
+        free_list(inner_nodes_by_split_feat[feat]);
+    }
 
     return stats;
 }
