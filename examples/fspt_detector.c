@@ -124,7 +124,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         int *gpus, int ngpus, int clear, int refit, int ordered,
-        int one_thread, int merge, int only_fit) {
+        int one_thread, int merge, int only_fit, int print_stats_after_fit) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -225,20 +225,20 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
     fprintf(stderr, "End of FSPT training\n");
-    // TO REMOVE
-    list *fspt_layers = get_network_layers_by_type(net, FSPT);
-    while (fspt_layers->size > 0) {
-        layer *l = (layer *) list_pop(fspt_layers);
-        for (int i = 0; i < l->classes; ++i) {
-            fspt_t *fspt = l->fspts[i];
-            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
-            char buf[256] = {0};
-            sprintf(buf, "%s class %d", l->ref, i);
-            print_fspt_stats(stderr, stats, buf);
-            free_fspt_stats(stats);
+    if (print_stats_after_fit) {
+        list *fspt_layers = get_network_layers_by_type(net, FSPT);
+        while (fspt_layers->size > 0) {
+            layer *l = (layer *) list_pop(fspt_layers);
+            for (int i = 0; i < l->classes; ++i) {
+                fspt_t *fspt = l->fspts[i];
+                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+                char buf[256] = {0};
+                sprintf(buf, "%s class %d", l->ref, i);
+                print_fspt_stats(stderr, stats, buf);
+                free_fspt_stats(stats);
+            }
         }
     }
-    //
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
@@ -436,6 +436,7 @@ Options are :\n\
     int one_thread = find_arg(argc, argv, "-one_thread");
     int only_fit = find_arg(argc, argv, "-only_fit");
     int merge = find_arg(argc, argv, "-merge") || only_fit;
+    int print_stats_after_fit = find_arg(argc, argv, "-print_stats");
     int fullscreen = find_arg(argc, argv, "-fullscreen");
 
     int *gpus = 0;
@@ -469,7 +470,7 @@ Options are :\n\
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts,
-                ordered, one_thread, merge, only_fit);
+                ordered, one_thread, merge, only_fit, print_stats_after_fit);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile);
