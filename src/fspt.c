@@ -467,6 +467,14 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         stats->n_nodes_by_depth_p[i] = 
             ((double) stats->n_nodes_by_depth[i]) / pow(2, i);
     }
+    for (int feat = 0; feat < n_features; ++feat) {
+        if (!inner_nodes_by_split_feat[feat]->size) continue;
+        for (int i = 0; i < inner_nodes_by_split_feat[feat]->size; ++i) {
+            fspt_node *node = inner_nodes_by_split_feat_arrays[feat][i];
+            stats->mean_split_values[feat] += node->split_value;
+        }
+        stats->mean_split_values[feat] /= inner_nodes_by_split_feat[feat]->size;
+    }
 
 
     /** Volume statistics **/
