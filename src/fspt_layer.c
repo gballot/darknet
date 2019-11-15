@@ -412,7 +412,8 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
-        if (fspt->root) free_fspt_nodes(fspt->root);
+        // TODO: DEBUG THIS LINE
+        //if (fspt->root) free_fspt_nodes(fspt->root);
         int n = l.fspt_n_training_data[class];
         if (merge) {
             int size_base = fspt->n_samples;
