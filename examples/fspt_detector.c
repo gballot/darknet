@@ -7,6 +7,20 @@
 #include "fspt_layer.h"
 #include "network.h"
 
+typedef struct validation_data {
+    int n_images;
+    int n_truth;
+    int n_yolo_detections;
+    int n_fspt_detections;
+    int classes;
+    int *n_true_detection_by_class;
+    int *n_false_detection_by_class;
+    int *n_no_detection_by_class;
+    int *n_true_rejections_by_class;
+    int *n_false_rejection_by_class;
+    float iou_thresh;
+} validation_data;
+
 static void print_fspt_detections(FILE **fps, char *id, detection *dets,
         int total, int classes, int w, int h) {
     for(int i = 0; i < total; ++i) {
@@ -25,6 +39,11 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
                     dets[i].prob[j], xmin, ymin, xmax, ymax);
         }
     }
+}
+
+static void update_validation_data(int nboxes_yolo, detection *dets_yolo,
+        int nboxes_fspt, detection *dets_fspt, validation_data *val) {
+    
 }
 
 static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
@@ -247,7 +266,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     //TODO
     int j;
     list *options = read_data_cfg(datacfg);
-    char *valid_images = option_find_str(options, "valid", "data/train.list");
+    char *valid_images = option_find_str(options, "valid", "data/valid.list");
     char *name_list = option_find_str(options, "names", "data/names.list");
     char *prefix = option_find_str(options, "results", "results");
     char **names = get_labels(name_list);
@@ -257,14 +276,20 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     network *net = load_network(cfgfile, weightfile, 0);
     set_batch_network(net, 1);
-    fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n",
-            net->learning_rate, net->momentum, net->decay);
     srand(time(0));
 
     list *plist = get_paths(valid_images);
     char **paths = (char **)list_to_array(plist);
 
-    layer l = net->layers[net->n-1];
+    layer l = net->layers[0];
+    for (int i = 0; i < net->n; ++i) {
+        l = net->layers[i];
+        if (l.type == FSPT || l.type == YOLO)
+            break;
+    }
+    if (l.type != FSPT && l.type != YOLO)
+        error("The net must have fspt or yolo layers");
+
     int classes = l.classes;
 
     char buff[1024];
@@ -273,6 +298,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     FILE **fps = 0;
     int coco = 0;
     int imagenet = 0;
+    int waymo = 0;
     if(0==strcmp(type, "coco")){
         if(!outfile) outfile = "coco_results";
         snprintf(buff, 1024, "%s/%s.json", prefix, outfile);
@@ -285,6 +311,11 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         fp = fopen(buff, "w");
         imagenet = 1;
         classes = 200;
+    } else if(0==strcmp(type, "waymo")){
+        if(!outfile) outfile = "waymo-detection";
+        snprintf(buff, 1024, "%s/%s.txt", prefix, outfile);
+        fp = fopen(buff, "w");
+        coco = 1;
     } else {
         if(!outfile) outfile = "comp4_det_test_";
         fps = calloc(classes, sizeof(FILE *));
@@ -316,6 +347,10 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.type = DETECTION_DATA;
     args.ordered = 1;
 
+    validation_data val_data = {0};
+    val_data.n_images = m;
+    val_data.classes = classes;
+
     for(t = 0; t < nthreads; ++t){
         args.path = paths[i+t];
         args.im = &buf[t];
@@ -340,6 +375,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             char *path = paths[i+t-nthreads];
             char *id = basecfg(path);
             float *X = val_resized[t].data;
+            // WIP
+            data *d = thr[t].d;
+            // end WIP
             network_predict(net, X);
             int w = val[t].w;
             int h = val[t].h;
@@ -354,19 +392,19 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                     yolo_thresh, fspt_thresh, hier_thresh, map, 0,
                     &nboxes_fspt);
             if (nms) do_nms_sort(dets_fspt, nboxes_fspt, classes, nms);
+
+            update_validation_data(nboxes_yolo, dets_yolo, nboxes_fspt,
+                    dets_fspt, val_data);
+            /*
             if (coco){
-                //print_cocos(fp, path, dets_fspt, nboxes_fspt, classes, w, h);
-                print_fspt_detections(fps, id, dets_fspt, nboxes_fspt, classes,
-                        w, h);
             } else if (imagenet){
-                //print_imagenet_detections(fp, i+t-nthreads+1, dets_fspt,
-                //      nboxes_fspt, classes, w, h);
-                print_fspt_detections(fps, id, dets_fspt, nboxes_fspt, classes,
-                        w, h);
+            } else if (waymo){
+                
             } else {
                 print_fspt_detections(fps, id, dets_fspt, nboxes_fspt, classes,
                         w, h);
             }
+            */
             free_detections(dets_fspt, nboxes_fspt);
             free_detections(dets_yolo, nboxes_yolo);
             free(id);
@@ -395,7 +433,7 @@ void run_fspt(int argc, char **argv)
 {
     if(argc < 4){
         fprintf(stderr,
-                "usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
+"usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
 With :\n\
     train -> train fspts on an already trained yolo network.\n\
     test  -> test fspt predictions.\n\
@@ -420,7 +458,8 @@ Options are :\n\
     -only_fit    -> if set, don't extract new data. implies -merge.\n\
     -one_thread  -> if set, the fspts are fitted in only one thread instead of\n\
                     one thread per fspt.\n\
-    -fullscreen  -> unused.\n",
+    -fullscreen  -> unused.\n\
+    -print_stats -> if set, print the statistics of the fspts after training.\n",
                 argv[0], argv[1]);
         return;
     }
