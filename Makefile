@@ -1,9 +1,9 @@
-GPU=1
-CUDNN=1
+GPU=0
+CUDNN=0
 OPENCV=0
 OPENMP=0
-DEBUG=0
-TRAIN=0
+DEBUG=1
+TRAIN=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -25,6 +25,7 @@ CC=gcc
 CPP=g++
 NVCC=nvcc 
 AR=ar
+VALGRIND=valgrind
 ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
@@ -35,20 +36,20 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=
-FSPT_OP= -clear 
+FSPT_OP=-refit -only_fit -print_stats -one_thread
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
-WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
-WEIGHTS=weights/fspt-waymo-day.weights
+#WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
+#WEIGHTS=weights/fspt-waymo-day.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else
 NETCMD=test
 FILE= waymo/Day/images/training_00029.jpg
 FILE= waymo/Day/images/training_000223988.jpg
-#FILE=
+FILE=
 endif
 
 ifeq ($(OPENMP), 1) 
@@ -60,6 +61,7 @@ OPTS=-O0 -g
 COMMON+= -DDEBUG
 CFLAGS+= -DDEBUG
 GDBCMD=
+VALGRIND_OP=--leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind.log
 ifeq ($(GPU), 1) 
 NVCCFLAGS=-G
 GDBCMD+= -ex "set cuda memcheck on"
@@ -139,7 +141,10 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex "b , $(BREAKPOINTS)), ") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
+	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix '-ex "b ', $(BREAKPOINTS)), '"') -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
+
+valgrind: $(EXEC)
+	$(SRUN) $(VALGRIND) $(VALGRIND_OP) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)
 
 run: $(EXEC)
 	$(SRUN) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP) 

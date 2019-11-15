@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH -o gpu-job-print-fspt-waymo.output
 #SBATCH -p PV1003q,NV100q,PV100q,GV1002q
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:0
 #SBATCH -n 1
 #SBATCH -c 24
 
@@ -15,4 +15,4 @@ netcfg='cfg/fspt-waymo.cfg'
 options=''
 
 #/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1
-/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt stats ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0
+/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt stats ${datacfg} ${netcfg} ${weightfile} ${options}
