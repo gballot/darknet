@@ -598,6 +598,42 @@ detection *make_network_boxes(network *net, float thresh, int *num)
     return dets;
 }
 
+detection **make_network_truth_boxes_batch(network *net, int **num)
+{
+    layer l = net->layers[0];
+    for (int i = 0; i < net->n; ++i) {
+        l = net->layers[i];
+        if (l.type == FSPT || l.type == YOLO)
+            break;
+    }
+    if (l.type != FSPT && l.type != YOLO)
+        error("The net must have fspt or yolo layers");
+
+    int classes = l.classes;
+    int *count = calloc(net->batch, sizeof(int));
+    detection **dets = calloc(net->batch, sizeof(detection *));
+    for (int b = 0; b < net->batch; ++b) {
+        /* while there are truth boxes*/
+        while(1) {
+            box truth = float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
+            if(!truth.x) break;
+            ++count[b];
+        }
+        dets[b] = calloc(count[b], sizeof(detection));
+        for(int i = 0; i < count[b]; ++i){
+            dets[b][i].prob = calloc(classes, sizeof(float));
+            if(l.coords > 4){
+                dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+            }
+        }
+    }
+    if(num)
+        *num = count;
+    else 
+        free(count);
+    return dets;
+}
+
 detection **make_network_boxes_batch(network *net, float thresh, int **num)
 {
     layer l = net->layers[net->n - 1];
@@ -617,6 +653,27 @@ detection **make_network_boxes_batch(network *net, float thresh, int **num)
     else 
         free(nboxes);
     return dets;
+}
+
+int *fill_network_boxes_batch(network *net, int w, int h, float thresh, float hier, int *map, int relative, detection **dets)
+{
+    detection **local_dets = malloc(net->batch * sizeof(detection *));
+    memcpy(local_dets, dets, net->batch * sizeof(detection *));
+    int *total = calloc(net->batch, sizeof(int));
+    for(int j = 0; j < net->n; ++j){
+        layer l = net->layers[j];
+        if(l.type == YOLO){
+            int *count = get_yolo_detections_batch(l, w, h, net->w, net->h,
+                    thresh, map, relative, local_dets);
+            for (int b = 0; b < net->batch; ++b) {
+                local_dets[b] += count[b];
+                total += count[b];
+            }
+            free(count);
+        }
+    }
+    free(local_dets);
+    return total;
 }
 
 void fill_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, detection *dets)
@@ -639,6 +696,27 @@ void fill_network_boxes(network *net, int w, int h, float thresh, float hier, in
     }
 }
 
+int *fill_network_fspt_truth_boxes_batch(network *net, detection **dets)
+{
+    detection **local_dets = malloc(net->batch * sizeof(detection *));
+    memcpy(local_dets, dets, net->batch * sizeof(detection *));
+    int *total = calloc(net->batch, sizeof(int));
+    for(int j = 0; j < net->n; ++j){
+        layer l = net->layers[j];
+        if(l.type == FSPT){
+            int *count = calloc(net->batch, sizeof(int));
+            fspt_predict_truth(l, *net, local_dets, &count);
+            for (int b = 0; b < net->batch; ++b) {
+                local_dets[b] += count[b];
+                total += count[b];
+            }
+            free(count);
+        }
+    }
+    free(local_dets);
+    return total;
+}
+
 int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh,
         float fspt_thresh, float hier, int *map, int relative,
         detection **dets)
@@ -655,15 +733,37 @@ int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh
                 local_dets[b] += count[b];
                 total += count[b];
             }
+            free(count);
         }
     }
+    free(local_dets);
     return total;
 }
 
-detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num)
+detection **get_network_boxes_batch(network *net, int w, int h, float thresh,
+        float hier, int *map, int relative, int **num)
+{
+    detection **dets = make_network_boxes_batch(net, thresh, NULL);
+    *num = fill_network_boxes_batch(net, w, h, thresh, hier, map, relative,
+            dets);
+    return dets;
+}
+
+detection *get_network_boxes(network *net, int w, int h, float thresh,
+        float hier, int *map, int relative, int *num)
 {
     detection *dets = make_network_boxes(net, thresh, num);
     fill_network_boxes(net, w, h, thresh, hier, map, relative, dets);
+    return dets;
+}
+
+detection **get_network_fspt_truth_boxes_batch(network *net, int w, int h,
+        float yolo_thresh, float fspt_thresh, float hier, int *map,
+        int relative, int **num)
+{
+    detection **dets = make_network_truth_boxes_batch(net, NULL);
+    *num = fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
+            hier, map, relative, dets);
     return dets;
 }
 

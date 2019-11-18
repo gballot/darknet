@@ -275,6 +275,52 @@ int *get_fspt_detections(layer l, int w, int h, network *net,
     return count;
 }
 
+
+void fspt_predict_truth(layer l, network net, detection **dets, int **n_boxes)
+{
+    int *count = calloc(l.batch, sizeof(int));
+    *n_boxes = count;
+    for (int b = 0; b < l.batch; ++b) {
+        /* while there are truth boxes*/
+        int t = 0;
+        while(1) {
+            box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
+            if(!truth.x) break;
+            /* Get mask index */
+            layer yolo = net.layers[l.yolo_layer];
+            float best_iou = 0;
+            int best_n = 0;
+            box truth_shift = truth;
+            truth_shift.x = truth_shift.y = 0;
+            for(int n = 0; n < yolo.total; ++n){
+                box pred = {0};
+                pred.w = yolo.biases[2*n]/net.w;
+                pred.h = yolo.biases[2*n+1]/net.h;
+                float iou = box_iou(pred, truth_shift);
+                if (iou > best_iou){
+                    best_iou = iou;
+                    best_n = n;
+                }
+            }
+            /* Update fspt */
+            int mask_n = int_index(yolo.mask, best_n, yolo.n);
+            if(mask_n >= 0){
+                int class = net.truth[t*(4 + 1) + 4 + b*l.truths];
+                debug_print("truth (x,y,w,h) = (%f,%f,%f,%f) - chosen mask %d (w,h) = (%f,%f)",
+                        truth.x, truth.y, truth.w, truth.h, mask_n,
+                        yolo.biases[2*mask_n]/net.w,
+                        yolo.biases[2*mask_n+1]/net.h);
+                update_fspt_input(l, &net, truth.x, truth.y, b);
+                fspt_predict(1, l.fspts[class], l.fspt_input,
+                        dets[b][count[b]].prob + class);
+                ++count[b];
+            }
+            ++t;
+        }
+    }
+}
+
+
 void resize_fspt_layer(layer *l, int w, int h) {
     l->w = w;
     l->h = h;

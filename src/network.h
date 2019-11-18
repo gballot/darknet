@@ -25,6 +25,16 @@ extern void calc_network_cost(network *net);
 extern void fit_fspts(network *net, int classes, int refit, int one_thread,
         int merge);
 extern void fspt_layers_set_samples(network *net, int refit, int merge);
+extern void validate_networks_fspt(network **nets, int n, data d, int interval);
+extern void validate_network_fspt(network *net, data d);
+extern detection **get_network_boxes_batch(network *net, int w, int h,
+        float thresh, float hier, int *map, int relative, int **num);
+extern detection **get_network_fspt_truth_boxes_batch(network *net, int w,
+        int h, float yolo_thresh, float fspt_thresh, float hier, int *map,
+        int relative, int **num);
+extern detection **get_network_fspt_boxes_batch(network *net, int w, int h,
+        float yolo_thresh, float fspt_thresh, float hier, int *map,
+        int relative, int **num);
 
 #endif
 

@@ -101,6 +101,24 @@ extern int *get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
         detection **dets);
 
+
+/**
+ * Gives the score of the fspt according to the real classes and real boxes.
+ * The result is given under the form of predictions where the probability for
+ * the true class is the score given by the fspt of this class and boxe size,
+ * if it match to this layer mask.
+ *
+ * \param l The fspt layer.
+ * \param net The network.
+ * \param dets Output parameter of size net->batch. will be filled by the
+ *             predictions for each batch image. Must be allocated by the
+ *             caller. @see make_network_truth_boxes_batch.
+ * \param n_boxes Output parameter of size net->batch. Will be filled by
+ *                the number of detection by batch image.
+ */
+extern void fspt_predict_truth(layer l, network net, detection **dets,
+        int **n_boxes);
+
 /**
  * Saves all the fspts to a file. Opening and closing the file is the 
  * responsibility of the caller.

@@ -42,7 +42,9 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
 }
 
 static void update_validation_data(int nboxes_yolo, detection *dets_yolo,
-        int nboxes_fspt, detection *dets_fspt, validation_data *val) {
+        int nboxes_fspt, detection *dets_fspt, int nboxes_fspt_truth,
+        detection *dets_fspt_truth, int nboxes_truth,
+        detection *dets_truth, validation_data *val) {
     
 }
 
@@ -289,7 +291,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     network *net = nets[0];
 
     int imgs = net->batch * net->subdivisions * ngpus;
-    data train, buffer;
+    data val, buffer;
 
     list *plist = get_paths(valid_images);
     char **paths = (char **)list_to_array(plist);
@@ -340,6 +342,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     }
     */
 
+    double start = what_time_is_it_now();
 
     float nms = .45;
 
@@ -371,101 +374,71 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     while (get_current_batch(net) < net->max_batches) {
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
-        train = buffer;
+        val = buffer;
         args.beg = *net->seen;
         load_thread = load_data(args);
         printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
         time=what_time_is_it_now();
 #ifdef GPU
         if(ngpus == 1){
-            train_network_fspt(net, train);
+            validate_network_fspt(net, val);
         } else {
-            train_networks_fspt(nets, ngpus, train, 4);
+            validate_network_fspt(net, val);
+            validate_networks_fspt(nets, ngpus, val, 4);
         }
 #else
-        train_network_fspt(net, train);
+        validate_network_fspt(net, val);
 #endif
         i = get_current_batch(net);
         fprintf(stderr,
-                "%ld: %lf seconds, %d images added to fspt input\n",
+                "%ld: %lf seconds, %d images added to validation.\n",
                 get_current_batch(net), what_time_is_it_now()-time,
                 i*imgs);
-        free_data(train);
+        // WIP
+        int w = val.w;
+        int h = val.h;
+        /* Yolo boxes. */
+        int *nboxes_yolo;
+        detection **dets_yolo = get_network_boxes_batch(net, w, h, fspt_thresh,
+                hier_thresh, map, 0, &nboxes_yolo);
+        if (nms) {
+            for (int b = 0; b < net->batch; ++b)
+                do_nms_sort(dets_yolo[b], nboxes_yolo[b], classes, nms);
+        }
+        /* FSPT boxes. */
+        int *nboxes_fspt;
+        detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 0,
+                &nboxes_fspt);
+        if (nms) {
+            for (int b = 0; b < net->batch; ++b)
+                do_nms_sort(dets_fspt[b], nboxes_fspt[b], classes, nms);
+        }
+        /* FSPT truth boxes */
+        int *nboxes_truth_fspt;
+        detection **dets_truth_fspt =
+            get_network_fspt_truth_boxes_batch(net, w, h,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 0,
+                &nboxes_truth_fspt);
+        /* Truth boxes */
+        int *nboxes_truth;
+        detection **dets_truth;
+
+        for (int b = 0; b < net->batch; ++b) {
+            update_validation_data(nboxes_yolo[b], dets_yolo[b], nboxes_fspt[b],
+                    dets_fspt[b], nboxes_truth_fspt[b], dets_truth_fspt[b],
+                    nboxes_truth[b], dets_truth[b], &val_data);
+            free_detections(dets_fspt[b], nboxes_fspt[b]);
+            free_detections(dets_yolo[b], nboxes_yolo[b]);
+            free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
+            free_detections(dets_truth[b], nboxes_truth[b]);
+        }
+        // END WIP
+        free_data(val);
     }
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
-
-    /// TO MODIFY/ERASE
-    for(int t = 0; t < nthreads; ++t){
-        args.path = paths[i+t];
-        args.im = &buf[t];
-        args.resized = &buf_resized[t];
-        thr[t] = load_data_in_thread(args);
-    }
-    double start = what_time_is_it_now();
-    for(i = nthreads; i < m+nthreads; i += nthreads){
-        fprintf(stderr, "%d\n", i);
-        for(t = 0; t < nthreads && i+t-nthreads < m; ++t){
-            pthread_join(thr[t], 0);
-            val[t] = buf[t];
-            val_resized[t] = buf_resized[t];
-        }
-        for(t = 0; t < nthreads && i+t < m; ++t){
-            args.path = paths[i+t];
-            args.im = &buf[t];
-            args.resized = &buf_resized[t];
-            thr[t] = load_data_in_thread(args);
-        }
-        for(t = 0; t < nthreads && i+t-nthreads < m; ++t){
-            char *path = paths[i+t-nthreads];
-            char *id = basecfg(path);
-            float *X = val_resized[t].data;
-            // WIP
-            data *d = thr[t].d;
-            // end WIP
-            network_predict(net, X);
-            int w = val[t].w;
-            int h = val[t].h;
-            /* Yolo boxes. */
-            int nboxes_yolo = 0;
-            detection *dets_yolo = get_network_boxes(net, w, h, fspt_thresh,
-                    hier_thresh, map, 0, &nboxes_yolo);
-            if (nms) do_nms_sort(dets_yolo, nboxes_yolo, classes, nms);
-            /* FSPT boxes. */
-            int nboxes_fspt = 0;
-            detection *dets_fspt = get_network_fspt_boxes(net, w, h,
-                    yolo_thresh, fspt_thresh, hier_thresh, map, 0,
-                    &nboxes_fspt);
-            if (nms) do_nms_sort(dets_fspt, nboxes_fspt, classes, nms);
-
-            update_validation_data(nboxes_yolo, dets_yolo, nboxes_fspt,
-                    dets_fspt, val_data);
-            /*
-            if (coco){
-            } else if (imagenet){
-            } else if (waymo){
-                
-            } else {
-                print_fspt_detections(fps, id, dets_fspt, nboxes_fspt, classes,
-                        w, h);
-            }
-            */
-            free_detections(dets_fspt, nboxes_fspt);
-            free_detections(dets_yolo, nboxes_yolo);
-            free(id);
-            free_image(val[t]);
-            free_image(val_resized[t]);
-        }
-    }
-    for(int j = 0; j < classes; ++j){
-        if(fps) fclose(fps[j]);
-    }
-    if(coco){
-        fseek(fp, -2, SEEK_CUR); 
-        fprintf(fp, "\n]\n");
-        fclose(fp);
-    }
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start);
 }
