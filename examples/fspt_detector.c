@@ -42,10 +42,10 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
 }
 
 static void update_validation_data(int nboxes_yolo, detection *dets_yolo,
-        int nboxes_fspt, detection *dets_fspt, int nboxes_fspt_truth,
-        detection *dets_fspt_truth, int nboxes_truth,
+        int nboxes_fspt, detection *dets_fspt, int nboxes_truth_fspt,
+        detection *dets_truth_fspt, int nboxes_truth,
         detection *dets_truth, validation_data *val) {
-    
+    //TODO
 }
 
 static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
@@ -307,41 +307,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     int classes = l.classes;
 
-    /*
-    char buff[1024];
-    char *type = option_find_str(options, "eval", "voc");
-    FILE *fp = 0;
-    FILE **fps = 0;
-    int coco = 0;
-    int imagenet = 0;
-    int waymo = 0;
-    if(0==strcmp(type, "coco")){
-        if(!outfile) outfile = "coco_results";
-        snprintf(buff, 1024, "%s/%s.json", prefix, outfile);
-        fp = fopen(buff, "w");
-        fprintf(fp, "[\n");
-        coco = 1;
-    } else if(0==strcmp(type, "imagenet")){
-        if(!outfile) outfile = "imagenet-detection";
-        snprintf(buff, 1024, "%s/%s.txt", prefix, outfile);
-        fp = fopen(buff, "w");
-        imagenet = 1;
-        classes = 200;
-    } else if(0==strcmp(type, "waymo")){
-        if(!outfile) outfile = "waymo-detection";
-        snprintf(buff, 1024, "%s/%s.txt", prefix, outfile);
-        fp = fopen(buff, "w");
-        coco = 1;
-    } else {
-        if(!outfile) outfile = "comp4_det_test_";
-        fps = calloc(classes, sizeof(FILE *));
-        for(int j = 0; j < classes; ++j){
-            snprintf(buff, 1024, "%s/%s%s.txt", prefix, outfile, names[j]);
-            fps[j] = fopen(buff, "w");
-        }
-    }
-    */
-
     double start = what_time_is_it_now();
 
     float nms = .45;
@@ -422,7 +387,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 &nboxes_truth_fspt);
         /* Truth boxes */
         int *nboxes_truth;
-        detection **dets_truth;
+        detection **dets_truth = get_network_truth_boxes_batch(net, w, h,
+                &nboxes_truth);
 
         for (int b = 0; b < net->batch; ++b) {
             update_validation_data(nboxes_yolo[b], dets_yolo[b], nboxes_fspt[b],
@@ -432,6 +398,14 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             free_detections(dets_yolo[b], nboxes_yolo[b]);
             free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
             free_detections(dets_truth[b], nboxes_truth[b]);
+            free(dets_fspt);
+            free(dets_yolo);
+            free(dets_truth_fspt);
+            free(dets_truth);
+            free(nboxes_fspt);
+            free(nboxes_yolo);
+            free(nboxes_truth_fspt);
+            free(nboxes_truth);
         }
         // END WIP
         free_data(val);

@@ -35,6 +35,8 @@ extern detection **get_network_fspt_truth_boxes_batch(network *net, int w,
 extern detection **get_network_fspt_boxes_batch(network *net, int w, int h,
         float yolo_thresh, float fspt_thresh, float hier, int *map,
         int relative, int **num);
+extern detection **get_network_truth_boxes_batch(network *net, int w, int h,
+        int **num);
 
 #endif
 
