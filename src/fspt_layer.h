@@ -92,13 +92,14 @@ extern void resize_fspt_layer(layer *l, int w, int h);
  * \param fspt_thresh The threshold for fspt rejection.
  * \param map ?
  * \param relative ?
- * \param dets Output parameter. Will be filled with the detections.
- *             Make sure to allocate enought space.
- * \return The number of detections.
+ * \param dets Size batches. Output parameter. Will be filled with the
+ *             detections for each images of the batch. Make sure to allocate
+ *             enought space.
+ * \return The number of detections for each images of the batch.
  */
-extern int get_fspt_detections(layer l, int w, int h, network *net,
+extern int *get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
-        detection *dets);
+        detection **dets);
 
 /**
  * Saves all the fspts to a file. Opening and closing the file is the 

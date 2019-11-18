@@ -287,6 +287,23 @@ int yolo_num_detections(layer l, float thresh)
     return count;
 }
 
+int *yolo_num_detections_batch(layer l, float thresh)
+{
+    int i, n, b;
+    int *count = calloc(l.batch, sizeof(int));
+    for (b = 0; b < l.batch; ++b) {
+        for (i = 0; i < l.w*l.h; ++i){
+            for(n = 0; n < l.n; ++n){
+                int obj_index  = entry_index(l, b, n*l.w*l.h + i, 4);
+                if(l.output[obj_index] > thresh){
+                    ++count[b];
+                }
+            }
+        }
+    }
+    return count;
+}
+
 void avg_flipped_yolo(layer l)
 {
     int i,j,n,z;
@@ -311,6 +328,37 @@ void avg_flipped_yolo(layer l)
     for(i = 0; i < l.outputs; ++i){
         l.output[i] = (l.output[i] + flip[i])/2.;
     }
+}
+
+int *get_yolo_detections_batch(layer l, int w, int h, int netw, int neth, float thresh, int *map, int relative, detection **dets)
+{
+    int i,j,n;
+    float *predictions = l.output;
+    //if (l.batch == 2) avg_flipped_yolo(l);
+    int *count = calloc(l.batch, sizeof(int));
+    for (int b = 0; b < l.batch; ++b) {
+        for (i = 0; i < l.w*l.h; ++i){
+            int row = i / l.w;
+            int col = i % l.w;
+            for(n = 0; n < l.n; ++n){
+                int obj_index  = entry_index(l, b, n*l.w*l.h + i, 4);
+                float objectness = predictions[obj_index];
+                if(objectness <= thresh) continue;
+                int box_index  = entry_index(l, b, n*l.w*l.h + i, 0);
+                dets[b][count[b]].bbox = get_yolo_box(predictions, l.biases, l.mask[n], box_index, col, row, l.w, l.h, netw, neth, l.w*l.h);
+                dets[b][count[b]].objectness = objectness;
+                dets[b][count[b]].classes = l.classes;
+                for(j = 0; j < l.classes; ++j){
+                    int class_index = entry_index(l, b, n*l.w*l.h + i, 4 + 1 + j);
+                    float prob = objectness*predictions[class_index];
+                    dets[b][count[b]].prob[j] = (prob > thresh) ? prob : 0;
+                }
+                ++count[b];
+            }
+        }
+        correct_yolo_boxes(dets[b], count[b], w, h, netw, neth, relative);
+    }
+    return count;
 }
 
 int get_yolo_detections(layer l, int w, int h, int netw, int neth, float thresh, int *map, int relative, detection *dets)

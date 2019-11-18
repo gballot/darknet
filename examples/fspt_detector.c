@@ -261,22 +261,35 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
-        float yolo_thresh, float fspt_thresh, float hier_thresh,
-        char *outfile) {
+        float yolo_thresh, float fspt_thresh, float hier_thresh, int ngpus,
+        int ordered, char *outfile) {
     //TODO
-    int j;
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
     char *name_list = option_find_str(options, "names", "data/names.list");
     char *prefix = option_find_str(options, "results", "results");
     char **names = get_labels(name_list);
+    char *base = basecfg(cfgfile);
     char *mapf = option_find_str(options, "map", 0);
     int *map = 0;
     if (mapf) map = read_map(mapf);
 
-    network *net = load_network(cfgfile, weightfile, 0);
-    set_batch_network(net, 1);
+    network **nets = calloc(ngpus, sizeof(network));
     srand(time(0));
+    int seed = rand();
+    int i;
+    for(i = 0; i < ngpus; ++i) {
+        srand(seed);
+#ifdef GPU
+        cuda_set_device(gpus[i]);
+#endif
+        nets[i] = load_network(cfgfile, weightfile, 1);
+    }
+    srand(time(0));
+    network *net = nets[0];
+
+    int imgs = net->batch * net->subdivisions * ngpus;
+    data train, buffer;
 
     list *plist = get_paths(valid_images);
     char **paths = (char **)list_to_array(plist);
@@ -292,6 +305,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     int classes = l.classes;
 
+    /*
     char buff[1024];
     char *type = option_find_str(options, "eval", "voc");
     FILE *fp = 0;
@@ -319,39 +333,71 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     } else {
         if(!outfile) outfile = "comp4_det_test_";
         fps = calloc(classes, sizeof(FILE *));
-        for(j = 0; j < classes; ++j){
+        for(int j = 0; j < classes; ++j){
             snprintf(buff, 1024, "%s/%s%s.txt", prefix, outfile, names[j]);
             fps[j] = fopen(buff, "w");
         }
     }
+    */
 
-
-    int m = plist->size;
-    int i=0;
-    int t;
 
     float nms = .45;
-
-    int nthreads = 4;
-    image *val = calloc(nthreads, sizeof(image));
-    image *val_resized = calloc(nthreads, sizeof(image));
-    image *buf = calloc(nthreads, sizeof(image));
-    image *buf_resized = calloc(nthreads, sizeof(image));
-    pthread_t *thr = calloc(nthreads, sizeof(pthread_t));
 
     load_args args = {0};
     args.w = net->w;
     args.h = net->h;
-    //args.type = IMAGE_DATA;
-    //args.type = LETTERBOX_DATA;
+    args.coords = l.coords;
+    args.paths = paths;
+    args.n = imgs;
+    args.m = plist->size;
+    args.classes = classes;
+    args.jitter = 0;
+    args.num_boxes = l.max_boxes;
+    args.d = &buffer;
     args.type = DETECTION_DATA;
+    args.threads = 64;
     args.ordered = 1;
+    args.beg = 0;
 
     validation_data val_data = {0};
-    val_data.n_images = m;
+    val_data.n_images = imgs;
     val_data.classes = classes;
 
-    for(t = 0; t < nthreads; ++t){
+    pthread_t load_thread = load_data(args);
+    double time;
+    if (ordered) {
+        net->max_batches = plist->size / imgs;
+    }
+    while (get_current_batch(net) < net->max_batches) {
+        time=what_time_is_it_now();
+        pthread_join(load_thread, 0);
+        train = buffer;
+        args.beg = *net->seen;
+        load_thread = load_data(args);
+        printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
+        time=what_time_is_it_now();
+#ifdef GPU
+        if(ngpus == 1){
+            train_network_fspt(net, train);
+        } else {
+            train_networks_fspt(nets, ngpus, train, 4);
+        }
+#else
+        train_network_fspt(net, train);
+#endif
+        i = get_current_batch(net);
+        fprintf(stderr,
+                "%ld: %lf seconds, %d images added to fspt input\n",
+                get_current_batch(net), what_time_is_it_now()-time,
+                i*imgs);
+        free_data(train);
+    }
+#ifdef GPU
+    if(ngpus != 1) sync_nets(nets, ngpus, 0);
+#endif
+
+    /// TO MODIFY/ERASE
+    for(int t = 0; t < nthreads; ++t){
         args.path = paths[i+t];
         args.im = &buf[t];
         args.resized = &buf_resized[t];
@@ -412,7 +458,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             free_image(val_resized[t]);
         }
     }
-    for(j = 0; j < classes; ++j){
+    for(int j = 0; j < classes; ++j){
         if(fps) fclose(fps[j]);
     }
     if(coco){
@@ -512,7 +558,7 @@ Options are :\n\
                 ordered, one_thread, merge, only_fit, print_stats_after_fit);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
-                hier_thresh, outfile);
+                hier_thresh, ngpus, ordered, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))

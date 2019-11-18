@@ -354,6 +354,19 @@ void train_network_fspt(network *net, data d)
     }
 }
 
+void validate_network_fspt(network *net, data d)
+{
+    assert(d.X.rows % net->batch == 0);
+    int batch = net->batch;
+    int n = d.X.rows / batch;
+
+    for(int i = 0; i < n; ++i){
+        get_next_batch(d, batch, i*batch, net->input, net->truth);
+        *net->seen += net->batch;
+        forward_network(net);
+    }
+}
+
 void set_temp_network(network *net, float t)
 {
     int i;
@@ -553,6 +566,22 @@ int num_detections(network *net, float thresh)
     return s;
 }
 
+int *num_detections_batch(network *net, float thresh)
+{
+    int i;
+    int *s = calloc(net->batch, sizeof(int));
+    for(i = 0; i < net->n; ++i){
+        layer l = net->layers[i];
+        if(l.type == YOLO){
+            int *num = yolo_num_detections_batch(l, thresh);
+            for (int b = 0; b < net->batch; ++b) {
+                s[b] += num[b];
+            }
+        }
+    }
+    return s;
+}
+
 detection *make_network_boxes(network *net, float thresh, int *num)
 {
     layer l = net->layers[net->n - 1];
@@ -566,6 +595,27 @@ detection *make_network_boxes(network *net, float thresh, int *num)
             dets[i].mask = calloc(l.coords-4, sizeof(float));
         }
     }
+    return dets;
+}
+
+detection **make_network_boxes_batch(network *net, float thresh, int **num)
+{
+    layer l = net->layers[net->n - 1];
+    int *nboxes = num_detections_batch(net, thresh);
+    detection **dets = calloc(net->batch, sizeof(detection *));
+    for (int b = 0; b < net->batch; ++b) {
+        dets[b] = calloc(nboxes[b], sizeof(detection));
+        for(int i = 0; i < nboxes[b]; ++i){
+            dets[b][i].prob = calloc(l.classes, sizeof(float));
+            if(l.coords > 4){
+                dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+            }
+        }
+    }
+    if(num)
+        *num = nboxes;
+    else 
+        free(nboxes);
     return dets;
 }
 
@@ -589,16 +639,22 @@ void fill_network_boxes(network *net, int w, int h, float thresh, float hier, in
     }
 }
 
-int fill_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, float fspt_thresh, float hier, int *map, int relative, detection *dets)
+int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh,
+        float fspt_thresh, float hier, int *map, int relative,
+        detection **dets)
 {
-    int total = 0;
-    int j;
-    for(j = 0; j < net->n; ++j){
+    detection **local_dets = malloc(net->batch * sizeof(detection *));
+    memcpy(local_dets, dets, net->batch * sizeof(detection *));
+    int *total = calloc(net->batch, sizeof(int));
+    for(int j = 0; j < net->n; ++j){
         layer l = net->layers[j];
         if(l.type == FSPT){
-            int count = get_fspt_detections(l, w, h, net, yolo_thresh, fspt_thresh, map, relative, dets);
-            dets += count;
-            total += count;
+            int *count = get_fspt_detections(l, w, h, net, yolo_thresh,
+                    fspt_thresh, map, relative, local_dets);
+            for (int b = 0; b < net->batch; ++b) {
+                local_dets[b] += count[b];
+                total += count[b];
+            }
         }
     }
     return total;
@@ -611,11 +667,13 @@ detection *get_network_boxes(network *net, int w, int h, float thresh, float hie
     return dets;
 }
 
-detection *get_network_fspt_boxes(network *net, int w, int h, float yolo_thresh, float fspt_thresh, float hier, int *map, int relative, int *num)
+detection **get_network_fspt_boxes_batch(network *net, int w, int h,
+        float yolo_thresh, float fspt_thresh, float hier, int *map,
+        int relative, int **num)
 {
-    int num_yolo = 0;
-    detection *dets = make_network_boxes(net, yolo_thresh, &num_yolo);
-    *num = fill_network_fspt_boxes(net, w, h, yolo_thresh, fspt_thresh, hier, map, relative, dets);
+    detection **dets = make_network_boxes_batch(net, yolo_thresh, NULL);
+    *num = fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
+            hier, map, relative, dets);
     return dets;
 }
 
@@ -1284,6 +1342,32 @@ void train_networks_fspt(network **nets, int n, data d, int interval)
     for(i = 0; i < n; ++i){
         data p = get_data_part(d, i, n);
         threads[i] = train_network_in_thread_fspt(nets[i], p);
+    }
+    for(i = 0; i < n; ++i){
+        pthread_join(threads[i], 0);
+    }
+    //cudaDeviceSynchronize();
+    if (get_current_batch(nets[0]) % interval == 0) {
+        printf("Syncing... ");
+        fflush(stdout);
+        sync_nets(nets, n, interval);
+        printf("Done!\n");
+    }
+    //cudaDeviceSynchronize();
+    free(threads);
+}
+
+void validate_networks_fspt(network **nets, int n, data d, int interval)
+{
+    int i;
+    int batch = nets[0]->batch;
+    int subdivisions = nets[0]->subdivisions;
+    assert(batch * subdivisions * n == d.X.rows);
+    pthread_t *threads = (pthread_t *) calloc(n, sizeof(pthread_t));
+
+    for(i = 0; i < n; ++i){
+        data p = get_data_part(d, i, n);
+        threads[i] = validate_network_in_thread_fspt(nets[i], p);
     }
     for(i = 0; i < n; ++i){
         pthread_join(threads[i], 0);

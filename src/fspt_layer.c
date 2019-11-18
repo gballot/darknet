@@ -220,9 +220,9 @@ static void copy_fspt_input_to_data(layer l, int classe) {
 }
 
 
-int get_fspt_detections(layer l, int w, int h, network *net,
+int *get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
-        detection *dets) {
+        detection **dets) {
     int i,j,n;
     int netw = net->w;
     int neth = net->h;
@@ -230,7 +230,7 @@ int get_fspt_detections(layer l, int w, int h, network *net,
     float *predictions = l.output;
     //if (l.batch == 2) avg_flipped_yolo(l);
     int fspt_box_find = 0;
-    int count = 0;
+    int *count = calloc(l.batch, sizeof(int));
     for (int b = 0; b < l.batch; ++b) {
         for (i = 0; i < l.w*l.h; ++i){
             int row = i / l.w;
@@ -255,23 +255,23 @@ int get_fspt_detections(layer l, int w, int h, network *net,
                         float score = fspt_get_score(l, j);
                         if(score > fspt_thresh) {
                             fspt_box_find = 1;
-                            dets[count].bbox = bbox;
-                            dets[count].objectness = objectness;
-                            dets[count].classes = l.classes;
-                            dets[count].prob[j] = prob;
+                            dets[b][count[b]].bbox = bbox;
+                            dets[b][count[b]].objectness = objectness;
+                            dets[b][count[b]].classes = l.classes;
+                            dets[b][count[b]].prob[j] = prob;
                         } else {
-                            dets[count].prob[j] = 0;
+                            dets[b][count[b]].prob[j] = 0;
                         }
                     } else {
-                        dets[count].prob[j] = 0;
+                        dets[b][count[b]].prob[j] = 0;
                     }
                 }
-                if (fspt_box_find) ++count;
+                if (fspt_box_find) ++count[b];
                 fspt_box_find = 0;
             }
         }
+        correct_yolo_boxes(dets[b], count[b], w, h, netw, neth, relative);
     }
-    correct_yolo_boxes(dets, count, w, h, netw, neth, relative);
     return count;
 }
 
