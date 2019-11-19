@@ -22,6 +22,15 @@ extern score_func string_to_fspt_score(char *s);
 extern float density_score(score_args *args);
 
 /**
+ * Prints a score_args to a file.
+ *
+ * \param stream The output stream.
+ * \param a The score_args.
+ * \param title An optional title.
+ */
+extern void print_fspt_score_args(FILE *stream, score_args *a, char *title);
+
+/**
  * An euristic score function called "euristic".
  * This score is :
  * \sum f_i \frac{ R^+ } { R^+ + E \frac{\Delta I(R)} {\Delta I} }

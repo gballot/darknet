@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "fspt_layer.h"
 #include "network.h"
+#include "fspt_score.h"
+#include "fspt_criterion.h"
 
 #define FLOATFORMA "% 10.5e"
 #define INT_FORMAT "% 11d"
@@ -431,7 +433,9 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
             fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
             char buf[256] = {0};
             sprintf(buf, "%s class %s", l->ref, names[i]);
-            print_fspt_stats(stderr, stats, buf);
+            print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
+            print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
+            print_fspt_stats(stderr, stats, NULL);
             free_fspt_stats(stats);
         }
     }
@@ -620,7 +624,9 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_stats(stderr, stats, buf);
+                print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
+                print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
+                print_fspt_stats(stderr, stats, NULL);
                 free_fspt_stats(stats);
             }
         }
@@ -864,3 +870,6 @@ Options are :\n\
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
 }
+
+#undef FLOATFORMA
+#undef INT_FORMAT

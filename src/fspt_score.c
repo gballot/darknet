@@ -70,6 +70,41 @@ float euristic_score(score_args *args) {
     return score;
 }
 
+void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
+    /** Title **/
+    if (title) {
+        int len = strlen(title);
+        fprintf(stream, "      ╔═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╗\n");
+        fprintf(stream, "      ║ %s ║\n", title);
+        fprintf(stream, "      ╚═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╝\n");
+    }
+    fprintf(stream, "Fspt score parameter :\n\
+        Messages to change fitting behaviour :\n\
+    -score_during_fit = %d\n\
+        Messages for all score functions :\n\
+    -fspt = %p\n\
+    -node = %p\n\
+    -discover = %d\n\
+    -need_normalize = %d\n\
+    -normalize_pass = %d\n\
+        Messages for euristic score :\n\
+    -compute_euristic_hyperparam = %d\n\
+    -euristic_hyperparam = %f\n\
+        Message for density score :\n\
+    -calibration_score = %f\n\
+    -calibration_n_samples_p = %f\n\
+    -calibration_volume_p = %f\n\
+    -calibration_tau = %f\n",
+    a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
+    a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
+    a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
+    a->calibration_tau);
+}
+
 score_func string_to_fspt_score(char *s) {
     if (strcmp(s, "euristic") == 0) {
         return euristic_score;

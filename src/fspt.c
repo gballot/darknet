@@ -485,6 +485,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     }
     stats->volume = fspt->volume;
     stats->min_volume = leaves_array[0]->volume;
+    stats->min_volume_parameter = fspt->min_volume_p;
     stats->max_volume = leaves_array[leaves->size - 1]->volume;
     stats->median_volume =
         median((const void *)leaves_array, leaves->size, sizeof(fspt_node *),
@@ -645,6 +646,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream, "Only the volumes of the leaves are considerated.\n");
     fprintf(stream, "The relative value are computed relatively \
 to the total volume.\n");
+    fprintf(stream, "min_volume_p = %f.\n", s->min_volume_parameter);
     fprintf(stream,
 "         ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐\n");
     fprintf(stream,
@@ -1048,6 +1050,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
     fspt->depth = 1;
     fspt->min_samples = c_args->min_samples;
     fspt->max_depth = c_args->max_depth;
+    fspt->min_volume_p = c_args->min_volume_p;
     /* discover score args */
     s_args->discover = 1;
     fspt->score(s_args);
@@ -1154,6 +1157,10 @@ void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
     *succ &= fwrite(&fspt.n_samples, sizeof(int), 1, fp);
     *succ &= fwrite(&fspt.depth, sizeof(int), 1, fp);
     *succ &= fwrite(&fspt.count, sizeof(int), 1, fp);
+    *succ &= fwrite(&fspt.volume, sizeof(double), 1, fp);
+    *succ &= fwrite(&fspt.min_samples, sizeof(int), 1, fp);
+    *succ &= fwrite(&fspt.min_volume_p, sizeof(float), 1, fp);
+    *succ &= fwrite(&fspt.max_depth, sizeof(double), 1, fp);
     /* to know if the file contains samples */
     *succ &= fwrite(&save_samples, sizeof(int), 1, fp);
     /* save samples if requested */
@@ -1241,6 +1248,10 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
     *succ &= fread(&fspt->n_samples, sizeof(int), 1, fp);
     *succ &= fread(&fspt->depth, sizeof(int), 1, fp);
     *succ &= fread(&fspt->count, sizeof(int), 1, fp);
+    *succ &= fread(&fspt->volume, sizeof(double), 1, fp);
+    *succ &= fread(&fspt->min_samples, sizeof(int), 1, fp);
+    *succ &= fread(&fspt->min_volume_p, sizeof(float), 1, fp);
+    *succ &= fread(&fspt->max_depth, sizeof(double), 1, fp);
     /* to know if file contains samples */
     fspt->samples = NULL;
     int contains_samples = 0;
@@ -1270,5 +1281,7 @@ void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
     fclose(fp);
 }
 
+#undef N_THRESH_STATS_FSPT
 #undef FLTFORM
 #undef INTFORM
+#undef BIGFLTF

@@ -69,6 +69,7 @@ typedef struct fspt_t {
     int count;          // keeps the successive violation of gain threshold
     double volume;      // total volume of the fspt
     int min_samples;
+    double min_volume_p;
     int max_depth;
 } fspt_t;
 
@@ -123,6 +124,7 @@ typedef struct fspt_stats {
     double volume;                // Volume of the fspt.
     double leaves_volume;         // Volume of the leaves.
     double mean_volume;           // Mean volume of leaves.
+    double min_volume_parameter;  // Value of the fitting parameter min_volume.
     double min_volume;            // Min volume of leaves.
     double max_volume;            // Max volume of leaves.
     double median_volume;         // Median volume of leaves.

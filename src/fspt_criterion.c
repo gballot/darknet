@@ -257,6 +257,44 @@ void gini_criterion(criterion_args *args) {
     free(random_features);
 }
 
+void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
+    /** Title **/
+    if (title) {
+        int len = strlen(title);
+        fprintf(stream, "      ╔═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╗\n");
+        fprintf(stream, "      ║ %s ║\n", title);
+        fprintf(stream, "      ╚═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╝\n");
+    }
+    fprintf(stream, "FSPT criterion arguments :\n\
+        Messages to change fitting behaviour :\n\
+    -merge_nodes = %d\n\
+        Messages between fspt_fit and all the criterion functions :\n\
+    -fspt = %p\n\
+    -node = %p\n\
+    -max_depth = %d\n\
+    -min_samples = %d\n\
+    -min_volume_p = %f\n\
+    -best_index = %d\n\
+    -best_split = %f\n\
+    -forbidden_split = %d\n\
+    -increment_count = %d\n\
+    -end_of_fitting = %d\n\
+        Messages for gini_criterion :\n\
+    -max_tries_p = %f\n\
+    -max_features_p = %f\n\
+    -gini_gain_thresh = %f\n\
+    -max_consecutive_gain_violations = %d\n\
+    -gain = %f\n",
+    a->merge_nodes, a->fspt, a->node, a->max_depth, a->min_samples,
+    a->min_volume_p, a->best_index, a->best_split, a->forbidden_split,
+    a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
+    a->gini_gain_thresh, a->max_consecutive_gain_violations, a->gain);
+}
+
 criterion_func string_to_fspt_criterion(char *s) {
     if (strcmp(s, "gini") == 0) {
         return gini_criterion;
