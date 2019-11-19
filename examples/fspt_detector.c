@@ -128,7 +128,6 @@ static int find_corresponding_detection(detection base, int n_dets,
 static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
         int nboxes_truth_fspt, detection *dets_truth_fspt, int nboxes_truth,
         detection *dets_truth, validation_data *val) {
-    //TODO
     val->n_yolo_detections += nboxes_fspt;
     val->n_truth += nboxes_truth;
     float iou_thresh = val->iou_thresh;
@@ -240,6 +239,99 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
         }
     }
     /* Fspt on truth */
+}
+
+static void print_validation_data(validation_data v) {
+
+}
+
+static validation_data *allocate_validation_data(int classes) {
+    validation_data *v = calloc(1, sizeof(validation_data));
+    /* True yolo detection */
+    v->n_true_detection = calloc(classes, sizeof(int));
+    v->mean_true_detection_iou = calloc(classes, sizeof(float));
+    v->n_true_detection_rejection = calloc(classes, sizeof(int));
+    v->n_true_detection_acceptance = calloc(classes, sizeof(int));
+    v->mean_true_detection_rejection_fspt_score =
+        calloc(classes, sizeof(float));
+    v->mean_true_detection_acceptance_fspt_score =
+        calloc(classes, sizeof(float));
+    /* Wrong class yolo detection */
+    v->n_wrong_class_detection = calloc(classes, sizeof(int *));
+    v->mean_wrong_class_detection_iou = calloc(classes, sizeof(float *));
+    v->n_wrong_class_rejection = calloc(classes, sizeof(int *));
+    v->n_wrong_class_acceptance = calloc(classes, sizeof(int *));
+    v->mean_wrong_class_rejection_fspt_score =
+        calloc(classes, sizeof(float *));
+    v->mean_wrong_class_acceptance_fspt_score =
+        calloc(classes, sizeof(float *));
+    for (int i = 0; i < classes; ++i) {
+        v->n_wrong_class_detection[i] = calloc(classes, sizeof(int));
+        v->mean_wrong_class_detection_iou[i] = calloc(classes, sizeof(float));
+        v->n_wrong_class_rejection[i] = calloc(classes, sizeof(int));
+        v->n_wrong_class_acceptance[i] = calloc(classes, sizeof(int));
+        v->mean_wrong_class_rejection_fspt_score[i] =
+            calloc(classes, sizeof(float));
+        v->mean_wrong_class_acceptance_fspt_score[i] =
+            calloc(classes, sizeof(float));
+    }
+    /* False yolo detection */
+    v->n_false_detection = calloc(classes, sizeof(int));
+    v->n_false_detection_rejection = calloc(classes, sizeof(int));
+    v->n_false_detection_acceptance = calloc(classes, sizeof(int));
+    v->mean_false_detection_rejection_fspt_score =
+        calloc(classes, sizeof(float));
+    v->mean_false_detection_acceptance_fspt_score =
+        calloc(classes, sizeof(float));
+    /* No yolo detection */
+    v->n_no_detection = calloc(classes, sizeof(int));
+    /* Fspt on truth */
+    v->n_rejection_of_truth = calloc(classes, sizeof(int));
+    v->n_acceptance_of_truth = calloc(classes, sizeof(int));
+    v->mean_rejection_of_truth_fspt_score = calloc(classes, sizeof(float));
+    v->mean_acceptance_of_truth_fspt_score = calloc(classes, sizeof(float));
+
+    return v;
+}
+
+static void free_validation_data(validation_data *v) {
+    /* True yolo detection */
+    free(v->n_true_detection);
+    free(v->mean_true_detection_iou);
+    free(v->n_true_detection_rejection);
+    free(v->n_true_detection_acceptance);
+    free(v->mean_true_detection_rejection_fspt_score);
+    free(v->mean_true_detection_acceptance_fspt_score);
+    /* Wrong class yolo detection */
+    for (int i = 0; i < v->classes; ++i) {
+        free(v->n_wrong_class_detection[i]);
+        free(v->mean_wrong_class_detection_iou[i]);
+        free(v->n_wrong_class_rejection[i]);
+        free(v->n_wrong_class_acceptance[i]);
+        free(v->mean_wrong_class_rejection_fspt_score[i]);
+        free(v->mean_wrong_class_acceptance_fspt_score[i]);
+    }
+    free(v->n_wrong_class_detection);
+    free(v->mean_wrong_class_detection_iou);
+    free(v->n_wrong_class_rejection);
+    free(v->n_wrong_class_acceptance);
+    free(v->mean_wrong_class_rejection_fspt_score);
+    free(v->mean_wrong_class_acceptance_fspt_score);
+    /* False yolo detection */
+    free(v->n_false_detection);
+    free(v->n_false_detection_rejection);
+    free(v->n_false_detection_acceptance);
+    free(v->mean_false_detection_rejection_fspt_score);
+    free(v->mean_false_detection_acceptance_fspt_score);
+    /* No yolo detection */
+    free(v->n_no_detection);
+    /* Fspt on truth */
+    free(v->n_rejection_of_truth);
+    free(v->n_acceptance_of_truth);
+    free(v->mean_rejection_of_truth_fspt_score);
+    free(v->mean_acceptance_of_truth_fspt_score);
+    /* Free validation data */
+    free(v);
 }
 
 static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
@@ -523,9 +615,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.ordered = 1;
     args.beg = 0;
 
-    validation_data val_data = {0};
-    val_data.n_images = plist->size;
-    val_data.classes = classes;
+    validation_data *val_data = allocate_validation_data(classes);
+    val_data->n_images = plist->size;
 
     pthread_t load_thread = load_data(args);
     double time;
@@ -555,8 +646,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 "%ld: %lf seconds, %d images added to validation.\n",
                 get_current_batch(net), what_time_is_it_now()-time,
                 i*imgs);
-        // WIP
-        int w = val.w;
+        int w = val.w; // ARE YOU SURE ?
         int h = val.h;
         /* FSPT boxes. */
         int *nboxes_fspt;
@@ -581,7 +671,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         for (int b = 0; b < net->batch; ++b) {
             update_validation_data(nboxes_fspt[b], dets_fspt[b],
                     nboxes_truth_fspt[b], dets_truth_fspt[b],
-                    nboxes_truth[b], dets_truth[b], &val_data);
+                    nboxes_truth[b], dets_truth[b], val_data);
             free_detections(dets_fspt[b], nboxes_fspt[b]);
             free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
             free_detections(dets_truth[b], nboxes_truth[b]);
@@ -592,9 +682,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             free(nboxes_truth_fspt);
             free(nboxes_truth);
         }
-        // END WIP
         free_data(val);
     }
+    print_validation_data(val_data);
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
