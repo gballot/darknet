@@ -8,6 +8,9 @@
 #include "fspt_layer.h"
 #include "network.h"
 
+#define FLOATFORMA "% 10.5e"
+#define INT_FORMAT "% 11d"
+
 typedef struct validation_data {
     float iou_thresh;
     float fspt_thresh;
@@ -241,8 +244,82 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
     /* Fspt on truth */
 }
 
-static void print_validation_data(validation_data v) {
+static void print_validation_data(FILE *stream, validation_data *v,
+        char *title) {
+    int classes = v->classes;
+    /** Title **/
+    if (title) {
+        int len = strlen(title);
+        fprintf(stream, "      ╔═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╗\n");
+        fprintf(stream, "      ║ %s ║\n", title);
+        fprintf(stream, "      ╚═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╝\n");
+    }
+    fprintf(stream, "Parameters :\n\
+    -IOU threshold = %f\n\
+    -FSPT threshold = %f\n\
+    -Number of image = %d\n\
+    -Number of true boxe = %d\n\
+    -Number of yolo detection = %d\n\
+    -Number of class = %d\n",
+    v->iou_thresh, v->fspt_thresh, v->n_images, v->n_truth,
+    v->n_yolo_detections, classes);
 
+    /* Resume */
+    fprintf(stream, "\n    ┏━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ RESUME ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━┛\n\n");
+    fprintf(stream,
+"             ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n");
+    fprintf(stream,
+"             │True detect.│Wrong class │ Prediction │No detection│ FSPT score │\n");
+    fprintf(stream,
+"             │   by YOLO  │ prediction │while empty │   by YOLO  │  on truth  │\n");
+    fprintf(stream,
+"┌────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│Total number│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n",
+        v->tot_n_true_detection, v->tot_n_wrong_class_detection,
+        v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth);
+    fprintf(stream,
+"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│  Mean IOU  │"FLOATFORMA"│"FLOATFORMA"│     //     │     //     │     //     │\n",
+        v->tot_mean_true_detection_iou, v->tot_mean_wrong_class_detection_iou);
+    fprintf(stream,
+"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│Fspt reject │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n",
+        v->tot_n_true_detection_rejection, v->tot_n_wrong_class_rejection,
+        v->tot_n_false_detection_rejection, v->tot_n_rejection_of_truth);
+    fprintf(stream,
+"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│Reject score│"FLOATFORMA"│"FLOATFORMA"│"FLOATFORMA"│     //     │"FLOATFORMA"│\n",
+        v->tot_mean_true_detection_rejection_fspt_score,
+        v->tot_mean_wrong_class_rejection_fspt_score,
+        v->tot_mean_false_detection_rejection_fspt_score,
+        v->tot_mean_rejection_of_truth_fspt_score);
+    fprintf(stream,
+"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│Fspt accept │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n",
+        v->tot_n_true_detection_acceptance, v->tot_n_wrong_class_acceptance,
+        v->tot_n_false_detection_acceptance, v->tot_n_acceptance_of_truth);
+    fprintf(stream,
+"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+    fprintf(stream,
+"│Accept score│"FLOATFORMA"│"FLOATFORMA"│"FLOATFORMA"│     //     │"FLOATFORMA"│\n",
+        v->tot_mean_true_detection_acceptance_fspt_score,
+        v->tot_mean_wrong_class_acceptance_fspt_score,
+        v->tot_mean_false_detection_acceptance_fspt_score,
+        v->tot_mean_acceptance_of_truth_fspt_score);
+    fprintf(stream,
+"└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n");
+    fprintf(stream, "\n");
 }
 
 static validation_data *allocate_validation_data(int classes) {
@@ -684,7 +761,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         }
         free_data(val);
     }
-    print_validation_data(val_data);
+    print_validation_data(stderr, val_data, "VALIDATION RESULT");
+    free_validation_data(val_data);
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
