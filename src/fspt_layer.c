@@ -287,7 +287,8 @@ void fspt_predict_truth(layer l, network net, detection **dets, int **n_boxes)
                         yolo.biases[2*mask_n+1]/net.h);
                 update_fspt_input(l, &net, truth.x, truth.y, b);
                 fspt_predict(1, l.fspts[class], l.fspt_input,
-                        dets[b][count[b]].prob + class);
+                        &dets[b][count[b]].fspt_score);
+                dets[b][count[b]].prob[class] = 1.f;
                 ++count[b];
             }
             ++t;
