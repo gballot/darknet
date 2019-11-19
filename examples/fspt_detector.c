@@ -9,33 +9,77 @@
 #include "network.h"
 
 typedef struct validation_data {
+    float iou_thresh;
+    float fspt_thresh;
     int n_images;           // Number of images.
     int n_truth;            // Number of true boxes.
     int n_yolo_detections;  // Total number of yolo prediction.
     int classes;            // Number of class.
+    /* True yolo detection */
+    int tot_n_true_detection;
     int *n_true_detection;  // Size classes. n_true_detection[i] is the number
                             // of true prediction for class `i` made by yolo.
+    float tot_mean_true_detection_iou;
+    float *mean_true_detection_iou;
+    int tot_n_true_detection_rejection;
+    int *n_true_detection_rejection;
+    int tot_n_true_detection_acceptance;
+    int *n_true_detection_acceptance;
+    float tot_mean_true_detection_rejection_fspt_score;
+    float *mean_true_detection_rejection_fspt_score;
+    float tot_mean_true_detection_acceptance_fspt_score;
+    float *mean_true_detection_acceptance_fspt_score;
+    /* Wrong class yolo detection */
+    int tot_n_wrong_class_detection;
     int **n_wrong_class_detection;  // Size classes*classes.
                                     // n_wrong_class_detection[i][j] is the
                                     // number of object of true class `i`
                                     // predicted as a class `j` by yolo.
+    int tot_n_wrong_class_rejection;
+    int **n_wrong_class_rejection;  // Size classes*classes.
+                                    // n_wrong_class_rejection[i][j] is the
+                                    // number of wrong class `j` prediction
+                                    // by yolo of object of true class `i` that
+                                    // have a fspt score under `fspt_thresh`.
+    int tot_n_wrong_class_acceptance;
+    int **n_wrong_class_acceptance;  // Size classes*classes.
+                                     // n_wrong_class_acceptance[i][j] is the
+                                     // number of wrong class `j` prediction
+                                     // by yolo of object of true class `i` that
+                                     // have a fspt score above `fspt_thresh`.
+    float tot_mean_wrong_class_detection_iou;
+    float **mean_wrong_class_detection_iou;
+    float tot_mean_wrong_class_rejection_fspt_score;
+    float **mean_wrong_class_rejection_fspt_score;
+    float tot_mean_wrong_class_acceptance_fspt_score;
+    float **mean_wrong_class_acceptance_fspt_score;
+    /* False yolo detection */
+    int tot_n_false_detection;
     int *n_false_detection;  // Size classes. n_false_detection[i] is the
                              // number of prediction of class `i` by yolo while
                              // there were no object.
+    int tot_n_false_detection_rejection;
+    int *n_false_detection_rejection;
+    int tot_n_false_detection_acceptance;
+    int *n_false_detection_acceptance;
+    float tot_mean_false_detection_rejection_fspt_score;
+    float *mean_false_detection_rejection_fspt_score;
+    float tot_mean_false_detection_acceptance_fspt_score;
+    float *mean_false_detection_acceptance_fspt_score;
+    /* No yolo detection */
+    int tot_n_no_detection;
     int *n_no_detection;  // Size classes. n_no_detection[i] is the number of
                           // object of class `i` that were not predicted by
                           // yolo.
-    int *n_wrong_class_rejections;
-    int *n_wrong_class_acceptance;
-    int *n_false_detection_rejections;
-    int *n_false_detection_acceptance;
-    int *n_true_detection_rejection;
-    int *n_true_detection_acceptance;
+    /* Fspt on truth */
+    int tot_n_rejection_of_truth;
     int *n_rejection_of_truth;
+    int tot_n_acceptance_of_truth;
     int *n_acceptance_of_truth;
-    float *mean_true_detection_iou;
-    float *mean_wrong_class_detection_iou;
-    float iou_thresh;
+    float tot_mean_rejection_of_truth_fspt_score;
+    float *mean_rejection_of_truth_fspt_score;
+    float tot_mean_acceptance_of_truth_fspt_score;
+    float *mean_acceptance_of_truth_fspt_score;
 } validation_data;
 
 static void print_fspt_detections(FILE **fps, char *id, detection *dets,
@@ -81,42 +125,95 @@ static int find_corresponding_detection(detection base, int n_dets,
     }
 }
 
-static void update_validation_data(int nboxes_yolo, detection *dets_yolo,
-        int nboxes_fspt, detection *dets_fspt, int nboxes_truth_fspt,
-        detection *dets_truth_fspt, int nboxes_truth,
+static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
+        int nboxes_truth_fspt, detection *dets_truth_fspt, int nboxes_truth,
         detection *dets_truth, validation_data *val) {
     //TODO
     float iou_thresh = val->iou_thresh;
+    float fspt_thresh = val->fspt_thresh;
     int classes = val->classes;
-    int remaining_nboxes_yolo = nboxes_yolo;
     int remaining_nboxes_fspt = nboxes_fspt;
     for (int i = 0; i < nboxes_truth; ++i) {
         detection det_truth = dets_truth[i];
         int class_truth = max_index(det_truth.prob, classes);
         int index = 0;
         float iou = 0.f;
-        if (find_corresponding_detection(det_truth, remaining_nboxes_yolo,
-                    dets_yolo, iou_thresh, &index, &iou)) {
-            detection det_yolo = dets_yolo[index];
-            dets_yolo[index] = dets_yolo[remaining_nboxes_yolo - 1];
-            dets_yolo[remaining_nboxes_yolo - 1] = det_yolo;
-            --remaining_nboxes_yolo;
-            int class_yolo = max_index(det_yolo.prob, classes);
+        if (find_corresponding_detection(det_truth, remaining_nboxes_fspt,
+                    dets_fspt, iou_thresh, &index, &iou)) {
+            detection det_fspt = dets_fspt[index];
+            dets_fspt[index] = dets_fspt[remaining_nboxes_fspt - 1];
+            dets_fspt[remaining_nboxes_fspt - 1] = det_fspt;
+            --remaining_nboxes_fspt;
+            int class_yolo = max_index(det_fspt.prob, classes);
             if (class_truth == class_yolo) {
+                ++val->tot_n_true_detection;
                 ++val->n_true_detection[class_truth];
+                val->tot_mean_true_detection_iou += iou;
+                val->mean_true_detection_iou[class_truth] += iou;
+                if (det_fspt.fspt_score > fspt_thresh)  {
+                    ++val->tot_n_true_detection_acceptance;
+                    ++val->n_true_detection_acceptance[class_truth];
+                    val->tot_mean_true_detection_acceptance_fspt_score
+                        += det_fspt.fspt_score;
+                    val->mean_true_detection_acceptance_fspt_score[class_truth]
+                        += det_fspt.fspt_score;
+                } else {
+                    ++val->tot_n_true_detection_rejection;
+                    ++val->n_true_detection_rejection[class_truth];
+                    val->tot_mean_true_detection_rejection_fspt_score
+                        += det_fspt.fspt_score;
+                    val->mean_true_detection_rejection_fspt_score[class_truth]
+                        += det_fspt.fspt_score;
+                }
             } else {
                 ++val->n_wrong_class_detection[class_truth][class_yolo];
+                ++val->tot_n_wrong_class_detection;
+                val->mean_wrong_class_detection_iou[class_truth][class_yolo]
+                    += iou;
+                val->tot_mean_wrong_class_detection_iou += iou;
+                if (det_fspt.fspt_score > fspt_thresh) {
+                    ++val->n_wrong_class_acceptance[class_truth][class_yolo];
+                    ++val->tot_n_wrong_class_acceptance;
+                    val->mean_wrong_class_acceptance_fspt_score[class_truth][class_yolo]
+                        += det_fspt.fspt_score;
+                    val->tot_mean_wrong_class_acceptance_fspt_score
+                        += det_fspt.fspt_score;
+                } else {
+                    ++val->n_wrong_class_rejection[class_truth][class_yolo];
+                    ++val->tot_n_wrong_class_rejection;
+                    val->mean_wrong_class_rejection_fspt_score[class_truth][class_yolo]
+                        += det_fspt.fspt_score;
+                    val->tot_mean_wrong_class_rejection_fspt_score
+                        += det_fspt.fspt_score;
+                }
             }
         } else {
             ++val->n_no_detection[class_truth];
+            ++val->tot_n_no_detection;
         }
     }
-    for (int i = 0; i < remaining_nboxes_yolo; ++i) {
-        detection det_yolo = dets_yolo[i];
-        int class_yolo = max_index(det_yolo.prob, classes);
+    for (int i = 0; i < remaining_nboxes_fspt; ++i) {
+        detection det_fspt = dets_fspt[i];
+        int class_yolo = max_index(det_fspt.prob, classes);
         ++val->n_false_detection[class_yolo];
+        ++val->tot_n_false_detection;
+        if (det_fspt.fspt_score > fspt_thresh) {
+            ++val->n_false_detection_acceptance[class_yolo];
+            ++val->tot_n_false_detection_acceptance;
+            val->mean_false_detection_acceptance_fspt_score[class_yolo]
+                += det_fspt.fspt_score;
+            val->tot_mean_false_detection_acceptance_fspt_score
+                += det_fspt.fspt_score;
+        } else {
+            ++val->n_false_detection_rejection[class_yolo];
+            ++val->tot_n_false_detection_rejection;
+            val->mean_false_detection_rejection_fspt_score[class_yolo]
+                += det_fspt.fspt_score;
+            val->tot_mean_false_detection_rejection_fspt_score
+                += det_fspt.fspt_score;
+        }
     }
-    val->n_yolo_detections += nboxes_yolo;
+    val->n_yolo_detections += nboxes_fspt;
     val->n_truth += nboxes_truth;
 }
 
@@ -191,7 +288,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
                 alphabet, l.classes);
         int nboxes_fspt = 0;
         detection *dets_fspt = get_network_fspt_boxes(net, im.w, im.h,
-                yolo_thresh, fspt_thresh, hier_thresh, 0, 1, &nboxes_fspt);
+                yolo_thresh, fspt_thresh, hier_thresh, 0, 1, 0, &nboxes_fspt);
         printf("%d boxes predicted by fspt.\n", nboxes_fspt);
         if (nms) do_nms_sort(dets_fspt, nboxes_fspt, l.classes, nms);
         draw_fspt_detections(im, dets_fspt, nboxes_fspt, yolo_thresh, names,
@@ -436,18 +533,10 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         // WIP
         int w = val.w;
         int h = val.h;
-        /* Yolo boxes. */
-        int *nboxes_yolo;
-        detection **dets_yolo = get_network_boxes_batch(net, w, h, fspt_thresh,
-                hier_thresh, map, 0, &nboxes_yolo);
-        if (nms) {
-            for (int b = 0; b < net->batch; ++b)
-                do_nms_sort(dets_yolo[b], nboxes_yolo[b], classes, nms);
-        }
         /* FSPT boxes. */
         int *nboxes_fspt;
         detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
-                yolo_thresh, fspt_thresh, hier_thresh, map, 0,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 0, 0,
                 &nboxes_fspt);
         if (nms) {
             for (int b = 0; b < net->batch; ++b)
@@ -465,19 +554,16 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 &nboxes_truth);
 
         for (int b = 0; b < net->batch; ++b) {
-            update_validation_data(nboxes_yolo[b], dets_yolo[b], nboxes_fspt[b],
-                    dets_fspt[b], nboxes_truth_fspt[b], dets_truth_fspt[b],
+            update_validation_data(nboxes_fspt[b], dets_fspt[b],
+                    nboxes_truth_fspt[b], dets_truth_fspt[b],
                     nboxes_truth[b], dets_truth[b], &val_data);
             free_detections(dets_fspt[b], nboxes_fspt[b]);
-            free_detections(dets_yolo[b], nboxes_yolo[b]);
             free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
             free_detections(dets_truth[b], nboxes_truth[b]);
             free(dets_fspt);
-            free(dets_yolo);
             free(dets_truth_fspt);
             free(dets_truth);
             free(nboxes_fspt);
-            free(nboxes_yolo);
             free(nboxes_truth_fspt);
             free(nboxes_truth);
         }

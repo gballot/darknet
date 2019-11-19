@@ -718,7 +718,7 @@ int *fill_network_fspt_truth_boxes_batch(network *net, detection **dets)
 }
 
 int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh,
-        float fspt_thresh, float hier, int *map, int relative,
+        float fspt_thresh, float hier, int *map, int relative, int suppress,
         detection **dets)
 {
     detection **local_dets = malloc(net->batch * sizeof(detection *));
@@ -727,8 +727,8 @@ int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh
     for(int j = 0; j < net->n; ++j){
         layer l = net->layers[j];
         if(l.type == FSPT){
-            int *count = get_fspt_detections(l, w, h, net, yolo_thresh,
-                    fspt_thresh, map, relative, local_dets);
+            int *count = get_fspt_detections_batch(l, w, h, net, yolo_thresh,
+                    fspt_thresh, map, relative, suppress, local_dets);
             for (int b = 0; b < net->batch; ++b) {
                 local_dets[b] += count[b];
                 total += count[b];
@@ -807,28 +807,27 @@ detection **get_network_fspt_truth_boxes_batch(network *net, int w, int h,
         int relative, int **num)
 {
     detection **dets = make_network_truth_boxes_batch(net, NULL);
-    *num = fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
-            hier, map, relative, dets);
+    *num = fill_network_fspt_truth_boxes_batch(net, dets);
     return dets;
 }
 
 detection **get_network_fspt_boxes_batch(network *net, int w, int h,
         float yolo_thresh, float fspt_thresh, float hier, int *map,
-        int relative, int **num)
+        int relative, int suppress, int **num)
 {
     detection **dets = make_network_boxes_batch(net, yolo_thresh, NULL);
     *num = fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
-            hier, map, relative, dets);
+            hier, map, relative, suppress, dets);
     return dets;
 }
 
 detection *get_network_fspt_boxes(network *net, int w, int h,
         float yolo_thresh, float fspt_thresh, float hier, int *map,
-        int relative, int *num)
+        int relative, int suppress, int *num)
 {
     detection **dets = make_network_boxes_batch(net, yolo_thresh, NULL);
     *num = *fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
-            hier, map, relative, dets);
+            hier, map, relative, suppress, dets);
     return *dets;
 }
 

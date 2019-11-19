@@ -220,57 +220,32 @@ static void copy_fspt_input_to_data(layer l, int classe) {
 }
 
 
-int *get_fspt_detections(layer l, int w, int h, network *net,
+int *get_fspt_detections_batch(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
         int suppress, detection **dets) {
-    int i,j,n;
     int netw = net->w;
     int neth = net->h;
     layer yolo_layer = net->layers[l.yolo_layer];
-    float *predictions = l.output;
-    //if (l.batch == 2) avg_flipped_yolo(l);
-    int fspt_box_find = 0;
-    int *count = calloc(l.batch, sizeof(int));
+    int *count = get_yolo_detections_batch(yolo_layer, w, h, netw, neth,
+            yolo_thresh, map, relative, dets);
     for (int b = 0; b < l.batch; ++b) {
-        for (i = 0; i < l.w*l.h; ++i){
-            int row = i / l.w;
-            int col = i % l.w;
-            for(n = 0; n < l.n; ++n){
-                int obj_index  = entry_index(l, b, n*l.w*l.h + i, 4);
-                float objectness = predictions[obj_index];
-                if(objectness <= yolo_thresh) continue;
-                int box_index  = entry_index(l, b, n*l.w*l.h + i, 0);
-                box bbox = get_yolo_box(predictions, yolo_layer.biases,
-                        yolo_layer.mask[n], box_index, col, row,
-                        l.w, l.h, netw, neth, l.w*l.h);
-                for(j = 0; j < l.classes; ++j){
-                    int class_index = entry_index(l, b, n*l.w*l.h + i, 4+1+j);
-                    float prob = objectness*predictions[class_index];
-                    if(prob > yolo_thresh) {
-                        update_fspt_input(l, net, bbox.x, bbox.y, b);
+        for (int i = 0; i < count[b]; ++i) {
+            detection *det = dets[b] + i;
+            update_fspt_input(l, net, det->bbox.x, det->bbox.y, b);
 #ifdef GPU
-                        cuda_pull_array(l.fspt_input_gpu, l.fspt_input,
-                                l.total);
+            cuda_pull_array(l.fspt_input_gpu, l.fspt_input,
+                    l.total);
 #endif
-                        float score = fspt_get_score(l, j);
-                        if(score > fspt_thresh) {
-                            fspt_box_find = 1;
-                            dets[b][count[b]].bbox = bbox;
-                            dets[b][count[b]].objectness = objectness;
-                            dets[b][count[b]].classes = l.classes;
-                            dets[b][count[b]].prob[j] = prob;
-                        } else {
-                            dets[b][count[b]].prob[j] = 0;
-                        }
-                    } else {
-                        dets[b][count[b]].prob[j] = 0;
-                    }
-                }
-                if (fspt_box_find || suppress) ++count[b];
-                fspt_box_find = 0;
+            int class = max_index(det->prob, l.classes);
+            det->fspt_score = fspt_get_score(l, class);
+            if (suppress && det->fspt_score < fspt_thresh) {
+                detection tmp_det = *det;
+                dets[b][i] = dets[b][count[b] - 1];
+                dets[b][count[b] - 1] = tmp_det;
+                --count[b];
+                --i;
             }
         }
-        correct_yolo_boxes(dets[b], count[b], w, h, netw, neth, relative);
     }
     return count;
 }
