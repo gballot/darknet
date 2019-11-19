@@ -822,6 +822,16 @@ detection **get_network_fspt_boxes_batch(network *net, int w, int h,
     return dets;
 }
 
+detection *get_network_fspt_boxes(network *net, int w, int h,
+        float yolo_thresh, float fspt_thresh, float hier, int *map,
+        int relative, int *num)
+{
+    detection **dets = make_network_boxes_batch(net, yolo_thresh, NULL);
+    *num = *fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
+            hier, map, relative, dets);
+    return *dets;
+}
+
 void free_detections(detection *dets, int n)
 {
     int i;

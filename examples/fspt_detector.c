@@ -2,22 +2,39 @@
 
 #include <stdlib.h>
 
+#include "box.h"
 #include "image.h"
 #include "utils.h"
 #include "fspt_layer.h"
 #include "network.h"
 
 typedef struct validation_data {
-    int n_images;
-    int n_truth;
-    int n_yolo_detections;
-    int n_fspt_detections;
-    int classes;
-    int *n_true_detection_by_class;
-    int *n_false_detection_by_class;
-    int *n_no_detection_by_class;
-    int *n_true_rejections_by_class;
-    int *n_false_rejection_by_class;
+    int n_images;           // Number of images.
+    int n_truth;            // Number of true boxes.
+    int n_yolo_detections;  // Total number of yolo prediction.
+    int classes;            // Number of class.
+    int *n_true_detection;  // Size classes. n_true_detection[i] is the number
+                            // of true prediction for class `i` made by yolo.
+    int **n_wrong_class_detection;  // Size classes*classes.
+                                    // n_wrong_class_detection[i][j] is the
+                                    // number of object of true class `i`
+                                    // predicted as a class `j` by yolo.
+    int *n_false_detection;  // Size classes. n_false_detection[i] is the
+                             // number of prediction of class `i` by yolo while
+                             // there were no object.
+    int *n_no_detection;  // Size classes. n_no_detection[i] is the number of
+                          // object of class `i` that were not predicted by
+                          // yolo.
+    int *n_wrong_class_rejections;
+    int *n_wrong_class_acceptance;
+    int *n_false_detection_rejections;
+    int *n_false_detection_acceptance;
+    int *n_true_detection_rejection;
+    int *n_true_detection_acceptance;
+    int *n_rejection_of_truth;
+    int *n_acceptance_of_truth;
+    float *mean_true_detection_iou;
+    float *mean_wrong_class_detection_iou;
     float iou_thresh;
 } validation_data;
 
@@ -41,11 +58,66 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
     }
 }
 
+static int find_corresponding_detection(detection base, int n_dets,
+        detection *comp, float iou_thresh, int *max_index,
+        float *max_iou_ptr) {
+    box box_base = base.bbox;
+    int index = 0;
+    float max_iou = 0.f;
+    for (int i = 0; i < n_dets; ++i) {
+        box box_comp = comp[i].bbox;
+        float tmp_iou = box_iou(box_base, box_comp);
+        if (tmp_iou > max_iou) {
+            max_iou = tmp_iou;
+            index = i;
+        }
+    }
+    if (max_iou >= iou_thresh) {
+        if (max_index) *max_index = index;
+        if (max_iou_ptr) *max_iou_ptr = max_iou;
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 static void update_validation_data(int nboxes_yolo, detection *dets_yolo,
         int nboxes_fspt, detection *dets_fspt, int nboxes_truth_fspt,
         detection *dets_truth_fspt, int nboxes_truth,
         detection *dets_truth, validation_data *val) {
     //TODO
+    float iou_thresh = val->iou_thresh;
+    int classes = val->classes;
+    int remaining_nboxes_yolo = nboxes_yolo;
+    int remaining_nboxes_fspt = nboxes_fspt;
+    for (int i = 0; i < nboxes_truth; ++i) {
+        detection det_truth = dets_truth[i];
+        int class_truth = max_index(det_truth.prob, classes);
+        int index = 0;
+        float iou = 0.f;
+        if (find_corresponding_detection(det_truth, remaining_nboxes_yolo,
+                    dets_yolo, iou_thresh, &index, &iou)) {
+            detection det_yolo = dets_yolo[index];
+            dets_yolo[index] = dets_yolo[remaining_nboxes_yolo - 1];
+            dets_yolo[remaining_nboxes_yolo - 1] = det_yolo;
+            --remaining_nboxes_yolo;
+            int class_yolo = max_index(det_yolo.prob, classes);
+            if (class_truth == class_yolo) {
+                ++val->n_true_detection[class_truth];
+            } else {
+                ++val->n_wrong_class_detection[class_truth][class_yolo];
+            }
+        } else {
+            ++val->n_no_detection[class_truth];
+        }
+    }
+    for (int i = 0; i < remaining_nboxes_yolo; ++i) {
+        detection det_yolo = dets_yolo[i];
+        int class_yolo = max_index(det_yolo.prob, classes);
+        ++val->n_false_detection[class_yolo];
+    }
+    val->n_yolo_detections += nboxes_yolo;
+    val->n_truth += nboxes_truth;
 }
 
 static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
@@ -67,7 +139,7 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
             fspt_t *fspt = l->fspts[i];
             fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
             char buf[256] = {0};
-            sprintf(buf, "%s class %d", l->ref, i);
+            sprintf(buf, "%s class %s", l->ref, names[i]);
             print_fspt_stats(stderr, stats, buf);
             free_fspt_stats(stats);
         }
@@ -149,6 +221,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
+    char *name_list = option_find_str(options, "names", "data/names.list");
+    char **names = get_labels(name_list);
 
     srand(time(0));
     char *base = basecfg(cfgfile);
@@ -254,7 +328,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_t *fspt = l->fspts[i];
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
-                sprintf(buf, "%s class %d", l->ref, i);
+                sprintf(buf, "%s class %s", l->ref, names[i]);
                 print_fspt_stats(stderr, stats, buf);
                 free_fspt_stats(stats);
             }
@@ -328,7 +402,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.beg = 0;
 
     validation_data val_data = {0};
-    val_data.n_images = imgs;
+    val_data.n_images = plist->size;
     val_data.classes = classes;
 
     pthread_t load_thread = load_data(args);

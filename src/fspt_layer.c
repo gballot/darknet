@@ -222,7 +222,7 @@ static void copy_fspt_input_to_data(layer l, int classe) {
 
 int *get_fspt_detections(layer l, int w, int h, network *net,
         float yolo_thresh, float fspt_thresh, int *map, int relative,
-        detection **dets) {
+        int suppress, detection **dets) {
     int i,j,n;
     int netw = net->w;
     int neth = net->h;
@@ -266,7 +266,7 @@ int *get_fspt_detections(layer l, int w, int h, network *net,
                         dets[b][count[b]].prob[j] = 0;
                     }
                 }
-                if (fspt_box_find) ++count[b];
+                if (fspt_box_find || suppress) ++count[b];
                 fspt_box_find = 0;
             }
         }

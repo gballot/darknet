@@ -547,6 +547,7 @@ typedef struct detection{
     float *mask;
     float objectness;
     int sort_class;
+    float fspt_score;
 } detection;
 
 typedef struct matrix{
