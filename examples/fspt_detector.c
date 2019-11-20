@@ -512,7 +512,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         int *gpus, int ngpus, int clear, int refit, int ordered,
-        int one_thread, int merge, int only_fit, int print_stats_after_fit) {
+        int one_thread, int merge, int only_fit, int print_stats_val) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -615,7 +615,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
     fprintf(stderr, "End of FSPT training\n");
-    if (print_stats_after_fit) {
+    if (print_stats_val) {
         list *fspt_layers = get_network_layers_by_type(net, FSPT);
         while (fspt_layers->size > 0) {
             layer *l = (layer *) list_pop(fspt_layers);
@@ -635,7 +635,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         float yolo_thresh, float fspt_thresh, float hier_thresh, int ngpus,
-        int *gpus, int ordered, char *outfile) {
+        int *gpus, int ordered, int print_stats_val, char *outfile) {
     //TODO
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
@@ -677,6 +677,23 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         error("The net must have fspt or yolo layers");
 
     int classes = l.classes;
+
+    if (print_stats_val) {
+        list *fspt_layers = get_network_layers_by_type(net, FSPT);
+        while (fspt_layers->size > 0) {
+            layer *l = (layer *) list_pop(fspt_layers);
+            for (int i = 0; i < l->classes; ++i) {
+                fspt_t *fspt = l->fspts[i];
+                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+                char buf[256] = {0};
+                sprintf(buf, "%s class %s", l->ref, names[i]);
+                print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
+                print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
+                print_fspt_stats(stderr, stats, NULL);
+                free_fspt_stats(stats);
+            }
+        }
+    }
 
     double start = what_time_is_it_now();
 
@@ -827,7 +844,7 @@ Options are :\n\
     int one_thread = find_arg(argc, argv, "-one_thread");
     int only_fit = find_arg(argc, argv, "-only_fit");
     int merge = find_arg(argc, argv, "-merge") || only_fit;
-    int print_stats_after_fit = find_arg(argc, argv, "-print_stats");
+    int print_stats_val = find_arg(argc, argv, "-print_stats");
     int fullscreen = find_arg(argc, argv, "-fullscreen");
 
     int *gpus = 0;
@@ -861,10 +878,10 @@ Options are :\n\
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts,
-                ordered, one_thread, merge, only_fit, print_stats_after_fit);
+                ordered, one_thread, merge, only_fit, print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
-                hier_thresh, ngpus, gpus, ordered, outfile);
+                hier_thresh, ngpus, gpus, ordered, print_stats_val, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))
