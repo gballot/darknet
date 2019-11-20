@@ -737,9 +737,9 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "┌────────────┬────────────┬────────────┐\n");
     fprintf(stream,
-"│            │   volume   │  relative  │\n");
+"│            │ n_samples  │  relative  │\n");
     fprintf(stream,
-"│    fspt    │   above    │   volume   │\n");
+"│    fspt    │   above    │ n_samples  │\n");
     fprintf(stream,
 "│   thresh   │    fspt    │   above    │\n");
     fprintf(stream,
@@ -820,9 +820,9 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "┌────────────┬────────────┬────────────┐\n");
     fprintf(stream,
-"│            │   volume   │  relative  │\n");
+"│            │  n_nodes   │  relative  │\n");
     fprintf(stream,
-"│    fspt    │   above    │   volume   │\n");
+"│    fspt    │   above    │  n_nodes   │\n");
     fprintf(stream,
 "│   thresh   │    fspt    │   above    │\n");
     fprintf(stream,
