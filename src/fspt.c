@@ -914,6 +914,8 @@ void free_fspt_stats(fspt_stats *stats) {
         free(stats->n_leaves_above_thresh);
     if (stats->n_leaves_above_thresh_p)
         free(stats->n_leaves_above_thresh_p);
+    if (stats->score_vol_n_array)
+        free(stats->score_vol_n_array);
     /* Depth */
     if (stats->n_nodes_by_depth)
         free(stats->n_nodes_by_depth);
