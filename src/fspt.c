@@ -9,9 +9,10 @@
 #include "utils.h"
 
 #define N_THRESH_STATS_FSPT 11
-#define FLTFORM "% 7.6f"
-#define BIGFLTF "% 4.2e"
-#define INTFORM "% 9d"
+#define FLTFORM "%9g"
+#define LEFTFLT "%-9g"
+#define INTFORM "%9d"
+#define LEFTINT "%-9d"
 
 /**
  * Computes the volume of a feature space.
@@ -643,7 +644,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "         ┌─────────────────────────────────────────────────────────────────────┐\n");
     fprintf(stream,
-"         │                           VOLUME STATISTICS (min_volume_p="FLTFORM")│\n",
+"         │                           VOLUME STATISTICS   min_volume_p="LEFTFLT"│\n",
         s->min_volume_parameter);
     fprintf(stream,
 "         ├─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤\n");
@@ -652,7 +653,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
-"│   value│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
+"│   value│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         s->leaves_volume, s->mean_volume, s->min_volume,
         s->first_quartile_volume, s->median_volume, s->third_quartile_volume,
         s->max_volume);
@@ -678,7 +679,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 "├─────────┼─────────┼─────────┤\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,
-"│"FLTFORM"│"BIGFLTF"│"FLTFORM"│\n",
+"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
             s->fspt_thresh[i], s->volume_above_thresh[i],
             s->volume_above_thresh_p[i]);
     }
@@ -688,7 +689,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "         ┌─────────────────────────────────────────────────────────────────────┐\n");
     fprintf(stream,
-"         │           NUMBER OF SAMPLES STATISTICS (min_samples_param="INTFORM")│\n",
+"         │           NUMBER OF SAMPLES STATISTICS   min_samples_param="LEFTINT"│\n",
         s->min_samples_param);
     fprintf(stream,
 "         ├─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤\n");
@@ -697,7 +698,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
-"│   value│"INTFORM"│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
+"│   value│"INTFORM"│"FLTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->n_samples, s->mean_samples_leaves, s->min_samples_leaves,
         s->first_quartile_samples_leaves, s->median_samples_leaves,
         s->third_quartile_samples_leaves, s->max_samples_leaves);
@@ -733,7 +734,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "         ┌───────────────────────────────────────────────────────────┐\n");
     fprintf(stream,
-"         │               DEPTH STATISTICS (max_depth_param="INTFORM")│\n",
+"         │               DEPTH STATISTICS   max_depth_param="LEFTINT"│\n",
         s->max_depth);
     fprintf(stream,
 "         ├─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤\n");
@@ -742,7 +743,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
     fprintf(stream,
-"│   value│"BIGFLTF"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
+"│   value│"FLTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│"INTFORM"│\n",
         s->mean_depth_leaves, s->min_depth_leaves,
         s->first_quartile_depth_leaves, s->median_depth_leaves, 
         s->third_quartile_depth_leaves, s->depth);
@@ -771,7 +772,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
         for (int i = half + half_prop + 1; i < length; ++i)
             depth_string[i] = ' ';
         depth_string[length] = '\0';
-        fprintf(stream, "│% 5d│%s│% 5d│\n", d + 1, depth_string,
+        fprintf(stream, "│%5d│%s│%-5d│\n", d + 1, depth_string,
                 s->n_nodes_by_depth[d]);
     }
     fprintf(stream,
@@ -825,7 +826,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 "┌────────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤\n");
         
     fprintf(stream,
-"│  score │"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│"BIGFLTF"│\n",
+"│  score │"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│"FLTFORM"│\n",
         s->mean_score, s->min_score, s->first_quartile_score, s->median_score,
         s->third_quartile_score, s->max_score);
     fprintf(stream,
@@ -1279,5 +1280,6 @@ void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
 
 #undef N_THRESH_STATS_FSPT
 #undef FLTFORM
+#undef LEFTFLT
 #undef INTFORM
-#undef BIGFLTF
+#undef LEFTINT
