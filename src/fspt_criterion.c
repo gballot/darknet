@@ -15,7 +15,7 @@
 #endif
 
 #define EPS 0.00001
-#define FLOAT_FORMAT__ "%-16.6f"
+#define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 

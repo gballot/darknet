@@ -8,7 +8,7 @@
 #include "math.h"
 #include "utils.h"
 
-#define FLOAT_FORMAT__ "%-16.6f"
+#define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 
@@ -109,7 +109,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 ├─────────────────────────────┴────────────────┤\n\
 │         Messages for density_score           │\n\
 ├─────────────────────────────┬────────────────┤\n\
-│          calibration_scoren │"FLOAT_FORMAT__"│\n\
+│           calibration_score │"FLOAT_FORMAT__"│\n\
 │     calibration_n_samples_p │"FLOAT_FORMAT__"│\n\
 │        calibration_volume_p │"FLOAT_FORMAT__"│\n\
 │             calibration_tau │"FLOAT_FORMAT__"│\n\
