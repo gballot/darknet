@@ -115,6 +115,12 @@ typedef struct score_args {
     float calibration_tau;
 } score_args;
 
+typedef struct score_vol_n {
+    float score;
+    double volume_p;
+    float n_samples_p;
+} score_vol_n;
+
 typedef struct fspt_stats {
     /* Inputs */
     fspt_t *fspt;                 // Fspt related to this statistics.
@@ -199,6 +205,7 @@ typedef struct fspt_stats {
                                  //thresholds.
     float *n_leaves_above_thresh_p;  // Size n_thresh. Proportional number of
                                      //nodes above each thresholds.
+    score_vol_n *score_vol_n_array;
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.

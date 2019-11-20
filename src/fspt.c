@@ -333,6 +333,23 @@ static float acc_score(const void *n) {
     return (float) node->score;
 }
 
+/**
+ * Helper function for qsort on score of the nodes.
+ *
+ * \param n1 The first pointer to a node pointer.
+ * \param n2 The second pointer to a node pointer.
+ * \return Negative if n1 < n2, positive if n1 > n2, 0 if n1 == n2
+ *         according to the score of the nodes.
+ */
+static int cmp_score_vol_n(const void *n1, const void *n2) {
+    score_vol_n *node1 = (score_vol_n *) n1;
+    score_vol_n *node2 = (score_vol_n *) n2;
+    if (node1->score > node2->score)
+        return -1;
+    else
+        return (node1->score < node2->score);
+}
+
 fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     if (!fspt->root) return NULL;
     /** Default values for thresh if NULL **/
@@ -425,6 +442,8 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         inner_nodes_by_split_feat_arrays[i] =
             (fspt_node **) list_to_array(inner_nodes_by_split_feat[i]);
     }
+    // allocate last array
+    stats->score_vol_n_array = calloc(leaves->size, sizeof(score_vol_n));
 
     /** Means, nodes by depth, and thresholds statistics */
     for (int i = 0; i < leaves->size; ++i) {
@@ -433,6 +452,9 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         stats->mean_samples_leaves += node->n_samples;
         stats->mean_depth_leaves += node->depth;
         stats->mean_score += node->score;
+        stats->score_vol_n_array[i] =
+            (score_vol_n) {node->score, node->volume / fspt->volume,
+                ((float) node->n_samples) / fspt->n_samples};
         /* Thresholds */
         for (int j = 0; j < n_thresh; ++j) {
             float thresh = fspt_thresh[j];
@@ -452,6 +474,8 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
     stats->mean_samples_leaves_p =
         n_samples ? stats->mean_samples_leaves / n_samples : 0.f;
     stats->mean_depth_leaves_p = stats->mean_depth_leaves / fspt->depth;
+    qsort(stats->score_vol_n_array, leaves->size, sizeof(score_vol_n),
+            cmp_score_vol_n);
     for (int j = 0; j < n_thresh; ++j) {
         stats->volume_above_thresh_p[j] =
             stats->volume_above_thresh[j] / fspt->volume;
@@ -830,7 +854,25 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
         s->mean_score, s->min_score, s->first_quartile_score, s->median_score,
         s->third_quartile_score, s->max_score);
     fprintf(stream,
-"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n\n");
+"└────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘\n");
+    fprintf(stream,
+"┌─────────┬──────────┬──────────┐\n");
+    fprintf(stream,
+"│  score  │  volume  │n_samples │\n");
+    fprintf(stream,
+"│  leaf   │proportion│proportion│\n");
+    fprintf(stream,
+"│ (sorted)│   leaf   │   leaf   │\n");
+    fprintf(stream,
+"├─────────┼──────────┼──────────┤\n");
+    for (int i = 0; i < s->n_leaves && i < 100 ; ++i) {
+        fprintf(stream,
+"│"FLTFORM"│ "FLTFORM"│ "FLTFORM"│\n",
+            s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
+            s->score_vol_n_array[i].n_samples_p);
+    }
+    fprintf(stream,
+"└─────────┴──────────┴──────────┘\n\n");
 
     /** Splits **/
     fprintf(stream,
