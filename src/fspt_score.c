@@ -19,14 +19,15 @@ float density_score(score_args *args) {
         args->discover = 0;
         assert(args->calibration_volume_p);
         double calibration_full_score =
-            args->calibration_n_samples_p / args->calibration_volume_p;
+            args->calibration_n_samples_p /
+            pow(args->calibration_volume_p, 1. - args->volume_penalization);
         args->calibration_tau =
             - log(1. - args->calibration_score) / calibration_full_score;
         return 0.f;
     }
     if (fspt->n_samples == 0) return 0.f;
     float uncalibred_score = ((float) node->n_samples / fspt->n_samples)
-        * ((float) fspt->volume / node->volume);
+        * pow(fspt->volume / node->volume, 1. - args->volume_penalization);
     float score = 1. - exp(- args->calibration_tau * uncalibred_score);
     return score;
 }
@@ -112,12 +113,13 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │           calibration_score │"FLOAT_FORMAT__"│\n\
 │     calibration_n_samples_p │"FLOAT_FORMAT__"│\n\
 │        calibration_volume_p │"FLOAT_FORMAT__"│\n\
+│         volume_penalization │"FLOAT_FORMAT__"│\n\
 │             calibration_tau │"FLOAT_FORMAT__"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
     a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
     a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
-    a->calibration_tau);
+    a->volume_penalization, a->calibration_tau);
 }
 
 score_func string_to_fspt_score(char *s) {

@@ -828,14 +828,18 @@ layer parse_fspt(list *options, size_params params)
     c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
     c_args.min_volume_p = option_find_float_quiet(options,
             "min_volume_p", 0.00001);
+    assert(0. <= c_args.min_volume_p && c_args.min_volume_p <= 1.);
     c_args.max_depth = option_find_int_quiet(options, "max_depth", 10);
     c_args.max_consecutive_gain_violations =
         option_find_int_quiet(options, "max_consecutive_gain_violations", 10);
     c_args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.);
+    assert(0. <= c_args.max_tries_p && c_args.max_tries_p <= 1.);
     c_args.max_features_p = option_find_float_quiet(options,
             "max_features_p", 1.);
+    assert(0. <= c_args.max_features_p && c_args.max_features_p <= 1.);
     c_args.gini_gain_thresh = option_find_float_quiet(options,
             "gini_gain_thresh", 0.01);
+    assert(0. <= c_args.gini_gain_thresh && c_args.gini_gain_thresh <= .5);
     /* score args */
     score_args s_args = {0};
     s_args.score_during_fit =
@@ -846,8 +850,13 @@ layer parse_fspt(list *options, size_params params)
         option_find_float_quiet(options, "calibration_score", 0.5);
     s_args.calibration_n_samples_p =
         option_find_float_quiet(options, "calibration_n_samples_p", 0.75);
+    assert(0. < s_args.calibration_n_samples_p && s_args.calibration_n_samples_p <= 1.);
     s_args.calibration_volume_p =
         option_find_float_quiet(options, "calibration_volume_p", 0.05);
+    assert(0. < s_args.calibration_volume_p && s_args.calibration_volume_p <= 1.);
+    s_args.volume_penalization =
+        option_find_float_quiet(options, "volume_penalization", 0.);
+    assert(0. <= s_args.volume_penalization && s_args.volume_penalization < 1.);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
