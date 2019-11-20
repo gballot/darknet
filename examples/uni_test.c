@@ -275,7 +275,7 @@ void uni_test() {
     args.gini_gain_thresh = 0.1f;
     args.max_depth = 10;
     args.min_samples = 1;
-    args.min_volume_p = 0.000013582763;
+    args.min_volume_p = -0.00000013582763;
     args.merge_nodes = 1;
     args.max_consecutive_gain_violations = 4;
     score_args s_args = {0};
