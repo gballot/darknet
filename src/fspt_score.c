@@ -80,7 +80,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
         fprintf(stream, "      ║ %s ║\n", title);
         fprintf(stream, "      ╚═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
-        fprintf(stream, "═╝\n");
+        fprintf(stream, "═╝\n\n");
     }
     fprintf(stream, "Fspt score parameter :\n\
         Messages to change fitting behaviour :\n\
@@ -98,7 +98,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
     -calibration_score = %f\n\
     -calibration_n_samples_p = %f\n\
     -calibration_volume_p = %f\n\
-    -calibration_tau = %f\n",
+    -calibration_tau = %f\n\n",
     a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
     a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,

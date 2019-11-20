@@ -286,7 +286,9 @@ void uni_test() {
     print_fspt(fspt_fitted);
 
     fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL);
-    print_fspt_stats(stderr, stats, "Fitted FSPT Statistics");
+    print_fspt_criterion_args(stderr, &args, "FITTED FSPT STATS");
+    print_fspt_score_args(stderr, &s_args, NULL);
+    print_fspt_stats(stderr, stats, NULL); 
     free_fspt_stats(stats);
 
     free_fspt(fspt_fitted);

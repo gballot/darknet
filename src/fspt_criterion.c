@@ -267,7 +267,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
         fprintf(stream, "      ║ %s ║\n", title);
         fprintf(stream, "      ╚═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
-        fprintf(stream, "═╝\n");
+        fprintf(stream, "═╝\n\n");
     }
     fprintf(stream, "FSPT criterion arguments :\n\
         Messages to change fitting behaviour :\n\
@@ -288,7 +288,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
     -max_features_p = %f\n\
     -gini_gain_thresh = %f\n\
     -max_consecutive_gain_violations = %d\n\
-    -gain = %f\n",
+    -gain = %f\n\n",
     a->merge_nodes, a->fspt, a->node, a->max_depth, a->min_samples,
     a->min_volume_p, a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
