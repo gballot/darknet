@@ -8,6 +8,10 @@
 #include "math.h"
 #include "utils.h"
 
+#define FLOAT_FORMAT__ "%-16.6f"
+#define POINTER_FORMAT "%-16p"
+#define INTEGER_FORMAT "%-16d"
+
 float density_score(score_args *args) {
     fspt_node *node = args->node;
     fspt_t *fspt = args->fspt;
@@ -82,23 +86,34 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n\n");
     }
-    fprintf(stream, "Fspt score parameter :\n\
-        Messages to change fitting behaviour :\n\
-    -score_during_fit = %d\n\
-        Messages for all score functions :\n\
-    -fspt = %p\n\
-    -node = %p\n\
-    -discover = %d\n\
-    -need_normalize = %d\n\
-    -normalize_pass = %d\n\
-        Messages for euristic score :\n\
-    -compute_euristic_hyperparam = %d\n\
-    -euristic_hyperparam = %f\n\
-        Message for density score :\n\
-    -calibration_score = %f\n\
-    -calibration_n_samples_p = %f\n\
-    -calibration_volume_p = %f\n\
-    -calibration_tau = %f\n\n",
+    fprintf(stream, "\
+┌──────────────────────────────────────────────┐\n\
+│             FSPT SCORE ARGUMENTS             │\n\
+├──────────────────────────────────────────────┤\n\
+│     Messages to change fitting behaviour     │\n\
+├─────────────────────────────┬────────────────┤\n\
+│            score_during_fit │"INTEGER_FORMAT"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│     Message for all the score functions      │\n\
+├─────────────────────────────┬────────────────┤\n\
+│                        fspt │"POINTER_FORMAT"│\n\
+│                        node │"POINTER_FORMAT"│\n\
+│                    discover │"INTEGER_FORMAT"│\n\
+│              need_normalize │"INTEGER_FORMAT"│\n\
+│              normalize_pass │"INTEGER_FORMAT"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│         Messages for euristic_score          │\n\
+├─────────────────────────────┬────────────────┤\n\
+│ compute_euristic_hyperparam │"INTEGER_FORMAT"│\n\
+│         euristic_hyperparam │"FLOAT_FORMAT__"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│         Messages for density_score           │\n\
+├─────────────────────────────┬────────────────┤\n\
+│          calibration_scoren │"FLOAT_FORMAT__"│\n\
+│     calibration_n_samples_p │"FLOAT_FORMAT__"│\n\
+│        calibration_volume_p │"FLOAT_FORMAT__"│\n\
+│             calibration_tau │"FLOAT_FORMAT__"│\n\
+└─────────────────────────────┴────────────────┘\n\n",
     a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
     a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
@@ -115,3 +130,6 @@ score_func string_to_fspt_score(char *s) {
     }
 }
 
+#undef FLOAT_FORMAT__
+#undef POINTER_FORMAT
+#undef INTEGER_FORMAT

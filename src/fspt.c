@@ -837,7 +837,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream,
 "│                            SPLIT STATISTICS (missing features means no split on it)│\n");
     fprintf(stream,
-"┌────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤\n");
+"├────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┤\n");
     fprintf(stream,
 "│feat│  count  │ count_p │  mean   │   min   │1st quart│  median │3rd quart│   max   │\n");
     fprintf(stream,

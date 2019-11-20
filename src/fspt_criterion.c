@@ -15,6 +15,9 @@
 #endif
 
 #define EPS 0.00001
+#define FLOAT_FORMAT__ "%-16.6f"
+#define POINTER_FORMAT "%-16p"
+#define INTEGER_FORMAT "%-16d"
 
 /**
  * Computes the Gini index of a two classes set.
@@ -269,26 +272,35 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n\n");
     }
-    fprintf(stream, "FSPT criterion arguments :\n\
-        Messages to change fitting behaviour :\n\
-    -merge_nodes = %d\n\
-        Messages between fspt_fit and all the criterion functions :\n\
-    -fspt = %p\n\
-    -node = %p\n\
-    -max_depth = %d\n\
-    -min_samples = %d\n\
-    -min_volume_p = %f\n\
-    -best_index = %d\n\
-    -best_split = %f\n\
-    -forbidden_split = %d\n\
-    -increment_count = %d\n\
-    -end_of_fitting = %d\n\
-        Messages for gini_criterion :\n\
-    -max_tries_p = %f\n\
-    -max_features_p = %f\n\
-    -gini_gain_thresh = %f\n\
-    -max_consecutive_gain_violations = %d\n\
-    -gain = %f\n\n",
+    fprintf(stream, "\
+┌──────────────────────────────────────────────┐\n\
+│           FSPT CRITERION ARGUMENTS           │\n\
+├──────────────────────────────────────────────┤\n\
+│     Messages to change fitting behaviour     │\n\
+├─────────────────────────────┬────────────────┤\n\
+│                 merge_nodes │"INTEGER_FORMAT"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│   Messages for all the criterion functions   │\n\
+├─────────────────────────────┬────────────────┤\n\
+│                        fspt │"POINTER_FORMAT"│\n\
+│                        node │"POINTER_FORMAT"│\n\
+│                   max_depth │"INTEGER_FORMAT"│\n\
+│                 min_samples │"INTEGER_FORMAT"│\n\
+│                min_volume_p │"FLOAT_FORMAT__"│\n\
+│                  best_index │"INTEGER_FORMAT"│\n\
+│                  best_split │"FLOAT_FORMAT__"│\n\
+│             forbidden_split │"INTEGER_FORMAT"│\n\
+│             increment_count │"INTEGER_FORMAT"│\n\
+│              end_of_fitting │"INTEGER_FORMAT"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│         Messages for gini_criterion          │\n\
+├─────────────────────────────┬────────────────┤\n\
+│                 max_tries_p │"FLOAT_FORMAT__"│\n\
+│              max_features_p │"FLOAT_FORMAT__"│\n\
+│            gini_gain_thresh │"FLOAT_FORMAT__"│\n\
+│max_consecutive_gain_violati │"INTEGER_FORMAT"│\n\
+│                        gain │"FLOAT_FORMAT__"│\n\
+└─────────────────────────────┴────────────────┘\n\n",
     a->merge_nodes, a->fspt, a->node, a->max_depth, a->min_samples,
     a->min_volume_p, a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
@@ -305,3 +317,6 @@ criterion_func string_to_fspt_criterion(char *s) {
 
 #undef unit_static
 #undef EPS
+#undef FLOAT_FORMAT__
+#undef POINTER_FORMAT
+#undef INTEGER_FORMAT
