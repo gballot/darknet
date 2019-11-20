@@ -635,7 +635,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         float yolo_thresh, float fspt_thresh, float hier_thresh, int ngpus,
-        int ordered, char *outfile) {
+        int *gpus, int ordered, char *outfile) {
     //TODO
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
@@ -864,7 +864,7 @@ Options are :\n\
                 ordered, one_thread, merge, only_fit, print_stats_after_fit);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
-                hier_thresh, ngpus, ordered, outfile);
+                hier_thresh, ngpus, gpus, ordered, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))

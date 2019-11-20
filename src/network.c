@@ -1218,6 +1218,17 @@ pthread_t train_network_in_thread(network *net, data d, float *err)
     return thread;
 }
 
+pthread_t validate_network_in_thread_fspt(network *net, data d)
+{
+    // TODO
+    pthread_t thread;
+    train_args *ptr = (train_args *)calloc(1, sizeof(train_args));
+    ptr->net = net;
+    ptr->d = d;
+    if(pthread_create(&thread, 0, train_thread_fspt, ptr)) error("Thread creation failed");
+    return thread;
+}
+
 pthread_t train_network_in_thread_fspt(network *net, data d)
 {
     pthread_t thread;
