@@ -27,6 +27,7 @@ backup/
 VOCdevkit/
 coco/
 waymo/
+local_cfg/
 darknet
 .fuse*
 gpu-job*

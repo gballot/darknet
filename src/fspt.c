@@ -453,8 +453,11 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, float *fspt_thresh) {
         stats->mean_depth_leaves += node->depth;
         stats->mean_score += node->score;
         stats->score_vol_n_array[i] =
-            (score_vol_n) {node->score, node->volume / fspt->volume,
-                ((float) node->n_samples) / fspt->n_samples};
+            (score_vol_n) {
+                node->score,
+                node->volume / fspt->volume,
+                node->n_samples
+            };
         /* Thresholds */
         for (int j = 0; j < n_thresh; ++j) {
             float thresh = fspt_thresh[j];
@@ -748,16 +751,17 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Score **/
     fprintf(stream, "\
-┌────────────┬────────────┬────────────┐\n\
-│   score    │   volume   │ n_samples  │\n\
-│    leaf    │ proportion │ proportion │\n\
-│  (sorted)  │    leaf    │    leaf    │\n\
-├────────────┼────────────┼────────────┤\n");
+┌────────────┬────────────┬────────────┬────────────┐\n\
+│   score    │   volume   │ n_samples  │ n_samples  │\n\
+│    leaf    │ proportion │   in the   │ proportion │\n\
+│  (sorted)  │    leaf    │    leaf    │    leaf    │\n\
+├────────────┼────────────┼────────────┼────────────┤\n");
     for (int i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
-│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
-            s->score_vol_n_array[i].n_samples_p);
+            s->score_vol_n_array[i].n_samples,
+            ((float) s->score_vol_n_array[i].n_samples) / s->n_samples);
     }
     fprintf(stream, "\
 └────────────┴────────────┴────────────┘\n\n");

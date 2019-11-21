@@ -10,8 +10,8 @@
 #include "fspt_score.h"
 #include "fspt_criterion.h"
 
-#define FLOATFORMA "% 10.5e"
-#define INT_FORMAT "% 11d"
+#define FLT_FORMAT "%12g"
+#define INT_FORMAT "%12d"
 
 typedef struct validation_data {
     float iou_thresh;
@@ -260,68 +260,59 @@ static void print_validation_data(FILE *stream, validation_data *v,
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n");
     }
-    fprintf(stream, "Parameters :\n\
+    fprintf(stream, "\
+Parameters :\n\
     -IOU threshold = %f\n\
     -FSPT threshold = %f\n\
     -Number of image = %d\n\
     -Number of true boxe = %d\n\
     -Number of yolo detection = %d\n\
-    -Number of class = %d\n",
+    -Number of class = %d\n\n",
     v->iou_thresh, v->fspt_thresh, v->n_images, v->n_truth,
     v->n_yolo_detections, classes);
 
     /* Resume */
-    fprintf(stream, "\n    ┏━━━━━━━━┓\n");
+    fprintf(stream, "    ┏━━━━━━━━┓\n");
     fprintf(stream, "    ┃ RESUME ┃\n");
     fprintf(stream, "    ┗━━━━━━━━┛\n\n");
-    fprintf(stream,
-"             ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n");
-    fprintf(stream,
-"             │True detect.│Wrong class │ Prediction │No detection│ FSPT score │\n");
-    fprintf(stream,
-"             │   by YOLO  │ prediction │while empty │   by YOLO  │  on truth  │\n");
-    fprintf(stream,
-"┌────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│Total number│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n",
+    fprintf(stream, "\
+                 ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+                 │True detect.│Wrong class │ Prediction │No detection│ FSPT score │\n\
+                 │   by YOLO  │ prediction │while empty │   by YOLO  │  on truth  │\n\
+┌────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│ Total numberer │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
+├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│    Mean IOU    │"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │     //     │\n\
+├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│ Fspt rejection │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│Rejection score │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│Fspt acceptance │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│Acceptance score│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+└────────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n",
+        // Total number
         v->tot_n_true_detection, v->tot_n_wrong_class_detection,
-        v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth);
-    fprintf(stream,
-"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│  Mean IOU  │"FLOATFORMA"│"FLOATFORMA"│     //     │     //     │     //     │\n",
-        v->tot_mean_true_detection_iou, v->tot_mean_wrong_class_detection_iou);
-    fprintf(stream,
-"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│Fspt reject │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n",
+        v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth,
+        // Mean iou
+        v->tot_mean_true_detection_iou, v->tot_mean_wrong_class_detection_iou,
+        // Fspt rejection
         v->tot_n_true_detection_rejection, v->tot_n_wrong_class_rejection,
-        v->tot_n_false_detection_rejection, v->tot_n_rejection_of_truth);
-    fprintf(stream,
-"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│Reject score│"FLOATFORMA"│"FLOATFORMA"│"FLOATFORMA"│     //     │"FLOATFORMA"│\n",
+        v->tot_n_false_detection_rejection, v->tot_n_rejection_of_truth,
+        // Rejection score
         v->tot_mean_true_detection_rejection_fspt_score,
         v->tot_mean_wrong_class_rejection_fspt_score,
         v->tot_mean_false_detection_rejection_fspt_score,
-        v->tot_mean_rejection_of_truth_fspt_score);
-    fprintf(stream,
-"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│Fspt accept │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n",
+        v->tot_mean_rejection_of_truth_fspt_score,
+        // Fspt acceptance
         v->tot_n_true_detection_acceptance, v->tot_n_wrong_class_acceptance,
-        v->tot_n_false_detection_acceptance, v->tot_n_acceptance_of_truth);
-    fprintf(stream,
-"├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    fprintf(stream,
-"│Accept score│"FLOATFORMA"│"FLOATFORMA"│"FLOATFORMA"│     //     │"FLOATFORMA"│\n",
+        v->tot_n_false_detection_acceptance, v->tot_n_acceptance_of_truth,
+        // Acceptance score
         v->tot_mean_true_detection_acceptance_fspt_score,
         v->tot_mean_wrong_class_acceptance_fspt_score,
         v->tot_mean_false_detection_acceptance_fspt_score,
         v->tot_mean_acceptance_of_truth_fspt_score);
-    fprintf(stream,
-"└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n");
-    fprintf(stream, "\n");
 }
 
 static validation_data *allocate_validation_data(int classes) {
@@ -888,5 +879,5 @@ Options are :\n\
         print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
 }
 
-#undef FLOATFORMA
+#undef FLT_FORMAT
 #undef INT_FORMAT

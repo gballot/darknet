@@ -119,7 +119,7 @@ typedef struct score_args {
 typedef struct score_vol_n {
     float score;
     double volume_p;
-    float n_samples_p;
+    int n_samples;
 } score_vol_n;
 
 typedef struct fspt_stats {
