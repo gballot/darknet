@@ -1,5 +1,6 @@
 #include "darknet.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "box.h"
@@ -502,7 +503,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 }
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
-        int *gpus, int ngpus, int clear, int refit, int ordered,
+        char *outfile, int *gpus, int ngpus, int clear, int refit, int ordered,
         int one_thread, int merge, int only_fit, int print_stats_val) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
@@ -511,6 +512,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     char **names = get_labels(name_list);
 
     srand(time(0));
+    FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
+    assert(outstream);
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     network **nets = calloc(ngpus, sizeof(network));
@@ -544,7 +547,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int classes = l.classes;
 
     if (only_fit) { 
-        fprintf(stderr, "Only fit FSPTs...\n");
+        fprintf(outstream, "Only fit FSPTs...\n");
     } else {
         list *plist = get_paths(train_images);
         char **paths = (char **)list_to_array(plist);
@@ -574,7 +577,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             train = buffer;
             args.beg = *net->seen;
             load_thread = load_data(args);
-            printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
+            fprintf(outstream, "Loaded: %lf seconds\n",
+                    what_time_is_it_now()-time);
             time=what_time_is_it_now();
 #ifdef GPU
             if(ngpus == 1){
@@ -586,7 +590,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             train_network_fspt(net, train);
 #endif
             i = get_current_batch(net);
-            fprintf(stderr,
+            fprintf(outstream,
                     "%ld: %lf seconds, %d images added to fspt input\n",
                     get_current_batch(net), what_time_is_it_now()-time,
                     i*imgs);
@@ -599,13 +603,13 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char buff[256];
         sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
         save_weights(net, buff);
-        fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
+        fprintf(outstream, "Data extraction done. Fitting FSPTs...\n");
     }
     fit_fspts(net, classes, refit, one_thread, merge);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
-    fprintf(stderr, "End of FSPT training\n");
+    fprintf(outstream, "End of FSPT training\n");
     if (print_stats_val) {
         list *fspt_layers = get_network_layers_by_type(net, FSPT);
         while (fspt_layers->size > 0) {
@@ -615,13 +619,15 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
-                print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
-                print_fspt_stats(stderr, stats, NULL);
+                print_fspt_criterion_args(outstream, &l->fspt_criterion_args,
+                        buf);
+                print_fspt_score_args(outstream, &l->fspt_score_args, NULL);
+                print_fspt_stats(outstream, stats, NULL);
                 free_fspt_stats(stats);
             }
         }
     }
+    if (outstream != stderr) fclose(outstream);
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
@@ -720,7 +726,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         val = buffer;
         args.beg = *net->seen;
         load_thread = load_data(args);
-        printf("Loaded: %lf seconds\n", what_time_is_it_now()-time);
+        fprintf(stderr, "Loaded: %lf seconds\n", what_time_is_it_now()-time);
         time=what_time_is_it_now();
 #ifdef GPU
         if(ngpus == 1){
@@ -810,7 +816,7 @@ Options are :\n\
     -fspt_thresh -> fspt rejection threshold. default 0.5.\n\
     -hier        -> unused.\n\
     -gpus        -> coma separated list of gpus.\n\
-    -out         -> ouput file for test and valid.\n\
+    -out         -> ouput file for prints.\n\
     -clear       -> if set, the training number of seen images is reset.\n\
     -refit       -> if set, the fspts are refitted if they already exist.\n\
     -ordered     -> if set, the data are selected sequentialy and not randomly.\n\
@@ -868,8 +874,9 @@ Options are :\n\
         test_fspt(datacfg, cfg, weights, filename, yolo_thresh, fspt_thresh,
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
-        train_fspt(datacfg, cfg, weights, gpus, ngpus, clear, refit_fspts,
-                ordered, one_thread, merge, only_fit, print_stats_val);
+        train_fspt(datacfg, cfg, weights, outfile, gpus, ngpus, clear,
+                refit_fspts, ordered, one_thread, merge, only_fit,
+                print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, ngpus, gpus, ordered, print_stats_val, outfile);

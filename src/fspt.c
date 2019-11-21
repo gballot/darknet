@@ -764,7 +764,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
             ((float) s->score_vol_n_array[i].n_samples) / s->n_samples);
     }
     fprintf(stream, "\
-└────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Depth **/
     fprintf(stream, "\

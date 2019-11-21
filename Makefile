@@ -1,9 +1,10 @@
-GPU=0
-CUDNN=0
+GPU=1
+CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=0
 TRAIN=0
+VALID=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -45,6 +46,8 @@ WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 #WEIGHTS=weights/fspt-waymo-day.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
+else ifeq ($(VALID), 1)
+NETCMD=valid
 else
 NETCMD=test
 FILE= waymo/Day/images/training_00029.jpg

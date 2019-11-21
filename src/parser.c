@@ -826,6 +826,7 @@ layer parse_fspt(list *options, size_params params)
     criterion_args c_args = {0};
     c_args.merge_nodes = option_find_int_quiet(options, "merge_nodes", 0);
     c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
+    assert(1 <= c_args.min_samples);
     c_args.min_volume_p = option_find_float_quiet(options,
             "min_volume_p", 0.00001);
     assert(0. <= c_args.min_volume_p && c_args.min_volume_p <= 1.);
