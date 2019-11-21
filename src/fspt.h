@@ -158,9 +158,9 @@ typedef struct fspt_stats {
     float mean_samples_leaves;    // Mean number of samples per leaves.
     int min_samples_leaves;       // Minimum number of samples per leaves.
     int max_samples_leaves;       // Maximum number of samples per leaves.
-    int median_samples_leaves;    // Median number of samples per leaves.
-    int first_quartile_samples_leaves; // First Q number of samples per leaves.
-    int third_quartile_samples_leaves; // Thid Q number of samples per leaves.
+    float median_samples_leaves;    // Median number of samples per leaves.
+    float first_quartile_samples_leaves; // First Q number of samples per leaves.
+    float third_quartile_samples_leaves; // Thid Q number of samples per leaves.
     int *n_samples_above_thresh;  // Number of samples in leaves with score
                                   // above each thresholds.
     float mean_samples_leaves_p;    // Proportional mean number of samples per
@@ -182,9 +182,9 @@ typedef struct fspt_stats {
     int depth;               // Depth of the tree.
     int min_depth_leaves;    // Min depth of the leaves.
     float mean_depth_leaves; // Mean depth of the leaves.
-    int median_depth_leaves; // Median depth of the leaves.
-    int first_quartile_depth_leaves;  // First Q of depth of leaves.
-    int third_quartile_depth_leaves;  // Third Q of depth of leaves.
+    float median_depth_leaves; // Median depth of the leaves.
+    float first_quartile_depth_leaves;  // First Q of depth of leaves.
+    float third_quartile_depth_leaves;  // Third Q of depth of leaves.
     float min_depth_leaves_p;    // Proportional min depth of the leaves.
     float mean_depth_leaves_p;   // Proportional mean depth of the leaves.
     float median_depth_leaves_p; // Proportional median depth of the leaves.
