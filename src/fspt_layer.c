@@ -289,6 +289,12 @@ void fspt_predict_truth(layer l, network net, detection **dets, int **n_boxes)
                 fspt_predict(1, l.fspts[class], l.fspt_input,
                         &dets[b][count[b]].fspt_score);
                 dets[b][count[b]].prob[class] = 1.f;
+                dets[b][count[b]].bbox.x = truth.x;
+                dets[b][count[b]].bbox.y = truth.y;
+                dets[b][count[b]].bbox.w = truth.w;
+                dets[b][count[b]].bbox.h = truth.h;
+                dets[b][count[b]].classes = l.classes;
+                dets[b][count[b]].objectness = 1.f;
                 ++count[b];
             }
             ++t;

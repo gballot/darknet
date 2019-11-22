@@ -6,9 +6,11 @@ typedef struct{
     float dx, dy, dw, dh;
 } dbox;
 
-float box_rmse(box a, box b);
-dbox diou(box a, box b);
-box decode_box(box b, box anchor);
-box encode_box(box b, box anchor);
+extern float box_rmse(box a, box b);
+extern dbox diou(box a, box b);
+extern box decode_box(box b, box anchor);
+extern box encode_box(box b, box anchor);
+extern void do_nms_suppression(detection *dets, int *tot_ptr, int classes,
+        float thresh);
 
 #endif

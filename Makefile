@@ -36,7 +36,7 @@ CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -
 CONF=waymo
 VERSION=
 MAINCMD=fspt
-BREAKPOINTS=
+BREAKPOINTS=examples/fspt_detector.c:776
 FSPT_OP=-refit -only_fit -print_stats
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
@@ -145,7 +145,7 @@ simple-test: $(EXEC)
 	./darknet detect cfg/yolov3.cfg weights/yolov3.weights data/dog.jpg
 
 gdb: $(EXEC)
-	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix '-ex "b ', $(BREAKPOINTS)), '"') -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
+	$(SRUN) $(GDB) ./$(EXEC) $(GDBCMD) $(addprefix $(addprefix -ex "b , $(BREAKPOINTS)), ") -ex "run $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)"
 
 valgrind: $(EXEC)
 	$(SRUN) $(VALGRIND) $(VALGRIND_OP) ./$(EXEC) $(DARKNET_GPU_OP) $(MAINCMD) $(NETCMD) $(DATACONF) $(NETCONF) $(WEIGHTS) $(FILE) $(FSPT_OP)

@@ -88,6 +88,66 @@ void do_nms_sort(detection *dets, int total, int classes, float thresh)
     }
 }
 
+void do_nms_suppression(detection *dets, int *tot_ptr, int classes,
+        float thresh)
+{
+    int total = *tot_ptr;
+    // Puts prediction without objectness at the end and decrease total.
+    int k = total-1;
+    for(int i = 0; i <= k; ++i){
+        if(dets[i].objectness == 0){
+            detection swap = dets[i];
+            dets[i] = dets[k];
+            dets[k] = swap;
+            --k;
+            --i;
+        }
+    }
+    total = k+1;
+
+    // Non maximal suppression.
+    for(k = 0; k < classes; ++k){
+        for(int i = 0; i < total; ++i){
+            dets[i].sort_class = k;
+        }
+        qsort(dets, total, sizeof(detection), nms_comparator);
+        for(int i = 0; i < total; ++i){
+            if(dets[i].prob[k] == 0) continue;
+            box a = dets[i].bbox;
+            for(int j = i+1; j < total; ++j){
+                box b = dets[j].bbox;
+                if (box_iou(a, b) > thresh){
+                    dets[j].prob[k] = 0;
+                    // If no more probability is positive we set
+                    // the objectness to 0.
+                    int still_prediction = 0;
+                    for (int k2 = 0; k2 < classes; ++k2) {
+                        if (dets[j].prob[k2] > 0)
+                            still_prediction = 1;
+                    }
+                    if (!still_prediction)
+                        dets[j].objectness = 0;
+                }
+            }
+        }
+    }
+
+    // Puts prediction without objectness at the end and decrease total.
+    k = total-1;
+    for(int i = 0; i <= k; ++i){
+        if(dets[i].objectness == 0){
+            detection swap = dets[i];
+            dets[i] = dets[k];
+            dets[k] = swap;
+            --k;
+            --i;
+        }
+    }
+    total = k+1;
+
+    *tot_ptr = total;
+}
+
 box float_to_box(float *f, int stride)
 {
     box b = {0};

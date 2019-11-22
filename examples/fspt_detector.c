@@ -136,10 +136,10 @@ static int find_corresponding_detection(detection base, int n_dets,
 }
 
 static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
-        int nboxes_truth_fspt, detection *dets_truth_fspt, int nboxes_truth,
-        detection *dets_truth, validation_data *val) {
-    debug_print("nboxes_fspt = %d, nboxes_truth = %d, nboxes_truth_fspt = %d",
-            nboxes_fspt, nboxes_truth, nboxes_truth_fspt);
+        int nboxes_truth, detection *dets_truth,
+        validation_data *val) {
+    debug_print("nboxes_fspt = %d, nboxes_truth = %d",
+            nboxes_fspt, nboxes_truth);
     val->n_yolo_detections += nboxes_fspt;
     val->n_truth += nboxes_truth;
     float iou_thresh = val->iou_thresh;
@@ -207,25 +207,21 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
             ++val->tot_n_no_detection;
             ++val->n_no_detection[class_truth];
         }
-        if (find_corresponding_detection(det_truth, nboxes_truth_fspt,
-                    dets_truth_fspt, iou_thresh, &index, &iou)) {
-            /* Fspt on truth */
-            detection det_truth_fspt = dets_truth_fspt[index];
-                if (det_truth_fspt.fspt_score > fspt_thresh) {
-                    ++val->tot_n_acceptance_of_truth;
-                    ++val->n_acceptance_of_truth[class_truth];
-                    val->tot_mean_acceptance_of_truth_fspt_score
-                        += det_truth_fspt.fspt_score;
-                    val->mean_acceptance_of_truth_fspt_score[class_truth]
-                        += det_truth_fspt.fspt_score;
-                } else {
-                    ++val->tot_n_rejection_of_truth;
-                    ++val->n_rejection_of_truth[class_truth];
-                    val->tot_mean_rejection_of_truth_fspt_score
-                        += det_truth_fspt.fspt_score;
-                    val->mean_rejection_of_truth_fspt_score[class_truth]
-                        += det_truth_fspt.fspt_score;
-                }
+        /* Fspt on truth */
+        if (det_truth.fspt_score > fspt_thresh) {
+            ++val->tot_n_acceptance_of_truth;
+            ++val->n_acceptance_of_truth[class_truth];
+            val->tot_mean_acceptance_of_truth_fspt_score
+                += det_truth.fspt_score;
+            val->mean_acceptance_of_truth_fspt_score[class_truth]
+                += det_truth.fspt_score;
+        } else {
+            ++val->tot_n_rejection_of_truth;
+            ++val->n_rejection_of_truth[class_truth];
+            val->tot_mean_rejection_of_truth_fspt_score
+                += det_truth.fspt_score;
+            val->mean_rejection_of_truth_fspt_score[class_truth]
+                += det_truth.fspt_score;
         }
     }
     for (int i = 0; i < remaining_nboxes_fspt; ++i) {
@@ -761,7 +757,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 &nboxes_fspt);
         if (nms) {
             for (int b = 0; b < net->batch; ++b)
-                do_nms_sort(dets_fspt[b], nboxes_fspt[b], classes, nms);
+                do_nms_suppression(dets_fspt[b], &nboxes_fspt[b], classes, nms);
         }
         /* FSPT truth boxes */
         int *nboxes_truth_fspt;
@@ -769,27 +765,18 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             get_network_fspt_truth_boxes_batch(net, w, h,
                 yolo_thresh, fspt_thresh, hier_thresh, map, 1,
                 &nboxes_truth_fspt);
-        /* Truth boxes */
-        int *nboxes_truth;
-        detection **dets_truth = get_network_truth_boxes_batch(net, w, h,
-                &nboxes_truth);
 
         for (int b = 0; b < net->batch; ++b) {
             update_validation_data(nboxes_fspt[b], dets_fspt[b],
-                    nboxes_truth_fspt[b], dets_truth_fspt[b],
-                    nboxes_truth[b], dets_truth[b], val_data);
+                    nboxes_truth_fspt[b], dets_truth_fspt[b], val_data);
             if (nboxes_fspt[b]) free_detections(dets_fspt[b], nboxes_fspt[b]);
             if (nboxes_truth_fspt[b])
                 free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
-            if (nboxes_truth[b])
-                free_detections(dets_truth[b], nboxes_truth[b]);
         }
         free(dets_fspt);
         free(dets_truth_fspt);
-        free(dets_truth);
         free(nboxes_fspt);
         free(nboxes_truth_fspt);
-        free(nboxes_truth);
         free_data(val);
     }
     print_validation_data(stderr, val_data, "VALIDATION RESULT");
