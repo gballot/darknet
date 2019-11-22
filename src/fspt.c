@@ -869,8 +869,6 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
             continue;
         }
         while (tmp_node->type != LEAF) {
-            debug_print("---> dept = %d, score = %f, n_samples = %d",
-                    tmp_node->depth, tmp_node->score, tmp_node->n_samples);
             int split_feature = tmp_node->split_feature;
             if (x[split_feature] <= tmp_node->split_value) {
                 tmp_node = tmp_node->left;
@@ -879,8 +877,6 @@ void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
             }
         }
         if (tmp_node->type == LEAF) {
-            debug_print("---> dept = %d, score = %f, n_samples = %d",
-                    tmp_node->depth, tmp_node->score, tmp_node->n_samples);
             nodes[i] = tmp_node;
         }
     }

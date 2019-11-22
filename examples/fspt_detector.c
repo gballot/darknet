@@ -717,16 +717,18 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.ordered = ordered;
     args.beg = 0;
 
+    if (ordered) {
+        net->max_batches = plist->size / imgs;
+    }
+
     validation_data *val_data = allocate_validation_data(classes);
-    val_data->n_images = plist->size;
+    val_data->n_images = net->max_batches * imgs;
+    val_data->classes = classes;
     val_data->iou_thresh = iou_thresh;
     val_data->fspt_thresh = fspt_thresh;
 
     pthread_t load_thread = load_data(args);
     double time;
-    if (ordered) {
-        net->max_batches = plist->size / imgs;
-    }
     while (get_current_batch(net) < net->max_batches) {
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
