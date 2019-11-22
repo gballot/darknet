@@ -2,7 +2,7 @@ GPU=1
 CUDNN=1
 OPENCV=0
 OPENMP=0
-DEBUG=0
+DEBUG=1
 TRAIN=0
 VALID=1
 
@@ -40,6 +40,7 @@ BREAKPOINTS=
 FSPT_OP=-refit -only_fit -print_stats
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
+NETCONF=local_cfg/fspt-waymo-test.cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 #WEIGHTS=weights/fspt-waymo-data-extraction-day.weights

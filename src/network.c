@@ -615,15 +615,18 @@ detection **make_network_truth_boxes_batch(network *net, int **num)
     for (int b = 0; b < net->batch; ++b) {
         /* while there are truth boxes*/
         while(1) {
-            box truth = float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
+            box truth =
+                float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
             if(!truth.x) break;
             ++count[b];
         }
-        dets[b] = calloc(count[b], sizeof(detection));
-        for(int i = 0; i < count[b]; ++i){
-            dets[b][i].prob = calloc(classes, sizeof(float));
-            if(l.coords > 4){
-                dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+        if (count[b]) {
+            dets[b] = calloc(count[b], sizeof(detection));
+            for(int i = 0; i < count[b]; ++i){
+                dets[b][i].prob = calloc(classes, sizeof(float));
+                if(l.coords > 4){
+                    dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+                }
             }
         }
     }
@@ -636,15 +639,25 @@ detection **make_network_truth_boxes_batch(network *net, int **num)
 
 detection **make_network_boxes_batch(network *net, float thresh, int **num)
 {
-    layer l = net->layers[net->n - 1];
+    layer l = net->layers[0];
+    for (int i = 0; i < net->n; ++i) {
+        l = net->layers[i];
+        if (l.type == FSPT || l.type == YOLO)
+            break;
+    }
+    if (l.type != FSPT && l.type != YOLO)
+        error("The net must have fspt or yolo layers");
+
     int *nboxes = num_detections_batch(net, thresh);
     detection **dets = calloc(net->batch, sizeof(detection *));
     for (int b = 0; b < net->batch; ++b) {
-        dets[b] = calloc(nboxes[b], sizeof(detection));
-        for(int i = 0; i < nboxes[b]; ++i){
-            dets[b][i].prob = calloc(l.classes, sizeof(float));
-            if(l.coords > 4){
-                dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+        if (nboxes[b]) {
+            dets[b] = calloc(nboxes[b], sizeof(detection));
+            for(int i = 0; i < nboxes[b]; ++i){
+                dets[b][i].prob = calloc(l.classes, sizeof(float));
+                if(l.coords > 4){
+                    dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+                }
             }
         }
     }
@@ -708,7 +721,7 @@ int *fill_network_fspt_truth_boxes_batch(network *net, detection **dets)
             fspt_predict_truth(l, *net, local_dets, &count);
             for (int b = 0; b < net->batch; ++b) {
                 local_dets[b] += count[b];
-                total += count[b];
+                total[b] += count[b];
             }
             free(count);
         }

@@ -111,6 +111,7 @@ static void print_fspt_detections(FILE **fps, char *id, detection *dets,
 static int find_corresponding_detection(detection base, int n_dets,
         detection *comp, float iou_thresh, int *max_index,
         float *max_iou_ptr) {
+    if (!n_dets) return 0;
     box box_base = base.bbox;
     int index = 0;
     float max_iou = 0.f;
@@ -512,8 +513,6 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     char **names = get_labels(name_list);
 
     srand(time(0));
-    FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
-    assert(outstream);
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
     network **nets = calloc(ngpus, sizeof(network));
@@ -547,7 +546,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int classes = l.classes;
 
     if (only_fit) { 
-        fprintf(outstream, "Only fit FSPTs...\n");
+        fprintf(stderr, "Only fit FSPTs...\n");
     } else {
         list *plist = get_paths(train_images);
         char **paths = (char **)list_to_array(plist);
@@ -577,7 +576,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             train = buffer;
             args.beg = *net->seen;
             load_thread = load_data(args);
-            fprintf(outstream, "Loaded: %lf seconds\n",
+            fprintf(stderr, "Loaded: %lf seconds\n",
                     what_time_is_it_now()-time);
             time=what_time_is_it_now();
 #ifdef GPU
@@ -590,7 +589,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             train_network_fspt(net, train);
 #endif
             i = get_current_batch(net);
-            fprintf(outstream,
+            fprintf(stderr,
                     "%ld: %lf seconds, %d images added to fspt input\n",
                     get_current_batch(net), what_time_is_it_now()-time,
                     i*imgs);
@@ -603,14 +602,16 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char buff[256];
         sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
         save_weights(net, buff);
-        fprintf(outstream, "Data extraction done. Fitting FSPTs...\n");
+        fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
     }
     fit_fspts(net, classes, refit, one_thread, merge);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
-    fprintf(outstream, "End of FSPT training\n");
+    fprintf(stderr, "End of FSPT training\n");
     if (print_stats_val) {
+        FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
+        assert(outstream);
         list *fspt_layers = get_network_layers_by_type(net, FSPT);
         while (fspt_layers->size > 0) {
             layer *l = (layer *) list_pop(fspt_layers);
@@ -626,13 +627,14 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 free_fspt_stats(stats);
             }
         }
+        if (outstream != stderr) fclose(outstream);
     }
-    if (outstream != stderr) fclose(outstream);
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
-        float yolo_thresh, float fspt_thresh, float hier_thresh, int ngpus,
-        int *gpus, int ordered, int print_stats_val, char *outfile) {
+        float yolo_thresh, float fspt_thresh, float hier_thresh,
+        float iou_thresh, int ngpus, int *gpus, int ordered,
+        int print_stats_val, char *outfile) {
     //TODO
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
@@ -714,6 +716,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     validation_data *val_data = allocate_validation_data(classes);
     val_data->n_images = plist->size;
+    val_data->iou_thresh = iou_thresh;
+    val_data->fspt_thresh = fspt_thresh;
 
     pthread_t load_thread = load_data(args);
     double time;
@@ -743,8 +747,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 "%ld: %lf seconds, %d images added to validation.\n",
                 get_current_batch(net), what_time_is_it_now()-time,
                 i*imgs);
-        int w = val.w; // ARE YOU SURE ?
-        int h = val.h;
+        int w = net->w; // ARE YOU SURE ?
+        int h = net->h;
         /* FSPT boxes. */
         int *nboxes_fspt;
         detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
@@ -769,9 +773,11 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             update_validation_data(nboxes_fspt[b], dets_fspt[b],
                     nboxes_truth_fspt[b], dets_truth_fspt[b],
                     nboxes_truth[b], dets_truth[b], val_data);
-            free_detections(dets_fspt[b], nboxes_fspt[b]);
-            free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
-            free_detections(dets_truth[b], nboxes_truth[b]);
+            if (nboxes_fspt[b]) free_detections(dets_fspt[b], nboxes_fspt[b]);
+            if (nboxes_truth_fspt[b])
+                free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
+            if (nboxes_truth[b])
+                free_detections(dets_truth[b], nboxes_truth[b]);
             free(dets_fspt);
             free(dets_truth_fspt);
             free(dets_truth);
@@ -833,6 +839,7 @@ Options are :\n\
     float yolo_thresh = find_float_arg(argc, argv, "-yolo_thresh", .5);
     float fspt_thresh = find_float_arg(argc, argv, "-fspt_thresh", .5);
     float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
+    float iou_thresh = find_float_arg(argc, argv, "-iou", .5);
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
     char *outfile = find_char_arg(argc, argv, "-out", 0);
     int clear = find_arg(argc, argv, "-clear");
@@ -879,7 +886,8 @@ Options are :\n\
                 print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
-                hier_thresh, ngpus, gpus, ordered, print_stats_val, outfile);
+                hier_thresh, iou_thresh, ngpus, gpus, ordered, print_stats_val,
+                outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))
