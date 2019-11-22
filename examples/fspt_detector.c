@@ -25,24 +25,24 @@ typedef struct validation_data {
     int tot_n_true_detection;
     int *n_true_detection;  // Size classes. n_true_detection[i] is the number
                             // of true prediction for class `i` made by yolo.
-    float tot_mean_true_detection_iou;
-    float *mean_true_detection_iou;
+    float tot_sum_true_detection_iou;
+    float *sum_true_detection_iou;
     int tot_n_true_detection_rejection;
     int *n_true_detection_rejection;
     int tot_n_true_detection_acceptance;
     int *n_true_detection_acceptance;
-    float tot_mean_true_detection_rejection_fspt_score;
-    float *mean_true_detection_rejection_fspt_score;
-    float tot_mean_true_detection_acceptance_fspt_score;
-    float *mean_true_detection_acceptance_fspt_score;
+    float tot_sum_true_detection_rejection_fspt_score;
+    float *sum_true_detection_rejection_fspt_score;
+    float tot_sum_true_detection_acceptance_fspt_score;
+    float *sum_true_detection_acceptance_fspt_score;
     /* Wrong class yolo detection */
     int tot_n_wrong_class_detection;
     int **n_wrong_class_detection;  // Size classes*classes.
                                     // n_wrong_class_detection[i][j] is the
                                     // number of object of true class `i`
                                     // predicted as a class `j` by yolo.
-    float tot_mean_wrong_class_detection_iou;
-    float **mean_wrong_class_detection_iou;
+    float tot_sum_wrong_class_detection_iou;
+    float **sum_wrong_class_detection_iou;
     int tot_n_wrong_class_rejection;
     int **n_wrong_class_rejection;  // Size classes*classes.
                                     // n_wrong_class_rejection[i][j] is the
@@ -55,10 +55,10 @@ typedef struct validation_data {
                                      // number of wrong class `j` prediction
                                      // by yolo of object of true class `i` that
                                      // have a fspt score above `fspt_thresh`.
-    float tot_mean_wrong_class_rejection_fspt_score;
-    float **mean_wrong_class_rejection_fspt_score;
-    float tot_mean_wrong_class_acceptance_fspt_score;
-    float **mean_wrong_class_acceptance_fspt_score;
+    float tot_sum_wrong_class_rejection_fspt_score;
+    float **sum_wrong_class_rejection_fspt_score;
+    float tot_sum_wrong_class_acceptance_fspt_score;
+    float **sum_wrong_class_acceptance_fspt_score;
     /* False yolo detection */
     int tot_n_false_detection;
     int *n_false_detection;  // Size classes. n_false_detection[i] is the
@@ -68,24 +68,26 @@ typedef struct validation_data {
     int *n_false_detection_rejection;
     int tot_n_false_detection_acceptance;
     int *n_false_detection_acceptance;
-    float tot_mean_false_detection_rejection_fspt_score;
-    float *mean_false_detection_rejection_fspt_score;
-    float tot_mean_false_detection_acceptance_fspt_score;
-    float *mean_false_detection_acceptance_fspt_score;
+    float tot_sum_false_detection_rejection_fspt_score;
+    float *sum_false_detection_rejection_fspt_score;
+    float tot_sum_false_detection_acceptance_fspt_score;
+    float *sum_false_detection_acceptance_fspt_score;
     /* No yolo detection */
     int tot_n_no_detection;
     int *n_no_detection;  // Size classes. n_no_detection[i] is the number of
                           // object of class `i` that were not predicted by
                           // yolo.
+    float tot_sum_no_detection_iou;
+    float *sum_no_detection_iou;
     /* Fspt on truth */
     int tot_n_rejection_of_truth;
     int *n_rejection_of_truth;
     int tot_n_acceptance_of_truth;
     int *n_acceptance_of_truth;
-    float tot_mean_rejection_of_truth_fspt_score;
-    float *mean_rejection_of_truth_fspt_score;
-    float tot_mean_acceptance_of_truth_fspt_score;
-    float *mean_acceptance_of_truth_fspt_score;
+    float tot_sum_rejection_of_truth_fspt_score;
+    float *sum_rejection_of_truth_fspt_score;
+    float tot_sum_acceptance_of_truth_fspt_score;
+    float *sum_acceptance_of_truth_fspt_score;
 } validation_data;
 
 static void print_fspt_detections(FILE **fps, char *id, detection *dets,
@@ -162,43 +164,43 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
                 /* True yolo detection */
                 ++val->tot_n_true_detection;
                 ++val->n_true_detection[class_truth];
-                val->tot_mean_true_detection_iou += iou;
-                val->mean_true_detection_iou[class_truth] += iou;
+                val->tot_sum_true_detection_iou += iou;
+                val->sum_true_detection_iou[class_truth] += iou;
                 if (det_fspt.fspt_score > fspt_thresh)  {
                     ++val->tot_n_true_detection_acceptance;
                     ++val->n_true_detection_acceptance[class_truth];
-                    val->tot_mean_true_detection_acceptance_fspt_score
+                    val->tot_sum_true_detection_acceptance_fspt_score
                         += det_fspt.fspt_score;
-                    val->mean_true_detection_acceptance_fspt_score[class_truth]
+                    val->sum_true_detection_acceptance_fspt_score[class_truth]
                         += det_fspt.fspt_score;
                 } else {
                     ++val->tot_n_true_detection_rejection;
                     ++val->n_true_detection_rejection[class_truth];
-                    val->tot_mean_true_detection_rejection_fspt_score
+                    val->tot_sum_true_detection_rejection_fspt_score
                         += det_fspt.fspt_score;
-                    val->mean_true_detection_rejection_fspt_score[class_truth]
+                    val->sum_true_detection_rejection_fspt_score[class_truth]
                         += det_fspt.fspt_score;
                 }
             } else {
                 /* Wrong class yolo detection */
                 ++val->tot_n_wrong_class_detection;
                 ++val->n_wrong_class_detection[class_truth][class_yolo];
-                val->tot_mean_wrong_class_detection_iou += iou;
-                val->mean_wrong_class_detection_iou[class_truth][class_yolo]
+                val->tot_sum_wrong_class_detection_iou += iou;
+                val->sum_wrong_class_detection_iou[class_truth][class_yolo]
                     += iou;
                 if (det_fspt.fspt_score > fspt_thresh) {
                     ++val->tot_n_wrong_class_acceptance;
                     ++val->n_wrong_class_acceptance[class_truth][class_yolo];
-                    val->tot_mean_wrong_class_acceptance_fspt_score
+                    val->tot_sum_wrong_class_acceptance_fspt_score
                         += det_fspt.fspt_score;
-                    val->mean_wrong_class_acceptance_fspt_score[class_truth][class_yolo]
+                    val->sum_wrong_class_acceptance_fspt_score[class_truth][class_yolo]
                         += det_fspt.fspt_score;
                 } else {
                     ++val->tot_n_wrong_class_rejection;
                     ++val->n_wrong_class_rejection[class_truth][class_yolo];
-                    val->tot_mean_wrong_class_rejection_fspt_score
+                    val->tot_sum_wrong_class_rejection_fspt_score
                         += det_fspt.fspt_score;
-                    val->mean_wrong_class_rejection_fspt_score[class_truth][class_yolo]
+                    val->sum_wrong_class_rejection_fspt_score[class_truth][class_yolo]
                         += det_fspt.fspt_score;
                 }
             }
@@ -211,16 +213,16 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
         if (det_truth.fspt_score > fspt_thresh) {
             ++val->tot_n_acceptance_of_truth;
             ++val->n_acceptance_of_truth[class_truth];
-            val->tot_mean_acceptance_of_truth_fspt_score
+            val->tot_sum_acceptance_of_truth_fspt_score
                 += det_truth.fspt_score;
-            val->mean_acceptance_of_truth_fspt_score[class_truth]
+            val->sum_acceptance_of_truth_fspt_score[class_truth]
                 += det_truth.fspt_score;
         } else {
             ++val->tot_n_rejection_of_truth;
             ++val->n_rejection_of_truth[class_truth];
-            val->tot_mean_rejection_of_truth_fspt_score
+            val->tot_sum_rejection_of_truth_fspt_score
                 += det_truth.fspt_score;
-            val->mean_rejection_of_truth_fspt_score[class_truth]
+            val->sum_rejection_of_truth_fspt_score[class_truth]
                 += det_truth.fspt_score;
         }
     }
@@ -228,21 +230,28 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
         /* False yolo detection */
         detection det_fspt = dets_fspt[i];
         int class_yolo = max_index(det_fspt.prob, classes);
+        int index = 0;
+        float iou = 0.f;
+        if (find_corresponding_detection(det_fspt, nboxes_truth,
+                    dets_truth, iou_thresh, &index, &iou)) {
+            val->tot_sum_no_detection_iou += iou;
+            val->sum_no_detection_iou[class_yolo] += iou;
+        }
         ++val->tot_n_false_detection;
         ++val->n_false_detection[class_yolo];
         if (det_fspt.fspt_score > fspt_thresh) {
             ++val->tot_n_false_detection_acceptance;
             ++val->n_false_detection_acceptance[class_yolo];
-            val->tot_mean_false_detection_acceptance_fspt_score
+            val->tot_sum_false_detection_acceptance_fspt_score
                 += det_fspt.fspt_score;
-            val->mean_false_detection_acceptance_fspt_score[class_yolo]
+            val->sum_false_detection_acceptance_fspt_score[class_yolo]
                 += det_fspt.fspt_score;
         } else {
             ++val->tot_n_false_detection_rejection;
             ++val->n_false_detection_rejection[class_yolo];
-            val->tot_mean_false_detection_rejection_fspt_score
+            val->tot_sum_false_detection_rejection_fspt_score
                 += det_fspt.fspt_score;
-            val->mean_false_detection_rejection_fspt_score[class_yolo]
+            val->sum_false_detection_rejection_fspt_score[class_yolo]
                 += det_fspt.fspt_score;
         }
     }
@@ -284,7 +293,7 @@ Parameters :\n\
 ┌────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
 │ Total numberer │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
 ├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│    Mean IOU    │"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │     //     │\n\
+│    Mean IOU    │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │\n\
 ├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
 │ Fspt rejection │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
 ├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
@@ -298,70 +307,93 @@ Parameters :\n\
         v->tot_n_true_detection, v->tot_n_wrong_class_detection,
         v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth,
         // Mean iou
-        v->tot_mean_true_detection_iou, v->tot_mean_wrong_class_detection_iou,
+        v->tot_n_true_detection ?
+            v->tot_sum_true_detection_iou / v->tot_n_true_detection : 0.f,
+        v->tot_n_wrong_class_detection ?
+            v->tot_sum_wrong_class_detection_iou
+            / v->tot_n_wrong_class_detection : 0.f,
+        v->tot_n_false_detection ? 
+            v->tot_sum_no_detection_iou / v->tot_n_false_detection : 0.f,
         // Fspt rejection
         v->tot_n_true_detection_rejection, v->tot_n_wrong_class_rejection,
         v->tot_n_false_detection_rejection, v->tot_n_rejection_of_truth,
         // Rejection score
-        v->tot_mean_true_detection_rejection_fspt_score,
-        v->tot_mean_wrong_class_rejection_fspt_score,
-        v->tot_mean_false_detection_rejection_fspt_score,
-        v->tot_mean_rejection_of_truth_fspt_score,
+        v->tot_n_true_detection_rejection ?
+            v->tot_sum_true_detection_rejection_fspt_score
+            / v->tot_n_true_detection_rejection : 0.f,
+        v->tot_n_wrong_class_rejection ?
+            v->tot_sum_wrong_class_rejection_fspt_score
+            / v->tot_n_wrong_class_rejection : 0.f,
+        v->tot_n_false_detection_rejection ?
+            v->tot_sum_false_detection_rejection_fspt_score
+            / v->tot_n_false_detection_rejection : 0.f,
+        v->tot_n_rejection_of_truth ?
+            v->tot_sum_rejection_of_truth_fspt_score
+            / v->tot_n_rejection_of_truth : 0.f,
         // Fspt acceptance
         v->tot_n_true_detection_acceptance, v->tot_n_wrong_class_acceptance,
         v->tot_n_false_detection_acceptance, v->tot_n_acceptance_of_truth,
         // Acceptance score
-        v->tot_mean_true_detection_acceptance_fspt_score,
-        v->tot_mean_wrong_class_acceptance_fspt_score,
-        v->tot_mean_false_detection_acceptance_fspt_score,
-        v->tot_mean_acceptance_of_truth_fspt_score);
+        v->tot_n_true_detection_acceptance  ?
+            v->tot_sum_true_detection_acceptance_fspt_score
+            / v->tot_n_true_detection_acceptance : 0.f,
+        v->tot_n_wrong_class_acceptance ?
+            v->tot_sum_wrong_class_acceptance_fspt_score
+            / v->tot_n_wrong_class_acceptance : 0.f,
+        v->tot_n_false_detection_acceptance ?
+            v->tot_sum_false_detection_acceptance_fspt_score
+            / v->tot_n_false_detection_acceptance : 0.f,
+        v->tot_n_acceptance_of_truth ?
+            v->tot_sum_acceptance_of_truth_fspt_score
+            / v->tot_n_acceptance_of_truth : 0.f);
 }
 
 static validation_data *allocate_validation_data(int classes) {
     validation_data *v = calloc(1, sizeof(validation_data));
     /* True yolo detection */
     v->n_true_detection = calloc(classes, sizeof(int));
-    v->mean_true_detection_iou = calloc(classes, sizeof(float));
+    v->sum_true_detection_iou = calloc(classes, sizeof(float));
     v->n_true_detection_rejection = calloc(classes, sizeof(int));
     v->n_true_detection_acceptance = calloc(classes, sizeof(int));
-    v->mean_true_detection_rejection_fspt_score =
+    v->sum_true_detection_rejection_fspt_score =
         calloc(classes, sizeof(float));
-    v->mean_true_detection_acceptance_fspt_score =
+    v->sum_true_detection_acceptance_fspt_score =
         calloc(classes, sizeof(float));
     /* Wrong class yolo detection */
     v->n_wrong_class_detection = calloc(classes, sizeof(int *));
-    v->mean_wrong_class_detection_iou = calloc(classes, sizeof(float *));
+    v->sum_wrong_class_detection_iou = calloc(classes, sizeof(float *));
     v->n_wrong_class_rejection = calloc(classes, sizeof(int *));
     v->n_wrong_class_acceptance = calloc(classes, sizeof(int *));
-    v->mean_wrong_class_rejection_fspt_score =
+    v->sum_wrong_class_rejection_fspt_score =
         calloc(classes, sizeof(float *));
-    v->mean_wrong_class_acceptance_fspt_score =
+    v->sum_wrong_class_acceptance_fspt_score =
         calloc(classes, sizeof(float *));
     for (int i = 0; i < classes; ++i) {
         v->n_wrong_class_detection[i] = calloc(classes, sizeof(int));
-        v->mean_wrong_class_detection_iou[i] = calloc(classes, sizeof(float));
+        v->sum_wrong_class_detection_iou[i] = calloc(classes, sizeof(float));
         v->n_wrong_class_rejection[i] = calloc(classes, sizeof(int));
         v->n_wrong_class_acceptance[i] = calloc(classes, sizeof(int));
-        v->mean_wrong_class_rejection_fspt_score[i] =
+        v->sum_wrong_class_rejection_fspt_score[i] =
             calloc(classes, sizeof(float));
-        v->mean_wrong_class_acceptance_fspt_score[i] =
+        v->sum_wrong_class_acceptance_fspt_score[i] =
             calloc(classes, sizeof(float));
     }
     /* False yolo detection */
     v->n_false_detection = calloc(classes, sizeof(int));
     v->n_false_detection_rejection = calloc(classes, sizeof(int));
     v->n_false_detection_acceptance = calloc(classes, sizeof(int));
-    v->mean_false_detection_rejection_fspt_score =
+    v->sum_false_detection_rejection_fspt_score =
         calloc(classes, sizeof(float));
-    v->mean_false_detection_acceptance_fspt_score =
+    v->sum_false_detection_acceptance_fspt_score =
         calloc(classes, sizeof(float));
     /* No yolo detection */
     v->n_no_detection = calloc(classes, sizeof(int));
+    v->sum_no_detection_iou = calloc(classes, sizeof(float));
     /* Fspt on truth */
     v->n_rejection_of_truth = calloc(classes, sizeof(int));
     v->n_acceptance_of_truth = calloc(classes, sizeof(int));
-    v->mean_rejection_of_truth_fspt_score = calloc(classes, sizeof(float));
-    v->mean_acceptance_of_truth_fspt_score = calloc(classes, sizeof(float));
+    v->sum_rejection_of_truth_fspt_score = calloc(classes, sizeof(float));
+    v->sum_acceptance_of_truth_fspt_score = calloc(classes, sizeof(float));
 
     return v;
 }
@@ -369,39 +401,40 @@ static validation_data *allocate_validation_data(int classes) {
 static void free_validation_data(validation_data *v) {
     /* True yolo detection */
     free(v->n_true_detection);
-    free(v->mean_true_detection_iou);
+    free(v->sum_true_detection_iou);
     free(v->n_true_detection_rejection);
     free(v->n_true_detection_acceptance);
-    free(v->mean_true_detection_rejection_fspt_score);
-    free(v->mean_true_detection_acceptance_fspt_score);
+    free(v->sum_true_detection_rejection_fspt_score);
+    free(v->sum_true_detection_acceptance_fspt_score);
     /* Wrong class yolo detection */
     for (int i = 0; i < v->classes; ++i) {
         free(v->n_wrong_class_detection[i]);
-        free(v->mean_wrong_class_detection_iou[i]);
+        free(v->sum_wrong_class_detection_iou[i]);
         free(v->n_wrong_class_rejection[i]);
         free(v->n_wrong_class_acceptance[i]);
-        free(v->mean_wrong_class_rejection_fspt_score[i]);
-        free(v->mean_wrong_class_acceptance_fspt_score[i]);
+        free(v->sum_wrong_class_rejection_fspt_score[i]);
+        free(v->sum_wrong_class_acceptance_fspt_score[i]);
     }
     free(v->n_wrong_class_detection);
-    free(v->mean_wrong_class_detection_iou);
+    free(v->sum_wrong_class_detection_iou);
     free(v->n_wrong_class_rejection);
     free(v->n_wrong_class_acceptance);
-    free(v->mean_wrong_class_rejection_fspt_score);
-    free(v->mean_wrong_class_acceptance_fspt_score);
+    free(v->sum_wrong_class_rejection_fspt_score);
+    free(v->sum_wrong_class_acceptance_fspt_score);
     /* False yolo detection */
     free(v->n_false_detection);
     free(v->n_false_detection_rejection);
     free(v->n_false_detection_acceptance);
-    free(v->mean_false_detection_rejection_fspt_score);
-    free(v->mean_false_detection_acceptance_fspt_score);
+    free(v->sum_false_detection_rejection_fspt_score);
+    free(v->sum_false_detection_acceptance_fspt_score);
     /* No yolo detection */
     free(v->n_no_detection);
+    free(v->sum_no_detection_iou);
     /* Fspt on truth */
     free(v->n_rejection_of_truth);
     free(v->n_acceptance_of_truth);
-    free(v->mean_rejection_of_truth_fspt_score);
-    free(v->mean_acceptance_of_truth_fspt_score);
+    free(v->sum_rejection_of_truth_fspt_score);
+    free(v->sum_acceptance_of_truth_fspt_score);
     /* Free validation data */
     free(v);
 }
