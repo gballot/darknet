@@ -11,7 +11,7 @@ module load cuda90/blas/9.0.176
 datacfg='cfg/waymo.data'
 netcfg='local_cfg/fspt-waymo'
 weightfile='weights/fspt-waymo.weights'
-options='-refit -only_fit -print_stats -out gpu-job-automatic'
+options='-refit -only_fit -print_stats -out gpu-job-automatic-with-middle-split'
 
 for i in {1..5}; do
   /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt train ${datacfg} ${netcfg}-${i}.cfg ${weightfile} ${options}-${i}

@@ -83,6 +83,7 @@ typedef struct criterion_args {
     int max_depth;
     int min_samples;
     double min_volume_p;
+    double min_length_p;
     int best_index;
     float best_split;
     int forbidden_split;

@@ -828,8 +828,11 @@ layer parse_fspt(list *options, size_params params)
     c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
     assert(1 <= c_args.min_samples);
     c_args.min_volume_p = option_find_float_quiet(options,
-            "min_volume_p", 0.00001);
+            "min_volume_p", 0.);
     assert(0. <= c_args.min_volume_p && c_args.min_volume_p <= 1.);
+    c_args.min_length_p = option_find_float_quiet(options,
+            "min_length_p", 0.0001);
+    assert(0. <= c_args.min_length_p && c_args.min_length_p <= 1.);
     c_args.max_depth = option_find_int_quiet(options, "max_depth", 10);
     c_args.max_consecutive_gain_violations =
         option_find_int_quiet(options, "max_consecutive_gain_violations", 10);

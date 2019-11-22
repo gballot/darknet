@@ -681,6 +681,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     fprintf(stream, "└────────┴────────────┴────────────┘\n");
 
     /** Statistics **/
+    int n_features = s->fspt->n_features;
     fprintf(stream,"\
                  ┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
                  │   total    │    mean    │    min     │     Q1     │   median   │     Q3     │    max     │\n\
@@ -690,8 +691,9 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 │ LU │   depth   │"INT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│\n\
 ├────┼───────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
 │ RE │  volume   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
-│ LA │ n_samples │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
-│ TI │   depth   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
+│ LA │mean_length│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
+│ TI │ n_samples │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
+│ VE │   depth   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
 ├────┼───────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
 │    │   score   │     //     │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n\
 └────┴───────────┼────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┤\n\
@@ -711,8 +713,16 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
         s->third_quartile_depth_leaves, s->depth,
         // relative volume
         s->leaves_volume_p, s->mean_volume_p, s->min_volume_p,
-        s->first_quartile_volume_p, s->median_volume_p, s->third_quartile_volume_p,
-        s->max_volume_p,
+        s->first_quartile_volume_p, s->median_volume_p,
+        s->third_quartile_volume_p, s->max_volume_p,
+        // relative mean length
+        pow(s->leaves_volume_p, 1. / n_features),
+        pow(s->mean_volume_p, 1. / n_features),
+        pow(s->min_volume_p, 1. / n_features),
+        pow(s->first_quartile_volume_p, 1. / n_features),
+        pow(s->median_volume_p, 1. / n_features),
+        pow(s->third_quartile_volume_p, 1. / n_features),
+        pow(s->max_volume_p, 1. / n_features),
         // relative n_samples
         1.f, s->mean_samples_leaves_p, s->min_samples_leaves_p,
         s->first_quartile_samples_leaves_p, s->median_samples_leaves_p,
@@ -730,24 +740,25 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Thresholds **/
     fprintf(stream,"\
-┌────────────┬──────────────────────────────────────┬──────────────────────────────────────┐\n\
-│            │ absolute values above fspt thresholds│ relative values above fspt thresholds│\n\
-│    fspt    ├────────────┬────────────┬────────────┼────────────┬────────────┬────────────┤\n\
-│            │   volume   │ n_samples  │  n_leaves  │   volume   │ n_samples  │  n_nodes   │\n\
-├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+┌────────────┬──────────────────────────────────────┬───────────────────────────────────────────────────┐\n\
+│            │ absolute values above fspt thresholds│     relative values above fspt thresholds         │\n\
+│    fspt    ├────────────┬────────────┬────────────┼────────────┬────────────┬────────────┬────────────┤\n\
+│            │   volume   │ n_samples  │  n_leaves  │   volume   │mean_length │ n_samples  │  n_nodes   │\n\
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,"\
-│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
             s->fspt_thresh[i],
             s->volume_above_thresh[i],
             s->n_samples_above_thresh[i],
             s->n_leaves_above_thresh[i],
             s->volume_above_thresh_p[i],
+            pow(s->volume_above_thresh_p[i], 1./n_features),
             s->n_samples_above_thresh_p[i],
             s->n_leaves_above_thresh_p[i]);
     }
     fprintf(stream,"\
-└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Score **/
     fprintf(stream, "\
