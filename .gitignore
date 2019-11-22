@@ -8,6 +8,7 @@
 *.orig
 .ale_config
 .lvimrc
+valgrind.log
 tags
 libdarknet.a
 libdarknet.so

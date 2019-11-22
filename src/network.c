@@ -680,7 +680,7 @@ int *fill_network_boxes_batch(network *net, int w, int h, float thresh, float hi
                     thresh, map, relative, local_dets);
             for (int b = 0; b < net->batch; ++b) {
                 local_dets[b] += count[b];
-                total += count[b];
+                total[b] += count[b];
             }
             free(count);
         }
@@ -744,7 +744,7 @@ int *fill_network_fspt_boxes_batch(network *net, int w, int h, float yolo_thresh
                     fspt_thresh, map, relative, suppress, local_dets);
             for (int b = 0; b < net->batch; ++b) {
                 local_dets[b] += count[b];
-                total += count[b];
+                total[b] += count[b];
             }
             free(count);
         }
@@ -791,20 +791,22 @@ detection **get_network_truth_boxes_batch(network *net, int w, int h, int **num)
             if(!truth.x) break;
             ++count[b];
         }
-        dets[b] = calloc(count[b], sizeof(detection));
-        for(int i = 0; i < count[b]; ++i){
-            box truth = float_to_box(net->truth + i*(4+1) + b*net->truths, 1);
-            dets[b][i].bbox.x = truth.x;
-            dets[b][i].bbox.y = truth.y;
-            dets[b][i].bbox.w = truth.w;
-            dets[b][i].bbox.h = truth.h;
-            dets[b][i].classes = classes;
-            dets[b][i].prob = calloc(classes, sizeof(float));
-            int class = net->truth[i*(4 + 1) + b*l.truths + 4];
-            dets[b][i].prob[class] = 1.f;
-            dets[b][i].objectness = 1.f;
-            if(l.coords > 4){
-                dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+        if (count[b]) {
+            dets[b] = calloc(count[b], sizeof(detection));
+            for(int i = 0; i < count[b]; ++i){
+                box truth = float_to_box(net->truth + i*(4+1) + b*net->truths, 1);
+                dets[b][i].bbox.x = truth.x;
+                dets[b][i].bbox.y = truth.y;
+                dets[b][i].bbox.w = truth.w;
+                dets[b][i].bbox.h = truth.h;
+                dets[b][i].classes = classes;
+                dets[b][i].prob = calloc(classes, sizeof(float));
+                int class = net->truth[i*(4 + 1) + b*l.truths + 4];
+                dets[b][i].prob[class] = 1.f;
+                dets[b][i].objectness = 1.f;
+                if(l.coords > 4){
+                    dets[b][i].mask = calloc(l.coords-4, sizeof(float));
+                }
             }
         }
     }

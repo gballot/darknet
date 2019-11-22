@@ -126,8 +126,11 @@ static int find_corresponding_detection(detection base, int n_dets,
     if (max_iou >= iou_thresh) {
         if (max_index) *max_index = index;
         if (max_iou_ptr) *max_iou_ptr = max_iou;
+        debug_print("find corresponding detection index = %d, iou = %f", index,
+                max_iou);
         return 1;
     } else {
+        debug_print("don't find corresponding detection iou = %f", max_iou);
         return 0;
     }
 }
@@ -135,6 +138,8 @@ static int find_corresponding_detection(detection base, int n_dets,
 static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
         int nboxes_truth_fspt, detection *dets_truth_fspt, int nboxes_truth,
         detection *dets_truth, validation_data *val) {
+    debug_print("nboxes_fspt = %d, nboxes_truth = %d, nboxes_truth_fspt = %d",
+            nboxes_fspt, nboxes_truth, nboxes_truth_fspt);
     val->n_yolo_detections += nboxes_fspt;
     val->n_truth += nboxes_truth;
     float iou_thresh = val->iou_thresh;
@@ -199,8 +204,8 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
             }
         } else {
             /* No yolo detection */
-            ++val->n_no_detection[class_truth];
             ++val->tot_n_no_detection;
+            ++val->n_no_detection[class_truth];
         }
         if (find_corresponding_detection(det_truth, nboxes_truth_fspt,
                     dets_truth_fspt, iou_thresh, &index, &iou)) {
@@ -245,7 +250,6 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
                 += det_fspt.fspt_score;
         }
     }
-    /* Fspt on truth */
 }
 
 static void print_validation_data(FILE *stream, validation_data *v,
@@ -639,7 +643,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
     char *name_list = option_find_str(options, "names", "data/names.list");
-    char *prefix = option_find_str(options, "results", "results");
     char **names = get_labels(name_list);
     char *base = basecfg(cfgfile);
     char *mapf = option_find_str(options, "map", 0);
@@ -711,7 +714,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.d = &buffer;
     args.type = DETECTION_DATA;
     args.threads = 64;
-    args.ordered = 1;
+    args.ordered = ordered;
     args.beg = 0;
 
     validation_data *val_data = allocate_validation_data(classes);
@@ -752,7 +755,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         /* FSPT boxes. */
         int *nboxes_fspt;
         detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
-                yolo_thresh, fspt_thresh, hier_thresh, map, 0, 0,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 1, 0,
                 &nboxes_fspt);
         if (nms) {
             for (int b = 0; b < net->batch; ++b)
@@ -762,7 +765,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         int *nboxes_truth_fspt;
         detection **dets_truth_fspt =
             get_network_fspt_truth_boxes_batch(net, w, h,
-                yolo_thresh, fspt_thresh, hier_thresh, map, 0,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 1,
                 &nboxes_truth_fspt);
         /* Truth boxes */
         int *nboxes_truth;
@@ -778,13 +781,13 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
             if (nboxes_truth[b])
                 free_detections(dets_truth[b], nboxes_truth[b]);
-            free(dets_fspt);
-            free(dets_truth_fspt);
-            free(dets_truth);
-            free(nboxes_fspt);
-            free(nboxes_truth_fspt);
-            free(nboxes_truth);
         }
+        free(dets_fspt);
+        free(dets_truth_fspt);
+        free(dets_truth);
+        free(nboxes_fspt);
+        free(nboxes_truth_fspt);
+        free(nboxes_truth);
         free_data(val);
     }
     print_validation_data(stderr, val_data, "VALIDATION RESULT");
