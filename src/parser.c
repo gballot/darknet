@@ -841,6 +841,7 @@ layer parse_fspt(list *options, size_params params)
     c_args.gini_gain_thresh = option_find_float_quiet(options,
             "gini_gain_thresh", 0.01);
     assert(0. <= c_args.gini_gain_thresh && c_args.gini_gain_thresh <= .5);
+    c_args.middle_split = option_find_int_quiet(options, "middle_split", 1);
     /* score args */
     score_args s_args = {0};
     s_args.score_during_fit =

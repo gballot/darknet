@@ -93,7 +93,7 @@ typedef struct criterion_args {
     float max_features_p;
     float gini_gain_thresh;
     int max_consecutive_gain_violations;
-    float gain;
+    int middle_split;
 } criterion_args;
 
 typedef struct score_args {

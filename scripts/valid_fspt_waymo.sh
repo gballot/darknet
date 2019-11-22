@@ -12,7 +12,6 @@ datacfg='cfg/waymo.data'
 netcfg='cfg/fspt-waymo.cfg'
 weightfile='weights/fspt-waymo.weights'
 options='-ordered -print_stats'
-options='-print_stats'
 
 #/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt valid ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1
 /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt valid ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0

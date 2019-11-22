@@ -1018,9 +1018,7 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
         c_args->node = current_node;
         int *index = &c_args->best_index;
         float *s = &c_args->best_split;
-        float *gain = &c_args->gain;
         fspt->criterion(c_args);
-        assert((*gain <= 0.5f) && (0.f <= *gain));
         if (c_args->forbidden_split) {
             debug_print(
                     "forbidden split node %p at depth %d and n_samples = %d",
@@ -1031,8 +1029,6 @@ void fspt_fit(int n_samples, float *X, criterion_args *c_args,
                 current_node->score = fspt->score(s_args);
             }
         } else {
-            debug_print("best_index=%d, best_split=%f, gain=%f",
-                    *index, *s, *gain);
             fspt_node *left = calloc(1, sizeof(fspt_node));
             fspt_node *right = calloc(1, sizeof(fspt_node));
             fspt_split(fspt, current_node, *index, *s, left, right);

@@ -276,8 +276,9 @@ void uni_test() {
     args.max_depth = 10;
     args.min_samples = 1;
     args.min_volume_p = -0.00000013582763;
-    args.merge_nodes = 1;
+    args.merge_nodes = 0;
     args.max_consecutive_gain_violations = 4;
+    args.middle_split = 1;
     score_args s_args = {0};
     s_args.calibration_score = 0.5;
     s_args.calibration_n_samples_p = 0.75;

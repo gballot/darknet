@@ -235,16 +235,38 @@ void gini_criterion(criterion_args *args) {
     }
     free(bins);
     free(cdf);
-    free(feature_limit);
     if (forbidden_split) {
         args->forbidden_split = 1;
     } else {
         int rand_idx = max_index(best_gains, fspt->n_features);
         args->best_index = random_features[rand_idx];
-        args->gain = best_gains[rand_idx];
+        float best_gain = best_gains[rand_idx];
         args->best_split = best_splits[rand_idx];
         args->forbidden_split = 0;
-        if (args->gain < args->gini_gain_thresh) {
+        if (best_gain < args->gini_gain_thresh) {
+            if (args->middle_split) {
+                /* split in the middle of the largest feature */
+                int new_index = 0;
+                float new_best_split = 0.f;
+                float max_dlim = 0.f;
+                for (int i = 0; i < fspt->n_features; ++i) {
+                    float node_min = feature_limit[2*i];
+                    float node_max = feature_limit[2*i + 1];
+                    float fspt_min = fspt->feature_limit[2*i];
+                    float fspt_max = fspt->feature_limit[2*i + 1];
+                    float relative_length = (node_max - node_min)
+                        / (fspt_max - fspt_min);
+                    if (relative_length > max_dlim) {
+                        max_dlim = relative_length;
+                        new_index = i;
+                        new_best_split = (node_max + node_min) / 2;
+                    }
+                }
+                debug_print("new index, new best split = %d,%f",
+                        new_index, new_best_split);
+                args->best_index = new_index;
+                args->best_split = new_best_split;
+            }
             args->increment_count = 1;
             debug_print("gain thresh violation at depth %d and count %d",
                     node->depth, node->parent ? node->parent->count : 0);
@@ -252,9 +274,12 @@ void gini_criterion(criterion_args *args) {
                 args->forbidden_split = 1;
             }
         } else {
+            debug_print("best_index=%d, best_split=%f, gain=%f",
+                    args->best_index, args->best_split, best_gain);
             node->count = 0;
         }
     }
+    free(feature_limit);
     free(best_gains);
     free(best_splits);
     free(random_features);
@@ -299,12 +324,12 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │              max_features_p │"FLOAT_FORMAT__"│\n\
 │            gini_gain_thresh │"FLOAT_FORMAT__"│\n\
 │max_consecutive_gain_violati │"INTEGER_FORMAT"│\n\
-│                        gain │"FLOAT_FORMAT__"│\n\
+│                middle_split │"INTEGER_FORMAT"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
     a->merge_nodes, a->fspt, a->node, a->max_depth, a->min_samples,
     a->min_volume_p, a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
-    a->gini_gain_thresh, a->max_consecutive_gain_violations, a->gain);
+    a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split);
 }
 
 criterion_func string_to_fspt_criterion(char *s) {
