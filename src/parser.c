@@ -847,21 +847,22 @@ layer parse_fspt(list *options, size_params params)
     c_args.middle_split = option_find_int_quiet(options, "middle_split", 1);
     /* score args */
     score_args s_args = {0};
-    s_args.score_during_fit =
-        option_find_int_quiet(options, "score_during_fit", 1);
-    s_args.compute_euristic_hyperparam =
-        option_find_int_quiet(options, "compute_euristic_hyperparam", 0);
     s_args.calibration_score =
         option_find_float_quiet(options, "calibration_score", 0.5);
     s_args.calibration_n_samples_p =
         option_find_float_quiet(options, "calibration_n_samples_p", 0.75);
-    assert(0. < s_args.calibration_n_samples_p && s_args.calibration_n_samples_p <= 1.);
+    assert(0. < s_args.calibration_n_samples_p
+            && s_args.calibration_n_samples_p <= 1.);
     s_args.calibration_volume_p =
-        option_find_float_quiet(options, "calibration_volume_p", 0.05);
-    assert(0. < s_args.calibration_volume_p && s_args.calibration_volume_p <= 1.);
+        option_find_float_quiet(options, "calibration_volume_p", 0.);
+    s_args.calibration_feat_length_p =
+        option_find_float_quiet(options, "calibration_feat_length_p", 0.1);
+    assert(0. < s_args.calibration_volume_p
+            && s_args.calibration_volume_p <= 1.);
     s_args.volume_penalization =
         option_find_float_quiet(options, "volume_penalization", 0.);
-    assert(0. <= s_args.volume_penalization && s_args.volume_penalization < 1.);
+    assert(0. <= s_args.volume_penalization
+            && s_args.volume_penalization < 1.);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,

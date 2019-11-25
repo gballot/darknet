@@ -17,12 +17,17 @@ float density_score(score_args *args) {
     fspt_t *fspt = args->fspt;
     if (args->discover) {
         args->discover = 0;
+        if (!args->calibration_volume_p && args->calibration_feat_length_p)
+            args->calibration_volume_p =
+                pow(args->calibration_feat_length_p, fspt->n_features);
         assert(args->calibration_volume_p);
         double calibration_full_score =
             args->calibration_n_samples_p /
             pow(args->calibration_volume_p, 1. - args->volume_penalization);
         args->calibration_tau =
             - log(1. - args->calibration_score) / calibration_full_score;
+        args->need_normalize = 0;
+        args->score_during_fit = 1;
         return 0.f;
     }
     if (fspt->n_samples == 0) return 0.f;
@@ -40,6 +45,7 @@ float euristic_score(score_args *args) {
             args->compute_euristic_hyperparam = 1;
         args->discover = 0;
         args->need_normalize = 0;
+        args->score_during_fit = 1;
         return 0.f;
     }
     if (args->compute_euristic_hyperparam) {
@@ -113,12 +119,14 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │           calibration_score │"FLOAT_FORMAT__"│\n\
 │     calibration_n_samples_p │"FLOAT_FORMAT__"│\n\
 │        calibration_volume_p │"FLOAT_FORMAT__"│\n\
+│   calibration_feat_length_p │"FLOAT_FORMAT__"│\n\
 │         volume_penalization │"FLOAT_FORMAT__"│\n\
 │             calibration_tau │"FLOAT_FORMAT__"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
     a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
     a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
+    a->calibration_feat_length_p,
     a->volume_penalization, a->calibration_tau);
 }
 

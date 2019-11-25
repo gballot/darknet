@@ -113,6 +113,7 @@ typedef struct score_args {
     float calibration_score;
     float calibration_n_samples_p;
     float calibration_volume_p;
+    float calibration_feat_length_p;
     float volume_penalization;
     float calibration_tau;
 } score_args;

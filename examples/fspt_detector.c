@@ -718,9 +718,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
-                print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
-                print_fspt_stats(stderr, stats, NULL);
+                print_fspt_stats(stderr, stats, buf);
                 free_fspt_stats(stats);
             }
         }

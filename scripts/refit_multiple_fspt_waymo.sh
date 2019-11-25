@@ -16,3 +16,9 @@ options='-refit -only_fit -print_stats -out gpu-job-automatic-with-middle-split'
 for i in {1..5}; do
   /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt train ${datacfg} ${netcfg}-${i}.cfg ${weightfile} ${options}-${i}
 done
+
+options='-refit -only_fit -print_stats -out gpu-job-automatic-with-middle-split-and-min-length'
+
+for i in {6..10}; do
+  /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt train ${datacfg} ${netcfg}-${i}.cfg ${weightfile} ${options}-${i}
+done
