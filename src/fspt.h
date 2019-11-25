@@ -109,12 +109,13 @@ typedef struct score_args {
     int compute_euristic_hyperparam;
     float euristic_hyperparam;
     /* message for density score */
-    float calibration_score;
-    float calibration_n_samples_p;
+    int exponential_normalization;
+    double calibration_score;
+    double calibration_n_samples_p;
     double calibration_volume_p;
     float calibration_feat_length_p;
-    float volume_penalization;
-    float calibration_tau;
+    double volume_penalization;
+    double calibration_tau;
 } score_args;
 
 typedef struct score_vol_n {

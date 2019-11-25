@@ -847,6 +847,8 @@ layer parse_fspt(list *options, size_params params)
     c_args.middle_split = option_find_int_quiet(options, "middle_split", 1);
     /* score args */
     score_args s_args = {0};
+    s_args.exponential_normalization =
+        option_find_int_quiet(options, "exponential_normalization", 1);
     s_args.calibration_score =
         option_find_float_quiet(options, "calibration_score", 0.5);
     s_args.calibration_n_samples_p =
