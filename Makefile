@@ -1,8 +1,8 @@
-GPU=1
-CUDNN=1
+GPU=0
+CUDNN=0
 OPENCV=0
 OPENMP=0
-DEBUG=0
+DEBUG=1
 TRAIN=0
 VALID=0
 
@@ -155,6 +155,9 @@ run: $(EXEC)
 
 test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
+
+gdb-test: $(EXEC)
+	$(GDB) ./$(EXEC) -ex "run -nogpu uni_test"
 
 tag:
 	ctags src/* include/* examples/*

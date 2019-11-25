@@ -94,6 +94,23 @@ void shuffle(void *arr, size_t n, size_t size)
     }
 }
 
+size_t *random_index_order_size_t(size_t min, size_t max)
+{
+    size_t *inds = calloc(max-min, sizeof(size_t));
+    size_t i;
+    for(i = min; i < max; ++i){
+        inds[i] = i;
+    }
+    if (max == 0) return inds;
+    for(i = min; i < max-1; ++i){
+        int swap = inds[i];
+        int index = i + rand()%(max-i);
+        inds[i] = inds[index];
+        inds[index] = swap;
+    }
+    return inds;
+}
+
 int *random_index_order(int min, int max)
 {
     int *inds = calloc(max-min, sizeof(int));
@@ -630,6 +647,20 @@ int max_index(float *a, int n)
     return max_i;
 }
 
+int max_index_double(double *a, int n)
+{
+    if(n <= 0) return -1;
+    int i, max_i = 0;
+    double max = a[0];
+    for(i = 1; i < n; ++i){
+        if(a[i] > max){
+            max = a[i];
+            max_i = i;
+        }
+    }
+    return max_i;
+}
+
 int int_index(int *a, int val, int n)
 {
     int i;
@@ -800,11 +831,11 @@ void qsort_float_on_index(size_t index, size_t n, size_t size,
     }
 }
 
-float median(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *)) {
+double median(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;
-    int N = n_elem + 1;
+    size_t N = n_elem + 1;
     if (N % 2) {
         return (accessor((const void *) b + size_elem * ((N / 2) - 1))
                 + accessor((const void *) b + size_elem * (N / 2))) / 2;
@@ -813,11 +844,11 @@ float median(const void *a, int n_elem, int size_elem,
     }
 }
 
-float first_quartile(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *)) {
+double first_quartile(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;
-    int N = n_elem + 3;
+    size_t N = n_elem + 3;
     switch (N % 4) {
         case 0:
             return accessor((const void *) b + size_elem * ((N / 4) - 1));
@@ -833,11 +864,11 @@ float first_quartile(const void *a, int n_elem, int size_elem,
     }
 }
 
-float third_quartile(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *)) {
+double third_quartile(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *)) {
     if (!n_elem) return 0.f;
     char *b = (char *) a;
-    int N = 3 * n_elem + 1;
+    size_t N = 3 * n_elem + 1;
     switch (N % 4) {
         case 0:
             return accessor((const void *) b + size_elem * ((N / 4) - 1));

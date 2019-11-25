@@ -16,7 +16,7 @@ static int eq_float_array(int n, const float *X, const float *Y) {
     return 1;
 }
 
-static float acc_int(const void *a) {
+static double acc_int(const void *a) {
     int *pa = (int *)a;
     return *pa;
 }
@@ -216,6 +216,10 @@ void uni_test() {
     fspt->n_nodes = 3;
     fspt->root = root;
     fspt->depth = 2;
+    criterion_args crit_args = {0};
+    score_args scor_args = {0};
+    fspt->c_args = &crit_args;
+    fspt->s_args = &scor_args;
 
     /* save */
     fspt_save(filename, *fspt, 1, &succ);
@@ -284,6 +288,8 @@ void uni_test() {
     s_args.calibration_score = 0.5;
     s_args.calibration_n_samples_p = 0.75;
     s_args.calibration_volume_p = 0.05;
+    fspt_fitted->c_args = &args;
+    fspt_fitted->s_args = &s_args;
     fspt_fit(n_samples, samples_fit, &args, &s_args, fspt_fitted);
     print_fspt(fspt_fitted);
 

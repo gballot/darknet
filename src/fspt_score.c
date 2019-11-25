@@ -12,7 +12,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 
-float density_score(score_args *args) {
+double density_score(score_args *args) {
     fspt_node *node = args->node;
     fspt_t *fspt = args->fspt;
     if (args->discover) {
@@ -31,13 +31,13 @@ float density_score(score_args *args) {
         return 0.f;
     }
     if (fspt->n_samples == 0) return 0.f;
-    float uncalibred_score = ((float) node->n_samples / fspt->n_samples)
+    double uncalibred_score = ((double) node->n_samples / fspt->n_samples)
         * pow(fspt->volume / node->volume, 1. - args->volume_penalization);
-    float score = 1. - exp(- args->calibration_tau * uncalibred_score);
+    double score = 1. - exp(- args->calibration_tau * uncalibred_score);
     return score;
 }
 
-float euristic_score(score_args *args) {
+double euristic_score(score_args *args) {
     fspt_node *node = args->node;
     fspt_t *fspt = args->fspt;
     if (args->discover) {
@@ -58,26 +58,26 @@ float euristic_score(score_args *args) {
                 ++n_leaves;
             }
         }
-        args->euristic_hyperparam = ((float) fspt->n_samples) / n_leaves;
+        args->euristic_hyperparam = ((double) fspt->n_samples) / n_leaves;
         free_list(node_list);
         args->compute_euristic_hyperparam = 0;
     }
     if (node->n_samples == 0) return 0.f;
-    float E = args->euristic_hyperparam;
-    float cum = 0;
-    float cum2 = 0;
+    double E = args->euristic_hyperparam;
+    double cum = 0;
+    double cum2 = 0;
     float *feature_limit = get_feature_limit(node);
     for (int i = 0; i < fspt->n_features; ++i) {
-        float d_feature_local = feature_limit[2*i + 1]
+        double d_feature_local = feature_limit[2*i + 1]
             - feature_limit[2*i];
-        float d_feature_global = fspt->feature_limit[2*i + 1]
+        double d_feature_global = fspt->feature_limit[2*i + 1]
             - fspt->feature_limit[2*i];
-        float c = E * d_feature_local / (node->n_samples * d_feature_global);
+        double c = E * d_feature_local / (node->n_samples * d_feature_global);
         cum += fspt->feature_importance[i] / (1. + c);
         cum2 += fspt->feature_importance[i];
     }
     free(feature_limit);
-    float score = cum / cum2;
+    double score = cum / cum2;
     return score;
 }
 
@@ -128,6 +128,16 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
     a->calibration_feat_length_p,
     a->volume_penalization, a->calibration_tau);
+}
+
+void save_score_args_file(FILE *fp, score_args *s, int *succ) {
+    *succ &= fwrite(s, sizeof(score_args), 1, fp);
+}
+
+score_args *load_score_args_file(FILE *fp, int *succ) {
+    score_args *s = malloc(sizeof(score_args));
+    *succ &= fread(s, sizeof(score_args), 1, fp);
+    return s;
 }
 
 score_func string_to_fspt_score(char *s) {

@@ -462,7 +462,7 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
                 l.ref, class, n);
         fspt_fit(n, X, c_args, s_args, fspt);
         fprintf(stderr,
-                "[Fspt %s:%d]: fit successful n_nodes = %d, depth = %d\n",
+                "[Fspt %s:%d]: fit successful n_nodes = %ld, depth = %d\n",
                 l.ref, class, fspt->n_nodes, fspt->depth);
         free(c_args);
     }

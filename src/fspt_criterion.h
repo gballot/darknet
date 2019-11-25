@@ -5,6 +5,10 @@
 
 #include "fspt.h"
 
+extern criterion_args *load_criterion_args_file(FILE *fp, int *succ);
+
+extern void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ);
+
 /**
  * Convert a string representing the name of a criterion function
  * to a pointer to this function.

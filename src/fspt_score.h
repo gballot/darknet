@@ -3,6 +3,9 @@
 
 #include "fspt.h"
 
+extern score_args *load_score_args_file(FILE *fp, int *succ);
+
+extern void save_score_args_file(FILE *fp, score_args *s, int *succ);
 /**
  * maps the string names of the functions to the score functions.
  *
@@ -12,16 +15,6 @@
 extern score_func string_to_fspt_score(char *s);
 
 /**
- * A score function called "density".
- * This score is the density of samples in the node normalized by the
- * density of the whole fspt.
- *
- * \param args The score arguments. Should at least contain the node and
- *             the fspt.
- */
-extern float density_score(score_args *args);
-
-/**
  * Prints a score_args to a file.
  *
  * \param stream The output stream.
@@ -29,6 +22,16 @@ extern float density_score(score_args *args);
  * \param title An optional title.
  */
 extern void print_fspt_score_args(FILE *stream, score_args *a, char *title);
+
+/**
+ * A score function called "density".
+ * This score is the density of samples in the node normalized by the
+ * density of the whole fspt.
+ *
+ * \param args The score arguments. Should at least contain the node and
+ *             the fspt.
+ */
+extern double density_score(score_args *args);
 
 /**
  * An euristic score function called "euristic".
@@ -44,6 +47,6 @@ extern void print_fspt_score_args(FILE *stream, score_args *a, char *title);
  * \param args The score arguments. Should at least contain the node and
  *             the fspt.
  */
-extern float euristic_score(score_args *args);
+extern double euristic_score(score_args *args);
 
 #endif /* FSPT_SCORE_H */

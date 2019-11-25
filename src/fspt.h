@@ -26,7 +26,7 @@ struct fspt_t;
 struct criterion_args;
 struct score_args;
 typedef void (*criterion_func) (struct criterion_args *args);
-typedef float (*score_func) (struct score_args *args);
+typedef double (*score_func) (struct score_args *args);
 
 /**
  * Node of the FSPT.
@@ -35,8 +35,8 @@ typedef struct fspt_node {
     FSTP_NODE_TYPE type;  // LEAF or INNER
     int n_features;
     struct fspt_t *fspt;   // the fspt that contains this node
-    float n_empty;        // number of empty points (is a float)
-    int n_samples;
+    size_t n_empty;        // number of empty points (is a float)
+    size_t n_samples;
     float *samples;     // training samples
     int split_feature;  // splits on feature SPLIT_FEATURE
     float split_value;   // go to right child if feature[i] > split_value
@@ -45,7 +45,7 @@ typedef struct fspt_node {
     struct fspt_node *left;    // left child
     struct fspt_node *parent;  // the parent node
     int depth;
-    float score;
+    double score;
     double volume;
     int count;          // keeps the successive violation of gain threshold
 } fspt_node;
@@ -59,8 +59,8 @@ typedef struct fspt_t {
                          //feature_limit[2*i] = min feature(i)
                          // feature_limite[2*i+1] = max feature(i)
     const float *feature_importance; // feature_importance of size n_feature
-    int n_nodes;         // number of nodes
-    int n_samples;       // number of training samples
+    size_t n_nodes;         // number of nodes
+    size_t n_samples;       // number of training samples
     float *samples;     // training samples
     fspt_node *root;
     criterion_func criterion; // spliting criterion
@@ -68,9 +68,8 @@ typedef struct fspt_t {
     int depth;
     int count;          // keeps the successive violation of gain threshold
     double volume;      // total volume of the fspt
-    int min_samples;
-    double min_volume_p;
-    int max_depth;
+    struct criterion_args *c_args;
+    struct score_args *s_args;
 } fspt_t;
 
 
@@ -92,7 +91,7 @@ typedef struct criterion_args {
     /* messages for gini_criterion */
     float max_tries_p;
     float max_features_p;
-    float gini_gain_thresh;
+    double gini_gain_thresh;
     int max_consecutive_gain_violations;
     int middle_split;
 } criterion_args;
@@ -119,16 +118,16 @@ typedef struct score_args {
 } score_args;
 
 typedef struct score_vol_n {
-    float score;
+    double score;
     double volume_p;
-    int n_samples;
+    size_t n_samples;
 } score_vol_n;
 
 typedef struct fspt_stats {
     /* Inputs */
     fspt_t *fspt;                 // Fspt related to this statistics.
     int n_thresh;                 // Number of thresholds.
-    float *fspt_thresh;           // Score thresholds for some statistics.
+    double *fspt_thresh;           // Score thresholds for some statistics.
     /* Volume statistics */
     double volume;                // Volume of the fspt.
     double leaves_volume;         // Volume of the leaves.
@@ -154,86 +153,86 @@ typedef struct fspt_stats {
                                     // the volume of the leaves with score
                                     // above each thresholds.
     /* Number of samples statistics */
-    int n_samples;                // Number of samples of the tree.
+    size_t n_samples;                // Number of samples of the tree.
     int min_samples_param;        // Parameter of the minimum number of
                                   // sample per nodes.
-    float mean_samples_leaves;    // Mean number of samples per leaves.
-    int min_samples_leaves;       // Minimum number of samples per leaves.
-    int max_samples_leaves;       // Maximum number of samples per leaves.
-    float median_samples_leaves;    // Median number of samples per leaves.
-    float first_quartile_samples_leaves; // First Q number of samples per leaves.
-    float third_quartile_samples_leaves; // Thid Q number of samples per leaves.
-    int *n_samples_above_thresh;  // Number of samples in leaves with score
+    double mean_samples_leaves;    // Mean number of samples per leaves.
+    size_t min_samples_leaves;       // Minimum number of samples per leaves.
+    size_t max_samples_leaves;       // Maximum number of samples per leaves.
+    double median_samples_leaves;    // Median number of samples per leaves.
+    double first_quartile_samples_leaves; // First Q number of samples per leaves.
+    double third_quartile_samples_leaves; // Thid Q number of samples per leaves.
+    size_t *n_samples_above_thresh;  // Number of samples in leaves with score
                                   // above each thresholds.
-    float mean_samples_leaves_p;    // Proportional mean number of samples per
+    double mean_samples_leaves_p;    // Proportional mean number of samples per
                                     // leaves.
-    float min_samples_leaves_p;     // Proportional minimum number of samples
+    double min_samples_leaves_p;     // Proportional minimum number of samples
                                     // per leaves.
-    float max_samples_leaves_p;     // Proportional maximum number of samples
+    double max_samples_leaves_p;     // Proportional maximum number of samples
                                     // per leaves.
-    float median_samples_leaves_p;  // Proportional median number of samples
+    double median_samples_leaves_p;  // Proportional median number of samples
                                     // per leaves.
-    float first_quartile_samples_leaves_p; // Proportional first Q number of
+    double first_quartile_samples_leaves_p; // Proportional first Q number of
                                            // samples per leaves.
-    float third_quartile_samples_leaves_p; // Proportional thid Q number of
+    double third_quartile_samples_leaves_p; // Proportional thid Q number of
                                            // samples per leaves.
-    float *n_samples_above_thresh_p;// Proportional number of samples in leaves
+    double *n_samples_above_thresh_p;// Proportional number of samples in leaves
                                     // with score above each thresholds.
     /* Depth statistics */
     int max_depth;           // Max depth parameter of the tree.
     int depth;               // Depth of the tree.
     int min_depth_leaves;    // Min depth of the leaves.
-    float mean_depth_leaves; // Mean depth of the leaves.
-    float median_depth_leaves; // Median depth of the leaves.
-    float first_quartile_depth_leaves;  // First Q of depth of leaves.
-    float third_quartile_depth_leaves;  // Third Q of depth of leaves.
-    float min_depth_leaves_p;    // Proportional min depth of the leaves.
-    float mean_depth_leaves_p;   // Proportional mean depth of the leaves.
-    float median_depth_leaves_p; // Proportional median depth of the leaves.
-    float first_quartile_depth_leaves_p;  // Proportional first Q of depth of
+    double mean_depth_leaves; // Mean depth of the leaves.
+    double median_depth_leaves; // Median depth of the leaves.
+    double first_quartile_depth_leaves;  // First Q of depth of leaves.
+    double third_quartile_depth_leaves;  // Third Q of depth of leaves.
+    double min_depth_leaves_p;    // Proportional min depth of the leaves.
+    double mean_depth_leaves_p;   // Proportional mean depth of the leaves.
+    double median_depth_leaves_p; // Proportional median depth of the leaves.
+    double first_quartile_depth_leaves_p;  // Proportional first Q of depth of
                                           // leaves.
-    float third_quartile_depth_leaves_p;  // Proportional third Q of depth of
+    double third_quartile_depth_leaves_p;  // Proportional third Q of depth of
                                           // leaves.
-    float balanced_index;    // Score between 0 and 1. 0 if line tree,
+    double balanced_index;    // Score between 0 and 1. 0 if line tree,
                              // 1 if balanced. (1 - (2*depth-1)/n_nodes).
-    int *n_nodes_by_depth;   // Size depth. Number of nodes by depth.
+    size_t *n_nodes_by_depth;   // Size depth. Number of nodes by depth.
     double *n_nodes_by_depth_p; // Size depth. Number of nodes by depth divided
                                 // by 2^(depth-1).
     /* Node type statistics */
-    int n_leaves;       // Number of leaves.
-    int n_inner;        // Number of inner nodes.
-    float n_leaves_p;   // Proportional number of leaves.
-    float n_inner_p;    // Proportional number of inner nodes.
-    int *n_leaves_above_thresh;  // Size n_thresh. Number of nodes above each
+    size_t n_leaves;       // Number of leaves.
+    size_t n_inner;        // Number of inner nodes.
+    double n_leaves_p;   // Proportional number of leaves.
+    double n_inner_p;    // Proportional number of inner nodes.
+    size_t *n_leaves_above_thresh;  // Size n_thresh. Number of nodes above each
                                  //thresholds.
-    float *n_leaves_above_thresh_p;  // Size n_thresh. Proportional number of
+    double *n_leaves_above_thresh_p;  // Size n_thresh. Proportional number of
                                      //nodes above each thresholds.
     score_vol_n *score_vol_n_array;
     /* Split statistics */
     int *split_features_count;    // Size n_features. Value at index i
                                   // is the number of split on feature i.
-    float *split_features_count_p;  // Size n_features. Value at index i
+    double *split_features_count_p;  // Size n_features. Value at index i
                                     // is the proportional number of split on
                                   // feature i.
-    float *min_split_values;      // Size n_features. Min split value by
+    double *min_split_values;      // Size n_features. Min split value by
                                   // features.
-    float *max_split_values;      // Size n_features. Max split value by
+    double *max_split_values;      // Size n_features. Max split value by
                                   // features.
-    float *mean_split_values;     // Size n_features. Mean split value by
+    double *mean_split_values;     // Size n_features. Mean split value by
                                   // features.
-    float *median_split_values;   // Size n_features. Median split value by
+    double *median_split_values;   // Size n_features. Median split value by
                                   // features.
-    float *first_quartile_split_values; // Size n_features. Fist Q split value
+    double *first_quartile_split_values; // Size n_features. Fist Q split value
                                         // by features.
-    float *third_quartile_split_values; // Size n_features. Third Q split value
+    double *third_quartile_split_values; // Size n_features. Third Q split value
                                         // by features.
     /* Score statistics */
-    float mean_score;    // Mean score of leaves.
-    float min_score;      // Min score of leaves.
-    float max_score;     // Max score of leaves.
-    float median_score;  // Median score of leaves.
-    float first_quartile_score;  // Fist Q score of leaves.
-    float third_quartile_score;  // Third Q score of leaves.
+    double mean_score;    // Mean score of leaves.
+    double min_score;      // Min score of leaves.
+    double max_score;     // Max score of leaves.
+    double median_score;  // Median score of leaves.
+    double first_quartile_score;  // Fist Q score of leaves.
+    double third_quartile_score;  // Third Q score of leaves.
 } fspt_stats;
 
 /**
@@ -283,7 +282,7 @@ extern double get_fspt_volume_score_above(float thresh, fspt_t *fspt);
  * \param nodes Output parameter that will be filled by the n nodes.
  *              Needs to be freed by the caller.
  */ 
-extern void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
+extern void fspt_decision_func(size_t n, const fspt_t *fspt, const float *X,
                         fspt_node **nodes);
 
 /**
@@ -296,7 +295,7 @@ extern void fspt_decision_func(int n, const fspt_t *fspt, const float *X,
  * \param Y Output parameter that will be filled by the n predictions.
  *          needs to be freed by the caller.
  */ 
-extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
+extern void fspt_predict(size_t n, const fspt_t *fspt, const float *X, float *Y);
 
 /**
  * Fits the feature space partitioning tree to the data X.
@@ -307,7 +306,7 @@ extern void fspt_predict(int n, const fspt_t *fspt, const float *X, float *Y);
  * \param c_args Pointer to the score args.
  * \param fspt The feature space partitioning tree.
  */
-extern void fspt_fit(int n_samples, float *X, criterion_args *c_args,
+extern void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
         score_args *s_args, fspt_t *fspt);
 
 
@@ -415,7 +414,7 @@ extern list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal);
  * \param fspt_thresh Array of thresholds for stats or NULL for automatic.
  */
 extern fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh,
-        float *fspt_thresh);
+        double *fspt_thresh);
 
 /**
  * Frees the fspt_stats except the fspt himself.

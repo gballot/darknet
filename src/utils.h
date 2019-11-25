@@ -67,6 +67,8 @@ extern float **one_hot_encode(float *a, int n, int k);
 extern float sec(clock_t clocks);
 extern void print_statistics(float *a, int n);
 extern int int_index(int *a, int val, int n);
+extern int max_index_double(double *a, int n);
+extern size_t *random_index_order_size_t(size_t min, size_t max);
 extern char *itoa(int val, int base);
 
 /**
@@ -89,8 +91,8 @@ extern void qsort_float_on_index(size_t index, size_t n, size_t size,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float median(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *));
+extern double median(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *));
 
 /**
  * Gives the first quartile of an array already sorted.
@@ -100,8 +102,8 @@ extern float median(const void *a, int n_elem, int size_elem,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float first_quartile(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *));
+extern double first_quartile(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *));
 
 /**
  * Gives the third quartile of an array already sorted.
@@ -111,8 +113,8 @@ extern float first_quartile(const void *a, int n_elem, int size_elem,
  * \param size_elem The size of the elements in `a`.
  * \param accessor The function pointer to get the value of an element.
  */
-extern float third_quartile(const void *a, int n_elem, int size_elem,
-        float (*accessor) (const void *));
+extern double third_quartile(const void *a, size_t n_elem, size_t size_elem,
+        double (*accessor) (const void *));
 
 
 #endif
