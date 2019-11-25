@@ -328,7 +328,7 @@ def examine_frame(frame):
                 continue
             width = camera_calibration.width
             height = camera_calibration.height
-        for camera_label in frame.camera_labels:
+        for camera_label in frame.camera_labels: # + frame.projected_lidar_labels
             if camera_label.name != angle:
                 continue
             for label in camera_label.labels:

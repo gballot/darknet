@@ -112,7 +112,7 @@ typedef struct score_args {
     /* message for density score */
     float calibration_score;
     float calibration_n_samples_p;
-    float calibration_volume_p;
+    double calibration_volume_p;
     float calibration_feat_length_p;
     float volume_penalization;
     float calibration_tau;

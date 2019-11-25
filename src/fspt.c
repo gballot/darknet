@@ -743,7 +743,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 ┌────────────┬──────────────────────────────────────┬───────────────────────────────────────────────────┐\n\
 │            │ absolute values above fspt thresholds│     relative values above fspt thresholds         │\n\
 │    fspt    ├────────────┬────────────┬────────────┼────────────┬────────────┬────────────┬────────────┤\n\
-│            │   volume   │ n_samples  │  n_leaves  │   volume   │mean_length │ n_samples  │  n_nodes   │\n\
+│            │   volume   │ n_samples  │  n_leaves  │   volume   │mean_length │ n_samples  │  n_leaves  │\n\
 ├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (int i = 0; i < s->n_thresh; ++i) {
         fprintf(stream,"\
@@ -762,20 +762,23 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Score **/
     fprintf(stream, "\
-┌────────────┬────────────┬────────────┬────────────┐\n\
-│   score    │   volume   │ n_samples  │ n_samples  │\n\
-│    leaf    │ proportion │   in the   │ proportion │\n\
-│  (sorted)  │    leaf    │    leaf    │    leaf    │\n\
-├────────────┼────────────┼────────────┼────────────┤\n");
+┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │\n\
+│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │\n\
+│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │\n\
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (int i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
-│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"INT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
+            pow(s->score_vol_n_array[i].volume_p, 1. / n_features),
             s->score_vol_n_array[i].n_samples,
-            ((float) s->score_vol_n_array[i].n_samples) / s->n_samples);
+            ((double) s->score_vol_n_array[i].n_samples) / s->n_samples,
+            ((double) s->score_vol_n_array[i].n_samples)
+            / s->score_vol_n_array[i].volume_p);
     }
     fprintf(stream, "\
-└────────────┴────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Depth **/
     fprintf(stream, "\

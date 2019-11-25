@@ -855,10 +855,12 @@ layer parse_fspt(list *options, size_params params)
             && s_args.calibration_n_samples_p <= 1.);
     s_args.calibration_volume_p =
         option_find_float_quiet(options, "calibration_volume_p", 0.);
+    assert(0. <= s_args.calibration_volume_p
+            && s_args.calibration_volume_p <= 1.);
     s_args.calibration_feat_length_p =
         option_find_float_quiet(options, "calibration_feat_length_p", 0.1);
-    assert(0. < s_args.calibration_volume_p
-            && s_args.calibration_volume_p <= 1.);
+    assert(0. <= s_args.calibration_feat_length_p
+            && s_args.calibration_feat_length_p <= 1.);
     s_args.volume_penalization =
         option_find_float_quiet(options, "volume_penalization", 0.);
     assert(0. <= s_args.volume_penalization

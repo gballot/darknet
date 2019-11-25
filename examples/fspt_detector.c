@@ -288,8 +288,8 @@ Parameters :\n\
     fprintf(stream, "    ┗━━━━━━━━┛\n\n");
     fprintf(stream, "\
                  ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n\
-                 │True detect.│Wrong class │ Prediction │No detection│ FSPT score │\n\
-                 │   by YOLO  │ prediction │while empty │   by YOLO  │  on truth  │\n\
+                 │True detect.│Wrong class │ Prediction │No detection│    True    │\n\
+                 │   by YOLO  │ prediction │while empty │   by YOLO  │    boxes   │\n\
 ┌────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
 │ Total numberer │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
 ├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
