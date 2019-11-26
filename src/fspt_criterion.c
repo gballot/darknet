@@ -18,6 +18,7 @@
 #define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
+#define CRITERION_ARGS_VERSION 1
 
 /**
  * Computes the Gini index of a two classes set.
@@ -358,7 +359,14 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 }
 
 void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ) {
-    *succ &= fwrite(c, sizeof(criterion_args), 1, fp);
+    int contains_args = 0;
+    int version = CRITERION_ARGS_VERSION;
+    if (c) {
+        contains_args = 1
+        *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
+        *succ &= fwrite(&version, sizeof(int), 1, fp);
+        *succ &= fwrite(c, sizeof(criterion_args), 1, fp);
+    }
 }
 
 criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
@@ -380,3 +388,5 @@ criterion_func string_to_fspt_criterion(char *s) {
 #undef FLOAT_FORMAT__
 #undef POINTER_FORMAT
 #undef INTEGER_FORMAT
+#undef CRITERION_ARGS_VERSION
+

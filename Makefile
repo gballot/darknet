@@ -2,8 +2,8 @@ GPU=1
 CUDNN=1
 OPENCV=0
 OPENMP=0
-DEBUG=0
-TRAIN=0
+DEBUG=1
+TRAIN=1
 VALID=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -37,14 +37,14 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=examples/fspt_detector.c:776
-FSPT_OP=-refit -only_fit -print_stats
+FSPT_OP=-print_stats
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=local_cfg/fspt-waymo-test.cfg
 DATACONF=cfg/$(CONF).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 #WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
-#WEIGHTS=weights/fspt-waymo-day.weights
+WEIGHTS=weights/yolov3.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else ifeq ($(VALID), 1)

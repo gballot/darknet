@@ -1231,6 +1231,7 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
             fseek(fp, size *sizeof(float), SEEK_CUR);
         }
     }
+    /* load root */
     fspt->root = pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
 }
 
