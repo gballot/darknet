@@ -80,9 +80,14 @@ typedef struct criterion_args {
     fspt_t *fspt;
     fspt_node *node;
     int max_depth;
+    size_t count_max_depth_hit;
     int min_samples;
+    size_t count_min_samples_hit;
     double min_volume_p;
+    size_t count_min_volume_p_hit;
     double min_length_p;
+    size_t count_min_length_p_hit;
+    size_t count_max_count_hit;
     int best_index;
     float best_split;
     int forbidden_split;

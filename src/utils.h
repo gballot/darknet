@@ -68,6 +68,7 @@ extern float sec(clock_t clocks);
 extern void print_statistics(float *a, int n);
 extern int int_index(int *a, int val, int n);
 extern int max_index_double(double *a, int n);
+extern int max_index_size_t(size_t *a, int n);
 extern size_t *random_index_order_size_t(size_t min, size_t max);
 extern char *itoa(int val, int base);
 

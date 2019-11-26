@@ -661,6 +661,20 @@ int max_index_double(double *a, int n)
     return max_i;
 }
 
+int max_index_size_t(size_t *a, int n)
+{
+    if(n <= 0) return -1;
+    int i, max_i = 0;
+    size_t max = a[0];
+    for(i = 1; i < n; ++i){
+        if(a[i] > max){
+            max = a[i];
+            max_i = i;
+        }
+    }
+    return max_i;
+}
+
 int int_index(int *a, int val, int n)
 {
     int i;
