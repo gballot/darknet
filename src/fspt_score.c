@@ -11,6 +11,7 @@
 #define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
+#define SCORE_ARGS_VERSION 1
 
 double density_score(score_args *args) {
     fspt_node *node = args->node;
@@ -134,12 +135,36 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 }
 
 void save_score_args_file(FILE *fp, score_args *s, int *succ) {
-    *succ &= fwrite(s, sizeof(score_args), 1, fp);
+    int contains_args = 0;
+    int version = SCORE_ARGS_VERSION;
+    if (s) {
+        contains_args = 1;
+        *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
+        *succ &= fwrite(&version, sizeof(int), 1, fp);
+        *succ &= fwrite(s, sizeof(score_args), 1, fp);
+    } else {
+        *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
+    }
 }
 
 score_args *load_score_args_file(FILE *fp, int *succ) {
-    score_args *s = malloc(sizeof(score_args));
-    *succ &= fread(s, sizeof(score_args), 1, fp);
+    score_args *s = NULL;
+    int contains_args = 0;
+    int version = 0;
+    *succ &= fread(&contains_args, sizeof(int), 1, fp);
+    if (contains_args == 1) {
+        *succ &= fread(&version, sizeof(int), 1, fp);
+        if (version == SCORE_ARGS_VERSION) {
+            s = malloc(sizeof(score_args));
+            *succ &= fread(s, sizeof(score_args), 1, fp);
+        } else {
+            *succ = 0;
+            fprintf(stderr, "ERROR : Wrong criterion version (%d)", version);
+        }
+    } else if (contains_args != 0) {
+        fprintf(stderr, "ERROR : in criterion arg read contains_args = %d",
+                contains_args);
+    }
     return s;
 }
 
@@ -156,3 +181,5 @@ score_func string_to_fspt_score(char *s) {
 #undef FLOAT_FORMAT__
 #undef POINTER_FORMAT
 #undef INTEGER_FORMAT
+#undef SCORE_ARGS_VERSION
+

@@ -362,16 +362,33 @@ void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ) {
     int contains_args = 0;
     int version = CRITERION_ARGS_VERSION;
     if (c) {
-        contains_args = 1
+        contains_args = 1;
         *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
         *succ &= fwrite(&version, sizeof(int), 1, fp);
         *succ &= fwrite(c, sizeof(criterion_args), 1, fp);
+    } else {
+        *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
     }
 }
 
 criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
-    criterion_args *c = malloc(sizeof(criterion_args));
-    *succ &= fread(c, sizeof(criterion_args), 1, fp);
+    criterion_args *c = NULL;
+    int contains_args = 0;
+    int version = 0;
+    *succ &= fread(&contains_args, sizeof(int), 1, fp);
+    if (contains_args == 1) {
+        *succ &= fread(&version, sizeof(int), 1, fp);
+        if (version == CRITERION_ARGS_VERSION) {
+            c = malloc(sizeof(criterion_args));
+            *succ &= fread(c, sizeof(criterion_args), 1, fp);
+        } else {
+            *succ = 0;
+            fprintf(stderr, "ERROR : Wrong criterion version (%d)", version);
+        }
+    } else if (contains_args != 0) {
+        fprintf(stderr, "ERROR : in criterion arg read contains_args = %d",
+                contains_args);
+    }
     return c;
 }
 
