@@ -18,7 +18,16 @@
 #define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
-#define CRITERION_ARGS_VERSION 1
+#define LONG_INTFORMAT "%-16ld"
+#define CRITERION_ARGS_VERSION 2
+
+typedef struct {
+    size_t count_max_depth_hit;
+    size_t count_min_samples_hit;
+    size_t count_min_volume_p_hit;
+    size_t count_min_length_p_hit;
+} forbidden_split_cause;
+
 
 /**
  * Computes the Gini index of a two classes set.
@@ -49,13 +58,40 @@ static int respect_min_lenght_p(int n_features, const float* fspt_lim,
     return 1;
 }
 
+static void determine_cause(forbidden_split_cause cause,
+        criterion_args *args) {
+    size_t tab[4] = {
+        cause.count_max_depth_hit,
+        cause.count_min_samples_hit,
+        cause.count_min_volume_p_hit,
+        cause.count_min_length_p_hit
+    };
+    int i = max_index_size_t(tab, 4);
+    switch (i) {
+        case 0:
+            ++args->count_max_depth_hit;
+            break;
+        case 1:
+            ++args->count_min_samples_hit;
+            break;
+        case 2:
+            ++args->count_min_volume_p_hit;
+            break;
+        case 3:
+            ++args->count_min_length_p_hit;
+            break;
+        default: break;
+    }
+}
+
 /**
  * Computes \hat G(R, I, s) = n^+ / n * G(R^+) + n^- / n * G(R^-).
  * with the notations from Toward Safe Machine Learning.
  */
 static double gini_after_split(float min, float max, float s, size_t n_left,
         size_t n_right, size_t n_empty, double node_volume, int min_samples,
-        double min_volume, double min_length_p, int *forbidden_split) {
+        double min_volume, double min_length_p, int *forbidden_split,
+        forbidden_split_cause *cause) {
     *forbidden_split = 0;
     double l = max - min;
     if (l == 0.) {
@@ -69,14 +105,21 @@ static double gini_after_split(float min, float max, float s, size_t n_left,
     double volume_left = node_volume * prop_left;
     double volume_right = node_volume * prop_right;
     if (n_empty_left + n_left < min_samples
-            || n_empty_right + n_right < min_samples
-            || volume_left < min_volume
-            || volume_right < min_volume
-            || prop_left < min_length_p
-            || prop_right < min_length_p) {
+            || n_empty_right + n_right < min_samples) {
+        ++cause->count_min_samples_hit;
         *forbidden_split = 1;
-        return 1.;
     }
+    if (volume_left < min_volume
+            || volume_right < min_volume) {
+        ++cause->count_min_volume_p_hit;
+        *forbidden_split = 1;
+    }
+    if (prop_left < min_length_p
+            || prop_right < min_length_p) {
+        ++cause->count_min_volume_p_hit;
+        *forbidden_split = 1;
+    }
+    if (*forbidden_split) return 1.;
     double gini_left = gini(n_empty_left, n_left);
     double gini_right = gini(n_empty_right, n_right);
     double total_left = n_left + n_empty_left;
@@ -164,7 +207,7 @@ static void best_split_on_feature(int feat, float node_min, float node_max,
         double min_volume, double min_length_p,
         float max_tries_p, size_t n_bins, const float *bins,
         const size_t *cdf, double *best_gain, int *best_index,
-        int *forbidden_split) {
+        int *forbidden_split, forbidden_split_cause *cause) {
     *forbidden_split = 1;
     int local_best_gain_index = -1;
     double local_best_gain = 0.;
@@ -180,7 +223,7 @@ static void best_split_on_feature(int feat, float node_min, float node_max,
         int local_forbidden_split = 0;
         double score = gini_after_split(node_min, node_max, bin, n_left,
                 n_right, n_empty, node_volume, min_samples, min_volume,
-                min_length_p, &local_forbidden_split);
+                min_length_p, &local_forbidden_split, cause);
         if (local_forbidden_split) continue;
         double tmp_gain = 0.5 - score;
         if (tmp_gain > local_best_gain) {
@@ -208,6 +251,7 @@ void gini_criterion(criterion_args *args) {
         free(feature_limit);
         return;
     }
+    forbidden_split_cause cause = {0};
     double *best_gains = malloc(fspt->n_features * sizeof(double));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
     size_t *cdf = malloc(2 * node->n_samples * sizeof(size_t));
@@ -237,7 +281,7 @@ void gini_criterion(criterion_args *args) {
                 args->min_volume_p * fspt->volume, args->min_length_p, 
                 args->max_tries_p, n_bins,
                 bins, cdf, &local_best_gain, &local_best_gain_index,
-                &local_forbidden_split);
+                &local_forbidden_split, &cause);
 
         if (!local_forbidden_split) {
             float fspt_min = fspt->feature_limit[2*feat];
@@ -260,6 +304,7 @@ void gini_criterion(criterion_args *args) {
     free(bins);
     free(cdf);
     if (forbidden_split) {
+        determine_cause(cause, args);
         args->forbidden_split = 1;
     } else {
         int rand_idx = max_index_double(best_gains, fspt->n_features);
@@ -295,6 +340,7 @@ void gini_criterion(criterion_args *args) {
             debug_print("gain thresh violation at depth %d and count %d",
                     node->depth, node->parent ? node->parent->count : 0);
             if (node->count >= args->max_consecutive_gain_violations) {
+                ++args->count_max_count_hit;
                 args->forbidden_split = 1;
             }
         } else {
@@ -334,9 +380,14 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │                        fspt │"POINTER_FORMAT"│\n\
 │                        node │"POINTER_FORMAT"│\n\
 │                   max_depth │"INTEGER_FORMAT"│\n\
+│         count_max_depth_hit │"LONG_INTFORMAT"│\n\
 │                 min_samples │"INTEGER_FORMAT"│\n\
+│       count_min_samples_hit │"LONG_INTFORMAT"│\n\
 │                min_volume_p │"FLOAT_FORMAT__"│\n\
+│      count_min_volume_p_hit │"LONG_INTFORMAT"│\n\
 │                min_length_p │"FLOAT_FORMAT__"│\n\
+│      count_min_length_p_hit │"LONG_INTFORMAT"│\n\
+│         count_max_count_hit │"LONG_INTFORMAT"│\n\
 │                  best_index │"INTEGER_FORMAT"│\n\
 │                  best_split │"FLOAT_FORMAT__"│\n\
 │             forbidden_split │"INTEGER_FORMAT"│\n\
@@ -351,8 +402,12 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │max_consecutive_gain_violati │"INTEGER_FORMAT"│\n\
 │                middle_split │"INTEGER_FORMAT"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
-    a->merge_nodes, a->fspt, a->node, a->max_depth, a->min_samples,
-    a->min_volume_p, a->min_length_p, 
+    a->merge_nodes, a->fspt, a->node,
+    a->max_depth, a->count_max_depth_hit,
+    a->min_samples, a->count_min_samples_hit,
+    a->min_volume_p, a->count_min_volume_p_hit,
+    a->min_length_p, a->count_min_length_p_hit,
+    a->count_max_count_hit,
     a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
     a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split);
@@ -406,4 +461,5 @@ criterion_func string_to_fspt_criterion(char *s) {
 #undef POINTER_FORMAT
 #undef INTEGER_FORMAT
 #undef CRITERION_ARGS_VERSION
+#undef LONG_INTFORMAT
 
