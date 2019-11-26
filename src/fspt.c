@@ -1017,6 +1017,8 @@ void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
     fspt->samples = X;
     fspt->root = root;
     fspt->depth = 1;
+    fspt->c_args = c_args;
+    fspt->s_args = s_args;
     /* discover score args */
     s_args->discover = 1;
     fspt->score(s_args);
