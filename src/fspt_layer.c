@@ -54,8 +54,8 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.fspt_input = calloc(l.total, sizeof(float));
 
     l.fspts = calloc(l.classes, sizeof(fspt_t *));
-    l.fspt_n_training_data = calloc(l.classes, sizeof(int));
-    l.fspt_n_max_training_data = calloc(l.classes, sizeof(int));
+    l.fspt_n_training_data = calloc(l.classes, sizeof(size_t));
+    l.fspt_n_max_training_data = calloc(l.classes, sizeof(size_t));
     l.fspt_training_data = calloc(l.classes, sizeof(float *));
 
     l.fspt_criterion_args = c_args_template;
@@ -419,11 +419,10 @@ void load_fspt_trees(layer l, FILE *fp) {
 void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
-        if (fspt->root) free_fspt_nodes(fspt->root);
-        int n = l.fspt_n_training_data[class];
+        size_t n = l.fspt_n_training_data[class];
         if (merge) {
-            int size_base = fspt->n_samples;
-            int max = l.fspt_n_max_training_data[class];
+            size_t size_base = fspt->n_samples;
+            size_t max = l.fspt_n_max_training_data[class];
             if (n + size_base > max) {
                 realloc_fspt_data(l, class, n + size_base, 0);
             }
@@ -440,12 +439,11 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
-        // TODO: DEBUG THIS LINE
-        //if (fspt->root) free_fspt_nodes(fspt->root);
-        int n = l.fspt_n_training_data[class];
+        if (fspt->root) free_fspt_nodes(fspt->root);
+        size_t n = l.fspt_n_training_data[class];
         if (merge) {
-            int size_base = fspt->n_samples;
-            int max = l.fspt_n_max_training_data[class];
+            size_t size_base = fspt->n_samples;
+            size_t max = l.fspt_n_max_training_data[class];
             if (n + size_base > max) {
                 realloc_fspt_data(l, class, n + size_base, 0);
             }
@@ -458,7 +456,7 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
         score_args *s_args = calloc(1, sizeof(score_args)); 
         *c_args = l.fspt_criterion_args;
         *s_args = l.fspt_score_args;
-        fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %d...\n",
+        fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %ld...\n",
                 l.ref, class, n);
         fspt_fit(n, X, c_args, s_args, fspt);
         fprintf(stderr,
@@ -486,8 +484,8 @@ void fspt_layer_set_samples(layer l, int refit, int merge) {
 
 void merge_training_data(layer l, layer base) {
     for (int class = 0; class < l.classes; ++class) {
-        int size_l = l.fspt_n_training_data[class];
-        int size_base = base.fspt_n_training_data[class];
+        size_t size_l = l.fspt_n_training_data[class];
+        size_t size_base = base.fspt_n_training_data[class];
         int max_base = base.fspt_n_max_training_data[class];
         if (size_l + size_base > max_base) {
             realloc_fspt_data(base, class, size_l, 1);

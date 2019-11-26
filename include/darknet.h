@@ -304,8 +304,8 @@ struct layer{
     float *fspt_input_gpu;
     fspt_t **fspts;
     float **fspt_training_data;
-    int *fspt_n_training_data;
-    int *fspt_n_max_training_data;
+    size_t *fspt_n_training_data;
+    size_t *fspt_n_max_training_data;
     criterion_args fspt_criterion_args;
     score_args fspt_score_args;
     int save_samples;
