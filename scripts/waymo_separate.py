@@ -25,7 +25,7 @@ from waymo_open_dataset.utils import transform_utils
 ###############################################################################
 
 folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
-train_folders = ['training_0000', 'training_0001', 'training_0002']
+train_folders = ['training_{:04d}'.format(i) for i in range(32)]
 links_train_images = folder_path + "links_train_images"
 links_train_labels = folder_path + "links_train_labels"
 links_test_images = folder_path + "links_test_images"
@@ -328,7 +328,22 @@ def examine_frame(frame):
                 continue
             width = camera_calibration.width
             height = camera_calibration.height
-        for camera_label in frame.camera_labels: # + frame.projected_lidar_labels
+        for camera_label in frame.camera_labels: # 2D labels
+            if camera_label.name != angle:
+                continue
+            for label in camera_label.labels:
+                got2Dlabels = True
+                labeled_image.add_label(label, width, height)
+                if label.type == open_labels.Label.Type.TYPE_VEHICLE:
+                    count_vehicles += 1
+                    total_area_vehicles += label.box.width * label.box.length
+                if label.type == open_labels.Label.Type.TYPE_PEDESTRIAN:
+                    count_pedestrians += 1
+                if label.type == open_labels.Label.Type.TYPE_SIGN:
+                    count_signs += 1
+                if label.type == open_labels.Label.Type.TYPE_CYCLIST:
+                    count_cyclists += 1
+        for camera_label in frame.projected_lidar_labels: # Projected label from lidar 3D points
             if camera_label.name != angle:
                 continue
             for label in camera_label.labels:
@@ -372,7 +387,7 @@ def main(argv):
             for file in files:
                 if file.startswith("segment"):  # avoid license file inside the folder
                     filepath = os.path.join(root, file)
-                    #print(filepath)
+                    print("examine : " + filepath)
                     dataset = tf.data.TFRecordDataset(filepath, compression_type='')
                     for data in dataset:
                         frame = open_dataset.Frame() # instance of a frame

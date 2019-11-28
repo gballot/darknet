@@ -3,7 +3,7 @@
 #SBATCH -p PV1003q
 #SBATCH --gres=gpu:0
 #SBATCH -n 1
-#SBATCH -c 4
+#SBATCH -c 16
 
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176

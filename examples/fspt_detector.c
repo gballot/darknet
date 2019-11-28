@@ -440,7 +440,8 @@ static void free_validation_data(validation_data *v) {
 }
 
 static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
-        float yolo_thresh, float fspt_thresh) {
+        float yolo_thresh, float fspt_thresh, char *outfile,
+        char *export_score_base) {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
@@ -451,6 +452,9 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
 
     network *net = load_network(cfgfile, weightfile, 0);
 
+    FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
+    assert(outstream);
+
     list *fspt_layers = get_network_layers_by_type(net, FSPT);
     while (fspt_layers->size > 0) {
         layer *l = (layer *) list_pop(fspt_layers);
@@ -459,12 +463,22 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
             fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
             char buf[256] = {0};
             sprintf(buf, "%s class %s", l->ref, names[i]);
-            print_fspt_criterion_args(stderr, &l->fspt_criterion_args, buf);
-            print_fspt_score_args(stderr, &l->fspt_score_args, NULL);
-            print_fspt_stats(stderr, stats, NULL);
+            print_fspt_criterion_args(outstream, fspt->c_args, buf);
+            print_fspt_score_args(outstream, fspt->s_args, NULL);
+            print_fspt_stats(outstream, stats, NULL);
+            if (export_score_base) {
+                char data_file[256] = {0};
+                sprintf(data_file, "%s_%s_%s.txt",
+                        export_score_base, l->ref, names[i]);
+                FILE *data_stream = fopen(data_file, "w");
+                assert(data_stream);
+                export_score_data(data_stream, stats);
+                fclose(data_stream);
+            }
             free_fspt_stats(stats);
         }
     }
+    if (outstream != stderr) fclose(outstream);
 }
 
 void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
@@ -654,9 +668,9 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_criterion_args(outstream, &l->fspt_criterion_args,
+                print_fspt_criterion_args(outstream, fspt->c_args,
                         buf);
-                print_fspt_score_args(outstream, &l->fspt_score_args, NULL);
+                print_fspt_score_args(outstream, fspt->s_args, NULL);
                 print_fspt_stats(outstream, stats, NULL);
                 free_fspt_stats(stats);
             }
@@ -711,6 +725,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int classes = l.classes;
 
     if (print_stats_val) {
+        FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
+        assert(outstream);
         list *fspt_layers = get_network_layers_by_type(net, FSPT);
         while (fspt_layers->size > 0) {
             layer *l = (layer *) list_pop(fspt_layers);
@@ -719,10 +735,14 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_stats(stderr, stats, buf);
+                print_fspt_criterion_args(outstream, fspt->c_args,
+                        buf);
+                print_fspt_score_args(outstream, fspt->s_args, NULL);
+                print_fspt_stats(outstream, stats, NULL);
                 free_fspt_stats(stats);
             }
         }
+        if (outstream != stderr) fclose(outstream);
     }
 
     double start = what_time_is_it_now();
@@ -811,7 +831,10 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         free(nboxes_truth_fspt);
         free_data(val);
     }
-    print_validation_data(stderr, val_data, "VALIDATION RESULT");
+    FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
+    assert(outstream);
+    print_validation_data(outstream, val_data, "VALIDATION RESULT");
+    if (outstream != stderr) fclose(outstream);
     free_validation_data(val_data);
 #ifdef GPU
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
@@ -847,6 +870,7 @@ Options are :\n\
     -hier        -> unused.\n\
     -gpus        -> coma separated list of gpus.\n\
     -out         -> ouput file for prints.\n\
+    -export      -> ouput file for score raw data.\n\
     -clear       -> if set, the training number of seen images is reset.\n\
     -refit       -> if set, the fspts are refitted if they already exist.\n\
     -ordered     -> if set, the data are selected sequentialy and not randomly.\n\
@@ -866,6 +890,7 @@ Options are :\n\
     float iou_thresh = find_float_arg(argc, argv, "-iou", .5);
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
     char *outfile = find_char_arg(argc, argv, "-out", 0);
+    char *export_score_file = find_char_arg(argc, argv, "-export", 0);
     int clear = find_arg(argc, argv, "-clear");
     int refit_fspts = find_arg(argc, argv, "-refit");
     int ordered = find_arg(argc, argv, "-ordered");
@@ -915,7 +940,8 @@ Options are :\n\
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))
-        print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh);
+        print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh, outfile,
+                export_score_file);
 }
 
 #undef FLT_FORMAT

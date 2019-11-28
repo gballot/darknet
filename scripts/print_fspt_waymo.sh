@@ -12,7 +12,8 @@ datacfg='cfg/waymo.data'
 netcfg='cfg/fspt-waymo.cfg'
 #weightfile='weights/fspt-waymo-data-extraction-day.weights'
 #weightfile='weights/yolov3-waymo.weights'
-options=''
+weightfile='weights/fspt-waymo.weights'
+options='-export results/job-print-fspt'
 
 #/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1
 /home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt stats ${datacfg} ${netcfg} ${weightfile} ${options}

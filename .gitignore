@@ -23,6 +23,7 @@ convnet/
 decaf/
 submission/
 cfg/
+results/
 weights/
 backup/
 VOCdevkit/

@@ -88,6 +88,7 @@ typedef struct criterion_args {
     double min_length_p;
     size_t count_min_length_p_hit;
     size_t count_max_count_hit;
+    size_t count_no_sample_hit;
     int best_index;
     float best_split;
     int forbidden_split;
@@ -389,6 +390,15 @@ extern void free_fspt_nodes(fspt_node *node);
  * \param fspt The fspt that will be freed.
  */
 extern void free_fspt(fspt_t *fspt);
+
+/**
+ * Creates text file with column :
+ * index, score, volume_p, mean_length_p, n_samples, n_samples_p, density
+ *
+ * \param stream The stream to write data.
+ * \param s The fspt stats.
+ */
+extern void export_score_data(FILE *stream, fspt_stats *s);
 
 /**
  * Prints the stats in a friendly format to stream.

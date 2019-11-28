@@ -439,7 +439,8 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
-        if (fspt->root) free_fspt_nodes(fspt->root);
+        // TODO: fix this function :
+        //if (fspt->root) free_fspt_nodes(fspt->root);
         size_t n = l.fspt_n_training_data[class];
         if (merge) {
             size_t size_base = fspt->n_samples;
@@ -462,7 +463,6 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
         fprintf(stderr,
                 "[Fspt %s:%d]: fit successful n_nodes = %ld, depth = %d\n",
                 l.ref, class, fspt->n_nodes, fspt->depth);
-        free(c_args);
     }
 #ifdef DEBUG
     if (fspt->root->type == INNER)

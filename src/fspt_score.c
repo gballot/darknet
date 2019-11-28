@@ -29,9 +29,9 @@ double density_score(score_args *args) {
             - log(1. - args->calibration_score) / calibration_full_score;
         args->need_normalize = 0;
         args->score_during_fit = 1;
-        return 0.f;
+        return 0.;
     }
-    if (fspt->n_samples == 0) return 0.f;
+    if (fspt->n_samples == 0) return 0.;
     double score = ((double) node->n_samples / fspt->n_samples)
         * pow(fspt->volume / node->volume, 1. - args->volume_penalization);
     if (args->exponential_normalization)

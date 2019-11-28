@@ -659,6 +659,21 @@ free_no_leaves:
     return stats;
 }
 
+void export_score_data(FILE *stream, fspt_stats *s) {
+    for (size_t i = 0; i < s->n_leaves; ++i) {
+        fprintf(stream, "\
+"LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT"\n",
+            i,
+            s->score_vol_n_array[i].score,
+            s->score_vol_n_array[i].volume_p,
+            pow(s->score_vol_n_array[i].volume_p, 1. / s->fspt->n_features),
+            s->score_vol_n_array[i].n_samples,
+            (double) s->score_vol_n_array[i].n_samples / s->n_samples,
+            (double) s->score_vol_n_array[i].n_samples
+                / (s->score_vol_n_array[i].volume_p * s->volume));
+    }
+}
+
 
 void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     /** Title **/
@@ -780,7 +795,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
             s->score_vol_n_array[i].n_samples,
             ((double) s->score_vol_n_array[i].n_samples) / s->n_samples,
             ((double) s->score_vol_n_array[i].n_samples)
-            / s->score_vol_n_array[i].volume_p);
+                / (s->score_vol_n_array[i].volume_p * s->volume));
     }
     fprintf(stream, "\
 └────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
@@ -998,8 +1013,9 @@ void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
         score_args *s_args, fspt_t *fspt) {
     c_args->fspt = fspt;
     s_args->fspt = fspt;
-    if (fspt->root)
-        free_fspt_nodes(fspt->root);
+    // TODO: what to do to have no double free ?
+    //if (fspt->root)
+    //   free_fspt_nodes(fspt->root);
     /* Builds the root */
     fspt_node *root = calloc(1, sizeof(fspt_node));
     root->type = LEAF;

@@ -19,7 +19,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 2
+#define CRITERION_ARGS_VERSION 3
 
 typedef struct {
     size_t count_max_depth_hit;
@@ -38,7 +38,7 @@ typedef struct {
  */
 static double gini(double x, double y)
 {
-    return 2 * x * y / ( (x + y)*(x + y) );
+    return 2. * x * y / ( (x + y)*(x + y) );
 }
 
 static int respect_min_lenght_p(int n_features, const float* fspt_lim,
@@ -241,12 +241,29 @@ void gini_criterion(criterion_args *args) {
     fspt_t *fspt = args->fspt;
     fspt_node *node = args->node;
     args->end_of_fitting = 0;
+    if (node->n_samples == 0) {
+        ++args->count_no_sample_hit;
+        args->forbidden_split = 1;
+    }
+    if (node->n_samples + node->n_empty < 2 * args->min_samples) {
+        ++args->count_min_samples_hit;
+        args->forbidden_split = 1;
+        return;
+    }
+    if (node->depth >= args->max_depth) {
+        ++args->count_max_depth_hit;
+        args->forbidden_split = 1;
+        return;
+    }
+    if (node->volume < 2 * args->min_volume_p * fspt->volume) {
+        ++args->count_min_volume_p_hit;
+        args->forbidden_split = 1;
+        return;
+    }
     float *feature_limit = get_feature_limit(node);
-    if (node->n_samples + node->n_empty < 2 * args->min_samples
-            || node->depth >= args->max_depth
-            || node->volume < args->min_volume_p * fspt->volume
-            || !respect_min_lenght_p(fspt->n_features, fspt->feature_limit,
+    if (!respect_min_lenght_p(fspt->n_features, fspt->feature_limit,
                 feature_limit, args->min_length_p)) {
+        ++args->count_min_length_p_hit;
         args->forbidden_split = 1;
         free(feature_limit);
         return;
@@ -388,6 +405,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │                min_length_p │"FLOAT_FORMAT__"│\n\
 │      count_min_length_p_hit │"LONG_INTFORMAT"│\n\
 │         count_max_count_hit │"LONG_INTFORMAT"│\n\
+│         count_no_sample_hit │"LONG_INTFORMAT"│\n\
 │                  best_index │"INTEGER_FORMAT"│\n\
 │                  best_split │"FLOAT_FORMAT__"│\n\
 │             forbidden_split │"INTEGER_FORMAT"│\n\
@@ -408,6 +426,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
     a->min_volume_p, a->count_min_volume_p_hit,
     a->min_length_p, a->count_min_length_p_hit,
     a->count_max_count_hit,
+    a->count_no_sample_hit,
     a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
     a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split);
