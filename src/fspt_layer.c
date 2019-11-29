@@ -486,7 +486,7 @@ void merge_training_data(layer l, layer base) {
     for (int class = 0; class < l.classes; ++class) {
         size_t size_l = l.fspt_n_training_data[class];
         size_t size_base = base.fspt_n_training_data[class];
-        int max_base = base.fspt_n_max_training_data[class];
+        size_t max_base = base.fspt_n_max_training_data[class];
         if (size_l + size_base > max_base) {
             realloc_fspt_data(base, class, size_l, 1);
         }

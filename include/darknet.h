@@ -469,7 +469,7 @@ struct network{
     float power;
     int time_steps;
     int step;
-    int max_batches;
+    size_t max_batches;
     float *scales;
     int   *steps;
     int num_steps;

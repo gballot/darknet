@@ -213,7 +213,7 @@ static void best_split_on_feature(int feat, float node_min, float node_max,
     int local_best_gain_index = -1;
     double local_best_gain = 0.;
     size_t *random_index = random_index_order_size_t(0, n_bins);
-    int max_bins = floor(n_bins * max_tries_p);
+    size_t max_bins = floor(n_bins * max_tries_p);
     if (!max_bins) max_bins = 1;
     for (size_t j = 0; j < max_bins; ++j) {
         size_t index = random_index[j];
@@ -247,7 +247,7 @@ void gini_criterion(criterion_args *args) {
         args->forbidden_split = 1;
         return;
     }
-    if (node->n_samples + node->n_empty < 2 * args->min_samples) {
+    if (node->n_samples + node->n_empty < (size_t) 2 * args->min_samples) {
         ++args->count_min_samples_hit;
         args->forbidden_split = 1;
         return;

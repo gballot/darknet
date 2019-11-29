@@ -93,7 +93,7 @@ float get_current_rate(network *net)
     size_t batch_num = get_current_batch(net);
     int i;
     float rate;
-    if (batch_num < net->burn_in) return net->learning_rate * pow((float)batch_num / net->burn_in, net->power);
+    if (batch_num < (size_t) net->burn_in) return net->learning_rate * pow((float)batch_num / net->burn_in, net->power);
     switch (net->policy) {
         case CONSTANT:
             return net->learning_rate;
@@ -102,7 +102,7 @@ float get_current_rate(network *net)
         case STEPS:
             rate = net->learning_rate;
             for(i = 0; i < net->num_steps; ++i){
-                if(net->steps[i] > batch_num) return rate;
+                if((size_t) net->steps[i] > batch_num) return rate;
                 rate *= net->scales[i];
             }
             return rate;

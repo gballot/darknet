@@ -787,7 +787,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 │    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │\n\
 │  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │\n\
 ├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    for (int i = 0; i < s->n_leaves && i < 100 ; ++i) {
+    for (size_t i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
 │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,

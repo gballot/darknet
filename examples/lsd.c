@@ -560,7 +560,7 @@ void train_prog(char *cfg, char *weight, char *acfg, char *aweight, int clear, i
     float aloss_avg = -1;
 
     if (maxbatch == 0) maxbatch = gnet->max_batches;
-    while (get_current_batch(gnet) < maxbatch) {
+    while (get_current_batch(gnet) < (size_t) maxbatch) {
         {
             int cb = get_current_batch(gnet);
             float alpha = (float) cb / (maxbatch/2);
@@ -728,7 +728,7 @@ void train_dcgan(char *cfg, char *weight, char *acfg, char *aweight, int clear, 
     //data generated = copy_data(train);
 
     if (maxbatch == 0) maxbatch = gnet->max_batches;
-    while (get_current_batch(gnet) < maxbatch) {
+    while (get_current_batch(gnet) < (size_t) maxbatch) {
         i += 1;
         time=clock();
         pthread_join(load_thread, 0);

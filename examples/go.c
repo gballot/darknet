@@ -161,7 +161,7 @@ void train_go(char *cfgfile, char *weightfile, char *filename, int *gpus, int ng
 
     int N = m.n;
     printf("Moves: %d\n", N);
-    int epoch = (*net->seen)/N;
+    size_t epoch = (*net->seen)/N;
     while(get_current_batch(net) < net->max_batches || net->max_batches == 0){
         double time=what_time_is_it_now();
 
@@ -187,7 +187,7 @@ void train_go(char *cfgfile, char *weightfile, char *filename, int *gpus, int ng
         if(*net->seen/N > epoch){
             epoch = *net->seen/N;
             char buff[256];
-            sprintf(buff, "%s/%s_%d.weights", backup_directory,base, epoch);
+            sprintf(buff, "%s/%s_%ld.weights", backup_directory,base, epoch);
             save_weights(net, buff);
 
         }

@@ -31,7 +31,7 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-type-limits -Wno-unknown-pragmas -Wno-sign-compare -Wfatal-errors -fPIC
+CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 CONF=waymo
 VERSION=

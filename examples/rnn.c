@@ -109,7 +109,8 @@ float_pair get_seq2seq_data(char **source, char **dest, int n, int characters, s
             x[(j*batch + i)*characters + curr] = 1;
             y[(j*batch + i)*characters + next] = 1;
 
-            if(curr > 255 || curr <= 0 || next > 255 || next <= 0){
+            //if(curr > 255 || curr <= 0 || next > 255 || next <= 0){
+            if(curr <= 0 || next <= 0){
                 /*text[(index+j+2)%len] = 0;
                 printf("%ld %d %d %d %d\n", index, j, len, (int)text[index+j], (int)text[index+j+1]);
                 printf("%s", text+index);
@@ -139,7 +140,8 @@ float_pair get_rnn_data(unsigned char *text, size_t *offsets, int characters, si
 
             offsets[i] = (offsets[i] + 1) % len;
 
-            if(curr > 255 || curr <= 0 || next > 255 || next <= 0){
+            //if(curr > 255 || curr <= 0 || next > 255 || next <= 0){
+            if(curr <= 0 || next <= 0){
                 /*text[(index+j+2)%len] = 0;
                 printf("%ld %d %d %d %d\n", index, j, len, (int)text[index+j], (int)text[index+j+1]);
                 printf("%s", text+index);

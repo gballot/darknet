@@ -90,26 +90,6 @@ typedef struct validation_data {
     float *sum_acceptance_of_truth_fspt_score;
 } validation_data;
 
-static void print_fspt_detections(FILE **fps, char *id, detection *dets,
-        int total, int classes, int w, int h) {
-    for(int i = 0; i < total; ++i) {
-        float xmin = dets[i].bbox.x - dets[i].bbox.w/2. + 1;
-        float xmax = dets[i].bbox.x + dets[i].bbox.w/2. + 1;
-        float ymin = dets[i].bbox.y - dets[i].bbox.h/2. + 1;
-        float ymax = dets[i].bbox.y + dets[i].bbox.h/2. + 1;
-
-        if (xmin < 1) xmin = 1;
-        if (ymin < 1) ymin = 1;
-        if (xmax > w) xmax = w;
-        if (ymax > h) ymax = h;
-
-        for(int j = 0; j < classes; ++j) {
-            if (dets[i].prob[j]) fprintf(fps[j], "%s %f %f %f %f %f\n", id,
-                    dets[i].prob[j], xmin, ymin, xmax, ymax);
-        }
-    }
-}
-
 static int find_corresponding_detection(detection base, int n_dets,
         detection *comp, float iou_thresh, int *max_index,
         float *max_iou_ptr) {
@@ -688,7 +668,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
-    char *base = basecfg(cfgfile);
     char *mapf = option_find_str(options, "map", 0);
     int *map = 0;
     if (mapf) map = read_map(mapf);

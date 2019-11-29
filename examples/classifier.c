@@ -95,7 +95,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
     load_thread = load_data(args);
 
     int count = 0;
-    int epoch = (*net->seen)/N;
+    size_t epoch = (*net->seen)/N;
     while(get_current_batch(net) < net->max_batches || net->max_batches == 0){
         if(net->random && count++%40 == 0){
             printf("Resizing\n");
@@ -146,7 +146,7 @@ void train_classifier(char *datacfg, char *cfgfile, char *weightfile, int *gpus,
         if(*net->seen/N > epoch){
             epoch = *net->seen/N;
             char buff[256];
-            sprintf(buff, "%s/%s_%d.weights",backup_directory,base, epoch);
+            sprintf(buff, "%s/%s_%ld.weights",backup_directory,base, epoch);
             save_weights(net, buff);
         }
         if(get_current_batch(net)%1000 == 0){

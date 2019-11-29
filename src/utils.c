@@ -806,7 +806,7 @@ char *itoa(int val, int base)
  */
 static int partition(size_t index, size_t n, size_t size, float *base) {
     float *pivot = malloc(size * sizeof(float));
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         pivot[i] = base[(n-1)/2 * size + i];
     }
     int i = -1;
