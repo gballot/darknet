@@ -311,12 +311,16 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
 
 void draw_fspt_detections(image im, detection *dets, int num, float thresh,
         char **names, image **alphabet, int classes) {
-    char fspt_names[classes][4096];
+    char *fspt_names[classes];
     for (int i = 0; i < classes; ++i) {
+        fspt_names[i] = malloc(4096);
         strcpy(fspt_names[i], names[i]);
         strcat(fspt_names[i], " - fspt");
     }
     draw_detections(im, dets, num, thresh, (char **)fspt_names, alphabet, classes);
+    for (int i = 0; i < classes; ++i) {
+        free(fspt_names[i]);
+    }
 }
 
 void transpose_image(image im)
