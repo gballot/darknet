@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 
 base = "/home/gballot/NTU/FSPT Yolo/darknet/results/"
 files = (
-        "job-print-fspt_fspt_3_vehicle",
-        "job-print-fspt_fspt_3_cyclist",
-        "job-print-fspt_fspt_3_pedestrian",
-        "job-print-fspt_fspt_2_vehicle",
-        "job-print-fspt_fspt_2_cyclist",
-        "job-print-fspt_fspt_2_pedestrian",
-        "job-print-fspt_fspt_1_vehicle",
-        "job-print-fspt_fspt_1_cyclist",
-        "job-print-fspt_fspt_1_pedestrian"
+        "job-print-fspt-no-limit_fspt_3_vehicle",
+        "job-print-fspt-no-limit_fspt_3_cyclist",
+        "job-print-fspt-no-limit_fspt_3_pedestrian",
+        "job-print-fspt-no-limit_fspt_2_vehicle",
+        "job-print-fspt-no-limit_fspt_2_cyclist",
+        "job-print-fspt-no-limit_fspt_2_pedestrian",
+        "job-print-fspt-no-limit_fspt_1_vehicle",
+        "job-print-fspt-no-limit_fspt_1_cyclist",
+        "job-print-fspt-no-limit_fspt_1_pedestrian"
         )
 
 for i in range(len(files)):

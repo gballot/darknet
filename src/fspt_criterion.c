@@ -61,21 +61,22 @@ static int respect_min_lenght_p(int n_features, const float* fspt_lim,
 static void determine_cause(forbidden_split_cause cause,
         criterion_args *args) {
     size_t tab[4] = {
+        cause.count_min_volume_p_hit,
         cause.count_max_depth_hit,
         cause.count_min_samples_hit,
-        cause.count_min_volume_p_hit,
         cause.count_min_length_p_hit
     };
+    if (!tab[0] && !tab[1] && !tab[2] && !tab[3]) return;
     int i = max_index_size_t(tab, 4);
     switch (i) {
         case 0:
-            ++args->count_max_depth_hit;
+            ++args->count_min_volume_p_hit;
             break;
         case 1:
-            ++args->count_min_samples_hit;
+            ++args->count_max_depth_hit;
             break;
         case 2:
-            ++args->count_min_volume_p_hit;
+            ++args->count_min_samples_hit;
             break;
         case 3:
             ++args->count_min_length_p_hit;
@@ -244,6 +245,7 @@ void gini_criterion(criterion_args *args) {
     if (node->n_samples == 0) {
         ++args->count_no_sample_hit;
         args->forbidden_split = 1;
+        return;
     }
     if (node->n_samples + node->n_empty < 2 * args->min_samples) {
         ++args->count_min_samples_hit;

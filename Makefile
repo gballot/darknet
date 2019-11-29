@@ -1,5 +1,5 @@
-GPU=0
-CUDNN=0
+GPU=1
+CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=0
@@ -37,7 +37,7 @@ CONF=waymo
 VERSION=
 MAINCMD=fspt
 BREAKPOINTS=examples/fspt_detector.c:776
-FSPT_OP=-print_stats -export result/test
+FSPT_OP=
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 #NETCONF=local_cfg/fspt-waymo-test.cfg
@@ -53,7 +53,7 @@ else
 NETCMD=test
 FILE= waymo/Day/images/training_00029.jpg
 FILE= waymo/Day/images/training_000223988.jpg
-#FILE=
+FILE=
 endif
 NETCMD=stats
 
