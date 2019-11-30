@@ -1148,8 +1148,14 @@ void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
     if (save_samples && size) {
         *succ &= (fwrite(fspt.samples, sizeof(float), size, fp) == size);
     }
-    if (fspt.root)
+    int have_root = 0;
+    if (fspt.root) {
+        have_root = 1;
+        *succ &= fwrite(&have_root, sizeof(int), 1, fp);
         pre_order_node_save(fp, *fspt.root, succ);
+    } else {
+        *succ &= fwrite(&have_root, sizeof(int), 1, fp);
+    }
 }
 
 void fspt_save(const char *filename, fspt_t fspt, int save_samples, int *succ){
@@ -1250,7 +1256,12 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
         }
     }
     /* load root */
-    fspt->root = pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
+    int have_root = 0;
+    *succ &= fread(&have_root, sizeof(int), 1, fp);
+    if (have_root) {
+        fspt->root =
+            pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
+    }
 }
 
 void fspt_load(const char *filename, fspt_t *fspt, int load_samples,

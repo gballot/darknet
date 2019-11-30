@@ -356,8 +356,10 @@ void gini_criterion(criterion_args *args) {
                 args->best_split = new_best_split;
             }
             args->increment_count = 1;
-            debug_print("gain thresh violation at depth %d and count %d",
-                    node->depth, node->parent ? node->parent->count : 0);
+            debug_print(
+                    "gain thresh violation at depth %d and count %d, gain %f",
+                    node->depth, node->parent ? node->parent->count : 0,
+                    best_gain);
             if (node->count >= args->max_consecutive_gain_violations) {
                 ++args->count_max_count_hit;
                 args->forbidden_split = 1;
