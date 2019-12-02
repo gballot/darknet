@@ -162,6 +162,14 @@ extern void fspt_layer_set_samples_class(layer l, int class, int refit,
 extern void fspt_layer_fit_class(layer l, int class, int refit, int merge);
 
 /**
+ * Compute the score of the leaves of the fspt without rebuilding it.
+ *
+ * \param l The fspt layer.
+ * \param class The class to re score.
+ */
+extern void fspt_layer_rescore_class(layer l, int class);
+
+/**
  * Sets the training data for all the class but don't fit.
  *
  * \param l The fspt layer.
@@ -179,6 +187,13 @@ extern void fspt_layer_set_samples(layer l, int refit, int merge);
  * \param merge If true, merge new data with samples already in the tree.
  */
 extern void fspt_layer_fit(layer l, int refit, int merge);
+
+/**
+ * Rescore the fspts of the fspt layer.
+ *
+ * \param l The fspt layer.
+ */
+extern void fspt_layer_rescore(layer l);
 
 /**
  * Merges the training data in layer l and base.

@@ -436,6 +436,23 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
     }
 }
 
+void fspt_layer_rescore_class(layer l, int class) {
+    fspt_t *fspt = l.fspts[class];
+    assert(fspt);
+    score_args *s_args = calloc(1, sizeof(score_args)); 
+    *s_args = l.fspt_score_args;
+    fprintf(stderr, "[Fspt %s:%d]: Start rescore\n",
+            l.ref, class);
+    fspt_rescore(fspt, s_args);
+    fprintf(stderr,
+            "[Fspt %s:%d]: rescore successful\n",
+            l.ref, class);
+#ifdef DEBUG
+    if (fspt->root->type == INNER)
+        print_fspt(fspt);
+#endif
+}
+
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
@@ -473,6 +490,12 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
 void fspt_layer_fit(layer l, int refit, int merge) {
     for (int class = 0; class < l.classes; ++class) {
         fspt_layer_fit_class(l, class, refit, merge);
+    }
+}
+
+void fspt_layer_rescore(layer l) {
+    for (int class = 0; class < l.classes; ++class) {
+        fspt_layer_rescore_class(l, class);
     }
 }
 

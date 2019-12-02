@@ -533,7 +533,7 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char *outfile, int *gpus, int ngpus, int clear, int refit, int ordered,
         int start, int end, int one_thread, int merge, int only_fit,
-        int print_stats_val) {
+        int only_score, int print_stats_val) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -572,9 +572,12 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         error("The net must have fspt or yolo layers");
 
     int classes = l.classes;
+    if (only_score) only_fit = 0;
 
     if (only_fit) { 
         fprintf(stderr, "Only fit FSPTs...\n");
+    } else if (only_score) {
+        fprintf(stderr, "Only score FSPTs...\n");
     } else {
         list *plist = get_paths(train_images);
         char **paths = (char **)list_to_array(plist);
@@ -633,8 +636,12 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
         save_weights(net, buff);
         fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
+    } // end if (!only_fit && !only_score)
+    if (only_score) {
+        fit_fspts(net, classes, refit, one_thread, merge);
+    } else {
+        score_fspts(net, classes, one_thread);
     }
-    fit_fspts(net, classes, refit, one_thread, merge);
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
@@ -727,7 +734,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         if (outstream != stderr) fclose(outstream);
     }
 
-    double start = what_time_is_it_now();
+    double start_time = what_time_is_it_now();
 
     float nms = .45;
 
@@ -823,7 +830,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
-            what_time_is_it_now() - start);
+            what_time_is_it_now() - start_time);
 }
 
 static void validate_fspt_recall(char *cfgfile, char *weightfile) {
@@ -863,6 +870,7 @@ Options are :\n\
                     starting from 0) image link. Default last link.\n\
     -merge       -> if set, newly extracted data are merged to existing.\n\
     -only_fit    -> if set, don't extract new data. implies -merge.\n\
+    -only_score  -> if set, only scores the fspts.\n\
     -one_thread  -> if set, the fspts are fitted in only one thread instead of\n\
                     one thread per fspt.\n\
     -fullscreen  -> unused.\n\
@@ -885,6 +893,7 @@ Options are :\n\
     int end = find_int_arg(argc, argv, "-end", 0);
     int one_thread = find_arg(argc, argv, "-one_thread");
     int only_fit = find_arg(argc, argv, "-only_fit");
+    int only_score = find_arg(argc, argv, "-only_score");
     int merge = find_arg(argc, argv, "-merge") || only_fit;
     int print_stats_val = find_arg(argc, argv, "-print_stats");
     int fullscreen = find_arg(argc, argv, "-fullscreen");
@@ -921,7 +930,7 @@ Options are :\n\
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, outfile, gpus, ngpus, clear,
                 refit_fspts, ordered, start, end, one_thread, merge, only_fit,
-                print_stats_val);
+                only_score, print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
