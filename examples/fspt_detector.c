@@ -532,7 +532,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char *outfile, int *gpus, int ngpus, int clear, int refit, int ordered,
-        int one_thread, int merge, int only_fit, int print_stats_val) {
+        int start, int end, int one_thread, int merge, int only_fit,
+        int print_stats_val) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -582,7 +583,6 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         args.coords = l.coords;
         args.paths = paths;
         args.n = imgs;
-        args.m = plist->size;
         args.classes = classes;
         args.jitter = l.jitter;
         args.num_boxes = l.max_boxes;
@@ -590,7 +590,9 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         args.type = DETECTION_DATA;
         args.threads = 64;
         args.ordered = ordered;
-        args.beg = 0;
+        args.beg = (0 <= start && start < plist->size) ? start : 0;
+        args.m = (end && args.beg < end && end < plist->size) ?
+            end : plist->size;
 
         pthread_t load_thread = load_data(args);
         double time;
@@ -662,6 +664,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         float yolo_thresh, float fspt_thresh, float hier_thresh,
         float iou_thresh, int ngpus, int *gpus, int ordered,
+        int start, int end, 
         int print_stats_val, char *outfile) {
     //TODO
     list *options = read_data_cfg(datacfg);
@@ -734,7 +737,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.coords = l.coords;
     args.paths = paths;
     args.n = imgs;
-    args.m = plist->size;
     args.classes = classes;
     args.jitter = 0;
     args.num_boxes = l.max_boxes;
@@ -742,7 +744,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.type = DETECTION_DATA;
     args.threads = 64;
     args.ordered = ordered;
-    args.beg = 0;
+    args.beg = (0 <= start && start < plist->size) ? start : 0;
+    args.m = (end && args.beg < end && end < plist->size) ?
+        end : plist->size;
 
     if (ordered) {
         net->max_batches = plist->size / imgs;
@@ -853,6 +857,10 @@ Options are :\n\
     -clear       -> if set, the training number of seen images is reset.\n\
     -refit       -> if set, the fspts are refitted if they already exist.\n\
     -ordered     -> if set, the data are selected sequentialy and not randomly.\n\
+    -start       -> indicate the line of the first (included and\n\
+                    starting from 0) image link. Default 0.\n\
+    -end         -> indicate the line of the last (excluded and\n\
+                    starting from 0) image link. Default last link.\n\
     -merge       -> if set, newly extracted data are merged to existing.\n\
     -only_fit    -> if set, don't extract new data. implies -merge.\n\
     -one_thread  -> if set, the fspts are fitted in only one thread instead of\n\
@@ -873,6 +881,8 @@ Options are :\n\
     int clear = find_arg(argc, argv, "-clear");
     int refit_fspts = find_arg(argc, argv, "-refit");
     int ordered = find_arg(argc, argv, "-ordered");
+    int start = find_int_arg(argc, argv, "-start", 0);
+    int end = find_int_arg(argc, argv, "-end", 0);
     int one_thread = find_arg(argc, argv, "-one_thread");
     int only_fit = find_arg(argc, argv, "-only_fit");
     int merge = find_arg(argc, argv, "-merge") || only_fit;
@@ -910,12 +920,12 @@ Options are :\n\
                 hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, outfile, gpus, ngpus, clear,
-                refit_fspts, ordered, one_thread, merge, only_fit,
+                refit_fspts, ordered, start, end, one_thread, merge, only_fit,
                 print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
-                hier_thresh, iou_thresh, ngpus, gpus, ordered, print_stats_val,
-                outfile);
+                hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
+                print_stats_val, outfile);
     else if(0==strcmp(argv[2], "recall"))
         validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))
