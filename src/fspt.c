@@ -1212,7 +1212,8 @@ static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
     return node;
 }
 
-void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
+void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
+        int load_s_args, int load_root, int *succ) {
     /* load n_features */
     int old_n_features = fspt->n_features;
     *succ &= fread(&fspt->n_features, sizeof(int), 1, fp);
@@ -1230,9 +1231,13 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
     *succ &= (fread(feature_importance, sizeof(float), size, fp) == size);
     fspt->feature_importance = feature_importance;
     /* load criterion_args */
-    fspt->c_args = load_criterion_args_file(fp, succ);
+    criterion_args *c_args = load_criterion_args_file(fp, succ);
+    if (load_c_args)
+        fspt->c_args = c_args;
     /* load score_args */
-    fspt->s_args = load_score_args_file(fp, succ);
+    score_args *s_args = load_score_args_file(fp, succ);
+    if (load_s_args)
+        fspt->s_args = s_args;
     /* load others */
     *succ &= fread(&fspt->n_nodes, sizeof(size_t), 1, fp);
     *succ &= fread(&fspt->n_samples, sizeof(size_t), 1, fp);
@@ -1249,6 +1254,7 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
         size = fspt->n_samples * fspt->n_features;
         if (load_samples && size) {
             float *samples = malloc(size * sizeof(float));
+            assert(samples);
             *succ &= (fread(samples, sizeof(float), size, fp) == size);
             fspt->samples = samples;
         } else {
@@ -1258,19 +1264,20 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int *succ) {
     /* load root */
     int have_root = 0;
     *succ &= fread(&have_root, sizeof(int), 1, fp);
-    if (have_root) {
+    if (have_root && load_root) {
         fspt->root =
             pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
     }
 }
 
 void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
-        int *succ) {
+        int load_c_args, int load_s_args, int load_root, int *succ) {
     fprintf(stderr, "Loading fspt from %s\n", filename);
     *succ = 1;
     FILE *fp = fopen(filename, "rb");
     if(!fp) file_error(filename);
-    fspt_load_file(fp, fspt, load_samples, succ);
+    fspt_load_file(fp, fspt, load_samples, load_c_args, load_s_args, load_root,
+            succ);
     fclose(fp);
 }
 

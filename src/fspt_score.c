@@ -139,8 +139,10 @@ void save_score_args_file(FILE *fp, score_args *s, int *succ) {
     int version = SCORE_ARGS_VERSION;
     if (s) {
         contains_args = 1;
+        size_t size = sizeof(score_args);
         *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
         *succ &= fwrite(&version, sizeof(int), 1, fp);
+        *succ &= fwrite(&size, sizeof(size_t), 1, fp);
         *succ &= fwrite(s, sizeof(score_args), 1, fp);
     } else {
         *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
@@ -151,18 +153,23 @@ score_args *load_score_args_file(FILE *fp, int *succ) {
     score_args *s = NULL;
     int contains_args = 0;
     int version = 0;
+    size_t size = 0;
     *succ &= fread(&contains_args, sizeof(int), 1, fp);
     if (contains_args == 1) {
         *succ &= fread(&version, sizeof(int), 1, fp);
-        if (version == SCORE_ARGS_VERSION) {
+        *succ &= fread(&size, sizeof(size_t), 1, fp);
+        if (version == SCORE_ARGS_VERSION
+                && size == sizeof(criterion_args)) {
             s = malloc(sizeof(score_args));
             *succ &= fread(s, sizeof(score_args), 1, fp);
         } else {
-            *succ = 0;
-            fprintf(stderr, "ERROR : Wrong criterion version (%d)", version);
+            fseek(fp, size, SEEK_CUR);
+            fprintf(stderr, "Wrong criterion version (%d) or size\
+(saved size = %ld and sizeof(score_args) = %ld).",
+                    version, size, sizeof(score_args));
         }
     } else if (contains_args != 0) {
-        fprintf(stderr, "ERROR : in criterion arg read contains_args = %d",
+        fprintf(stderr, "ERROR : in load_score_args_file - contains_args = %d",
                 contains_args);
     }
     return s;

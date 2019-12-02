@@ -103,7 +103,7 @@ static int entry_index(layer l, int batch, int location, int entry)
 }
 
 /**
- * Realloc space for more input date correspondint to classe classe on layer l.
+ * Realloc space for more input data corresponding to class `class` on layer l.
  * num * l.total * sizeof(float) is allocated.
  *
  * \param l The layer that we want to realloc space.
@@ -412,7 +412,7 @@ void save_fspt_trees(layer l, FILE *fp) {
 void load_fspt_trees(layer l, FILE *fp) {
     for (int i = 0; i < l.classes; ++i) {
         int succ = 1;
-        fspt_load_file(fp, l.fspts[i], l.load_samples, &succ);
+        fspt_load_file(fp, l.fspts[i], l.load_samples, 1, 1, 1, &succ);
     }
 }
 

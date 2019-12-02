@@ -348,10 +348,15 @@ extern void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ);
  * \param fspt The feature space partitioning tree parsed from config file.
  * \param load_samples If true, it will load the samples if they are
  *                     registered.
+ * \param load_c_args If true, it will load the cirterion_args if it is
+ *                    registered.
+ * \param load_s_args If true, it will load the score_args if it is
+ *                    registered.
+ * \param load_root If true, it will load the root if it is registered.
  * \param succ Output parameter. True if succes, false otherwise.
  */
 extern void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
-        int *succ);
+        int load_c_args, int load_s_args, int load_root, int *succ);
 
 /**
  * Load the fspt from an open file.
@@ -363,10 +368,15 @@ extern void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
  * \param fspt The feature space partitioning tree parsed from config file.
  * \param load_samples If true, it will load the samples if they are
  *                     registered.
+ * \param load_c_args If true, it will load the cirterion_args if it is
+ *                    registered.
+ * \param load_s_args If true, it will load the score_args if it is
+ *                    registered.
+ * \param load_root If true, it will load the root if it is registered.
  * \param succ Output parameter. True if succes, false otherwise.
  */
 extern void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples,
-        int *succ);
+        int load_c_args, int load_s_args, int load_root, int *succ);
 
 /**
  * Friendly prints a fspt to the terminal.

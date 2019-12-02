@@ -233,7 +233,7 @@ void uni_test() {
 
     /* load */
     fspt_t *fspt_loaded = make_fspt(2, feat_lim2, feat_imp2, NULL, NULL);
-    fspt_load(filename, fspt_loaded, 1, &succ);
+    fspt_load(filename, fspt_loaded, 1, 1, 1, 1, &succ);
     print_fspt(fspt_loaded);
 
     if (!succ) {

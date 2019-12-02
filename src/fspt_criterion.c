@@ -19,7 +19,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 3
+#define CRITERION_ARGS_VERSION 4
 
 typedef struct {
     size_t count_max_depth_hit;
@@ -441,8 +441,10 @@ void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ) {
     int version = CRITERION_ARGS_VERSION;
     if (c) {
         contains_args = 1;
+        size_t size = sizeof(criterion_args);
         *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
         *succ &= fwrite(&version, sizeof(int), 1, fp);
+        *succ &= fwrite(&size, sizeof(size_t), 1, fp);
         *succ &= fwrite(c, sizeof(criterion_args), 1, fp);
     } else {
         *succ &= fwrite(&contains_args, sizeof(int), 1, fp);
@@ -453,18 +455,23 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
     criterion_args *c = NULL;
     int contains_args = 0;
     int version = 0;
+    size_t size = 0;
     *succ &= fread(&contains_args, sizeof(int), 1, fp);
     if (contains_args == 1) {
         *succ &= fread(&version, sizeof(int), 1, fp);
-        if (version == CRITERION_ARGS_VERSION) {
+        *succ &= fread(&size, sizeof(size_t), 1, fp);
+        if (version == CRITERION_ARGS_VERSION
+                && size == sizeof(criterion_args)) {
             c = malloc(sizeof(criterion_args));
             *succ &= fread(c, sizeof(criterion_args), 1, fp);
         } else {
-            *succ = 0;
-            fprintf(stderr, "ERROR : Wrong criterion version (%d)", version);
+            fseek(fp, size, SEEK_CUR);
+            fprintf(stderr, "Wrong criterion version (%d) or size\
+(saved size = %ld and sizeof(criterion_args) = %ld).",
+                    version, size, sizeof(score_args));
         }
     } else if (contains_args != 0) {
-        fprintf(stderr, "ERROR : in criterion arg read contains_args = %d",
+        fprintf(stderr, "ERROR : in load_criterion_args_file - contains_args = %d",
                 contains_args);
     }
     return c;
