@@ -316,6 +316,13 @@ extern void fspt_predict(size_t n, const fspt_t *fspt, const float *X, float *Y)
 extern void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
         score_args *s_args, fspt_t *fspt);
 
+/**
+ * Recompute the score of the leaves without fitting.
+ *
+ * \param fspt The fspt.
+ * \param s_args The new score arguments.
+ */
+extern void fspt_rescore(fspt_t *fspt, score_args *s_args);
 
 /**
  * Save the fspt to a file.

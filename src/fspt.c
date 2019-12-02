@@ -1009,6 +1009,37 @@ void fspt_predict(size_t n, const fspt_t *fspt, const float *X, float *Y) {
     free(nodes);
 }
 
+void fspt_rescore(fspt_t *fspt, score_args *s_args) {
+    s_args->fspt = fspt;
+    fspt->s_args = s_args;
+    /* discover score args */
+    s_args->discover = 1;
+    fspt->score(s_args);
+    /* score */
+    list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
+    fspt_node *current_node;
+    while ((current_node = (fspt_node *) list_pop(node_list))) {
+        if (current_node->type == LEAF) {
+            s_args->node = current_node;
+            current_node->score = fspt->score(s_args);
+        }
+    }
+    free_list(node_list);
+    /* normalize */
+    if (s_args->need_normalize) {
+        s_args->normalize_pass = 1;
+        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
+        fspt_node *current_node;
+        while ((current_node = (fspt_node *) list_pop(node_list))) {
+            if (current_node->type == LEAF) {
+                s_args->node = current_node;
+                current_node->score = fspt->score(s_args);
+            }
+        }
+        free_list(node_list);
+    }
+}
+
 void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
         score_args *s_args, fspt_t *fspt) {
     c_args->fspt = fspt;
