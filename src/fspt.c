@@ -354,6 +354,7 @@ static int cmp_score_vol_n(const void *n1, const void *n2) {
 }
 
 fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh) {
+    if (!fspt) return NULL;
     if (!fspt->root) return NULL;
     /** Default values for thresh if NULL **/
     fspt_stats *stats = calloc(1, sizeof(fspt_stats));
@@ -676,6 +677,7 @@ void export_score_data(FILE *stream, fspt_stats *s) {
 
 
 void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
+    if (!s) return;
     /** Title **/
     if (title) {
         int len = strlen(title);

@@ -71,15 +71,19 @@ static void determine_cause(forbidden_split_cause cause,
     switch (i) {
         case 0:
             ++args->count_min_volume_p_hit;
+            args->node->cause = MIN_VOLUME;
             break;
         case 1:
             ++args->count_max_depth_hit;
+            args->node->cause = MAX_DEPTH;
             break;
         case 2:
             ++args->count_min_samples_hit;
+            args->node->cause = MIN_SAMPLES;
             break;
         case 3:
             ++args->count_min_length_p_hit;
+            args->node->cause = MIN_LENGTH;
             break;
         default: break;
     }
@@ -244,21 +248,25 @@ void gini_criterion(criterion_args *args) {
     args->end_of_fitting = 0;
     if (node->n_samples == 0) {
         ++args->count_no_sample_hit;
+        node->cause = NO_SAMPLES;
         args->forbidden_split = 1;
         return;
     }
     if (node->n_samples + node->n_empty < (size_t) 2 * args->min_samples) {
         ++args->count_min_samples_hit;
+        node->cause = MIN_SAMPLES;
         args->forbidden_split = 1;
         return;
     }
     if (node->depth >= args->max_depth) {
         ++args->count_max_depth_hit;
+        node->cause = MAX_DEPTH;
         args->forbidden_split = 1;
         return;
     }
     if (node->volume < 2 * args->min_volume_p * fspt->volume) {
         ++args->count_min_volume_p_hit;
+        node->cause = MIN_VOLUME;
         args->forbidden_split = 1;
         return;
     }
@@ -267,6 +275,7 @@ void gini_criterion(criterion_args *args) {
                 feature_limit, args->min_length_p)) {
         ++args->count_min_length_p_hit;
         args->forbidden_split = 1;
+        node->cause = MIN_LENGTH;
         free(feature_limit);
         return;
     }
@@ -377,6 +386,10 @@ void gini_criterion(criterion_args *args) {
 }
 
 void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
+    if (!a) {
+        fprintf(stream, "No criterion args.\n");
+        return;
+    }
     /** Title **/
     if (title) {
         int len = strlen(title);

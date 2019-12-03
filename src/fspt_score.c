@@ -84,6 +84,10 @@ double euristic_score(score_args *args) {
 }
 
 void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
+    if (!a) {
+        fprintf(stream, "No score args.\n");
+        return;
+    }
     /** Title **/
     if (title) {
         int len = strlen(title);

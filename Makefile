@@ -1,9 +1,9 @@
-GPU=1
-CUDNN=1
+GPU=0
+CUDNN=0
 OPENCV=0
 OPENMP=0
 DEBUG=0
-TRAIN=1
+TRAIN=0
 VALID=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -34,19 +34,20 @@ COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 CONF=waymo
-VERSION=
+VERSION=-full
 MAINCMD=fspt
 BREAKPOINTS=examples/fspt_detector.c:776
 FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
-NETCONF=local_cfg/fspt-waymo-test.cfg
-NETCONF=local_cfg/fspt-waymo-dontload-full-test.cfg
+#NETCONF=local_cfg/fspt-waymo-test.cfg
+#NETCONF=local_cfg/fspt-waymo-dontload-full-test.cfg
 DATACONF=cfg/$(CONF).data
+DATACONF=cfg/$(CONF)$(VERSION).data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 #WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
-DATACONF=cfg/$(CONF)-full.data
-WEIGHTS=weights/yolov3-waymo-full.weights
+#DATACONF=cfg/$(CONF)-full.data
+#WEIGHTS=weights/yolov3-waymo-full.weights
 ifeq ($(TRAIN), 1) 
 NETCMD=train
 else ifeq ($(VALID), 1)
@@ -57,7 +58,7 @@ FILE= waymo/Day/images/training_00029.jpg
 FILE= waymo/Day/images/training_001111111.jpg
 FILE=
 endif
-#NETCMD=stats
+NETCMD=stats
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp

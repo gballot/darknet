@@ -19,6 +19,8 @@
 
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
+typedef enum {SPLIT = 0, UNKNOW, MAX_DEPTH, MIN_SAMPLES, MIN_VOLUME,
+    MIN_LENGTH, MAX_COUNT, NO_SAMPLES} NON_SPLIT_CAUSE;
 
 
 struct fspt_node;
@@ -48,6 +50,7 @@ typedef struct fspt_node {
     double score;
     double volume;
     int count;          // keeps the successive violation of gain threshold
+    NON_SPLIT_CAUSE cause;
 } fspt_node;
 
 /**

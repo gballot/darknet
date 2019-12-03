@@ -8,9 +8,9 @@
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176
 
-datacfg='cfg/waymo.data'
-netcfg='cfg/fspt-waymo.cfg'
-weightfile='weights/fspt-waymo.weights'
+datacfg='cfg/waymo-full.data'
+netcfg='cfg/fspt-waymo-full.cfg'
+weightfile='weights/fspt-waymo-full.weights'
 options='-ordered -print_stats'
 
 #/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt valid ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1

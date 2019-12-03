@@ -8,4 +8,4 @@
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176
 
-/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 detector train cfg/waymo-full.data cfg/yolov3-waymo-full.cfg weights/darknet53.conv.74 -gpus 0
+/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 detector train cfg/waymo-full-only-day.data cfg/yolov3-waymo-full.cfg weights/darknet53.conv.74 -gpus 0
