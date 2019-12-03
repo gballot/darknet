@@ -20,7 +20,7 @@
 typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
 typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
 typedef enum {SPLIT = 0, UNKNOW, MAX_DEPTH, MIN_SAMPLES, MIN_VOLUME,
-    MIN_LENGTH, MAX_COUNT, NO_SAMPLES} NON_SPLIT_CAUSE;
+    MIN_LENGTH, MAX_COUNT, NO_SAMPLE} NON_SPLIT_CAUSE;
 
 
 struct fspt_node;
@@ -131,6 +131,7 @@ typedef struct score_vol_n {
     double score;
     double volume_p;
     size_t n_samples;
+    NON_SPLIT_CAUSE cause;
 } score_vol_n;
 
 typedef struct fspt_stats {

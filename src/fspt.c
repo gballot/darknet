@@ -13,9 +13,11 @@
 #define N_THRESH_STATS_FSPT 11
 #define FLT_FORMAT "%12g"
 #define LEFTFLTFOR "%-12g"
+#define STR_FORMAT "%s"
 #define INT_FORMAT "%12d"
 #define LINTFORMAT "%12ld"
 #define LEFTINTFOR "%-12d"
+#define NODE_VERSION 1
 
 /**
  * Computes the volume of a feature space.
@@ -461,7 +463,8 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh) {
             (score_vol_n) {
                 node->score,
                 node->volume / fspt->volume,
-                node->n_samples
+                node->n_samples,
+                node->cause
             };
         /* Thresholds */
         for (int j = 0; j < n_thresh; ++j) {
@@ -675,6 +678,37 @@ void export_score_data(FILE *stream, fspt_stats *s) {
     }
 }
 
+static char *cause_to_string(NON_SPLIT_CAUSE c) {
+    switch (c) {
+        case SPLIT:
+            return "   SPLIT    ";
+            break;
+        case UNKNOW:
+            return "   UNKNOW   ";
+            break;
+        case MAX_DEPTH:
+            return " MAX_DEPTH  ";
+            break;
+        case MIN_SAMPLES:
+            return "MIN_SAMPLES ";
+            break;
+        case MIN_VOLUME:
+            return " MIN_VOLUME ";
+            break;
+        case MIN_LENGTH:
+            return " MIN_LENGTH ";
+            break;
+        case MAX_COUNT:
+            return " MAX_COUNT  ";
+            break;
+        case NO_SAMPLE:
+            return " NO_SAMPLE  ";
+            break;
+        default:
+            return "????????????";
+    }
+}
+
 
 void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     if (!s) return;
@@ -784,23 +818,24 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Score **/
     fprintf(stream, "\
-┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
-│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │\n\
-│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │\n\
-│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │\n\
-├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │   cause    │\n\
+│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │   of the   │\n\
+│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    end     │\n\
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (size_t i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
-│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"STR_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
             pow(s->score_vol_n_array[i].volume_p, 1. / n_features),
             s->score_vol_n_array[i].n_samples,
             ((double) s->score_vol_n_array[i].n_samples) / s->n_samples,
             ((double) s->score_vol_n_array[i].n_samples)
-                / (s->score_vol_n_array[i].volume_p * s->volume));
+                / (s->score_vol_n_array[i].volume_p * s->volume),
+            cause_to_string(s->score_vol_n_array[i].cause));
     }
     fprintf(stream, "\
-└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Depth **/
     fprintf(stream, "\
@@ -1298,8 +1333,14 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
     int have_root = 0;
     *succ &= fread(&have_root, sizeof(int), 1, fp);
     if (have_root && load_root) {
-        fspt->root =
-            pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
+        int version = 0;
+        *succ &= fread(&version, sizeof(int), 1, fp);
+        if (version == NODE_VERSION) {
+            fspt->root =
+                pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
+        } else {
+            fprintf(stderr, "Nodes not load : wrong version (%d)", version);
+        }
     }
 }
 
@@ -1317,6 +1358,8 @@ void fspt_load(const char *filename, fspt_t *fspt, int load_samples,
 #undef N_THRESH_STATS_FSPT
 #undef FLT_FORMAT
 #undef LEFTFLTFOR
+#undef STR_FORMAT
 #undef INT_FORMAT
 #undef LINTFORMAT
 #undef LEFTINTFOR
+#undef NODE_VERSION

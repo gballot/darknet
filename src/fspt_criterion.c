@@ -248,7 +248,7 @@ void gini_criterion(criterion_args *args) {
     args->end_of_fitting = 0;
     if (node->n_samples == 0) {
         ++args->count_no_sample_hit;
-        node->cause = NO_SAMPLES;
+        node->cause = NO_SAMPLE;
         args->forbidden_split = 1;
         return;
     }
