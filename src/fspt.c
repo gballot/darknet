@@ -683,7 +683,7 @@ static char *cause_to_string(NON_SPLIT_CAUSE c) {
         case SPLIT:
             return "   SPLIT    ";
             break;
-        case UNKNOW:
+        case UNKNOWN_CAUSE:
             return "   UNKNOW   ";
             break;
         case MAX_DEPTH:
@@ -1219,7 +1219,9 @@ void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
     int have_root = 0;
     if (fspt.root) {
         have_root = 1;
+        int version = NODE_VERSION;
         *succ &= fwrite(&have_root, sizeof(int), 1, fp);
+        *succ &= fwrite(&version, sizeof(int), 1, fp);
         pre_order_node_save(fp, *fspt.root, succ);
     } else {
         *succ &= fwrite(&have_root, sizeof(int), 1, fp);

@@ -163,12 +163,12 @@ score_args *load_score_args_file(FILE *fp, int *succ) {
         *succ &= fread(&version, sizeof(int), 1, fp);
         *succ &= fread(&size, sizeof(size_t), 1, fp);
         if (version == SCORE_ARGS_VERSION
-                && size == sizeof(criterion_args)) {
+                && size == sizeof(score_args)) {
             s = malloc(sizeof(score_args));
             *succ &= fread(s, sizeof(score_args), 1, fp);
         } else {
             fseek(fp, size, SEEK_CUR);
-            fprintf(stderr, "Wrong criterion version (%d) or size\
+            fprintf(stderr, "Wrong score args version (%d) or size\
 (saved size = %ld and sizeof(score_args) = %ld).",
                     version, size, sizeof(score_args));
         }

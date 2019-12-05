@@ -66,7 +66,10 @@ static void determine_cause(forbidden_split_cause cause,
         cause.count_min_samples_hit,
         cause.count_min_length_p_hit
     };
-    if (!tab[0] && !tab[1] && !tab[2] && !tab[3]) return;
+    if (!tab[0] && !tab[1] && !tab[2] && !tab[3]) {
+        args->node->cause = UNKNOWN_CAUSE;
+        return;
+    }
     int i = max_index_size_t(tab, 4);
     switch (i) {
         case 0:
@@ -121,7 +124,7 @@ static double gini_after_split(float min, float max, float s, size_t n_left,
     }
     if (prop_left < min_length_p
             || prop_right < min_length_p) {
-        ++cause->count_min_volume_p_hit;
+        ++cause->count_min_length_p_hit;
         *forbidden_split = 1;
     }
     if (*forbidden_split) return 1.;
@@ -207,7 +210,7 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
 /**
  * Finds the best split point on feature feat.
  */
-static void best_split_on_feature(int feat, float node_min, float node_max,
+static void best_split_on_feature(float node_min, float node_max,
         size_t n_samples, size_t n_empty, double node_volume, int min_samples,
         double min_volume, double min_length_p,
         float max_tries_p, size_t n_bins, const float *bins,
@@ -304,7 +307,7 @@ void gini_criterion(criterion_args *args) {
         int local_best_gain_index = 0;
         double local_best_gain = 0.;
         int local_forbidden_split = 1;
-        best_split_on_feature(feat, node_min, node_max, node->n_samples,
+        best_split_on_feature(node_min, node_max, node->n_samples,
                 node->n_empty, node->volume, args->min_samples,
                 args->min_volume_p * fspt->volume, args->min_length_p, 
                 args->max_tries_p, n_bins,
@@ -479,8 +482,8 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
             *succ &= fread(c, sizeof(criterion_args), 1, fp);
         } else {
             fseek(fp, size, SEEK_CUR);
-            fprintf(stderr, "Wrong criterion version (%d) or size\
-(saved size = %ld and sizeof(criterion_args) = %ld).",
+            fprintf(stderr, "Wrong criterion args version (%d) or size \
+(saved size = %ld and sizeof(criterion_args) = %ld).\n",
                     version, size, sizeof(score_args));
         }
     } else if (contains_args != 0) {
