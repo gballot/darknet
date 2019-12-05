@@ -17,7 +17,7 @@
 #define INT_FORMAT "%12d"
 #define LINTFORMAT "%12ld"
 #define LEFTINTFOR "%-12d"
-#define NODE_VERSION 1
+#define NODE_VERSION 2
 
 /**
  * Computes the volume of a feature space.
@@ -62,16 +62,22 @@ float *get_feature_limit(const fspt_node *node) {
  * \param traversal The mode of traversal @see FSPT_TRAVERSAL.
  */
 static void add_nodes_to_list(list *nodes, fspt_node *node,
-        FSPT_TRAVERSAL traversal) {
+        FSPT_TRAVERSAL traversal, FSPT_NODE_TYPE type) {
     if (!node) return;
-    if (traversal == PRE_ORDER)
-        list_insert(nodes, node);
-    add_nodes_to_list(nodes, node->left, traversal);
-    if (traversal == IN_ORDER)
-        list_insert(nodes, node);
-    add_nodes_to_list(nodes, node->right, traversal);
-    if (traversal == POST_ORDER)
-        list_insert(nodes, node);
+    if (traversal == PRE_ORDER) {
+        if (type == ALL_NODES || type == node->type)
+            list_insert(nodes, node);
+    }
+    add_nodes_to_list(nodes, node->left, traversal, type);
+    if (traversal == IN_ORDER) {
+        if (type == ALL_NODES || type == node->type)
+            list_insert(nodes, node);
+    }
+    add_nodes_to_list(nodes, node->right, traversal, type);
+    if (traversal == POST_ORDER) {
+        if (type == ALL_NODES || type == node->type)
+            list_insert(nodes, node);
+    }
 }
 
 /**
@@ -84,7 +90,21 @@ static void add_nodes_to_list(list *nodes, fspt_node *node,
  */
 list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal) {
     list *nodes = make_list();
-    add_nodes_to_list(nodes, fspt->root, traversal);
+    add_nodes_to_list(nodes, fspt->root, traversal, ALL_NODES);
+    return nodes;
+}
+
+/**
+ * Creates a list with the leaves of a fspt. The traversal mode can be
+ * customized. The caller must free the list.
+ *
+ * \param fspt The fspt/
+ * \param traversal The mode of traversal @see FSPT_TRAVERSAL.
+ * \return The list of all the nodes.
+ */
+list *fspt_leaves_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal) {
+    list *nodes = make_list();
+    add_nodes_to_list(nodes, fspt->root, traversal, LEAF);
     return nodes;
 }
 
@@ -1106,7 +1126,8 @@ void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
     /* discover score args */
     s_args->discover = 1;
     fspt->score(s_args);
-    if (c_args->merge_nodes) s_args->score_during_fit = 0;
+    if (c_args->merge_nodes || s_args->need_normalize)
+        s_args->score_during_fit = 0;
     if (s_args->score_during_fit) {
         s_args->node = root;
         root->score = fspt->score(s_args);
@@ -1147,29 +1168,41 @@ void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
     if (c_args->merge_nodes) {
         merge_nodes(fspt);
     }
+    list *leaves = fspt_leaves_to_list(fspt, PRE_ORDER);
+    s_args->n_leaves = leaves->size;
+    fspt_node **leaves_array = (fspt_node **) list_to_array(leaves);
+    score_vol_n *score_vol_n_array = NULL;;
+    if (s_args->need_normalize)
+        score_vol_n_array = calloc(leaves->size, sizeof(score_vol_n));
     if (!s_args->score_during_fit) {
-        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
-        fspt_node *current_node;
-        while ((current_node = (fspt_node *) list_pop(node_list))) {
-            if (current_node->type == LEAF) {
-                s_args->node = current_node;
-                current_node->score = fspt->score(s_args);
+        for (int i = 0; i < leaves->size; ++i) {
+            fspt_node *leaf = leaves_array[i];
+            s_args->node = leaf;
+            leaf->score = fspt->score(s_args);
+            if (s_args->need_normalize) {
+                score_vol_n_array[i] =
+                    (score_vol_n) {
+                        leaf->score,
+                        leaf->volume / fspt->volume,
+                        leaf->n_samples,
+                        leaf->cause
+                    };
             }
         }
-        free_list(node_list);
     }
     if (s_args->need_normalize) {
         s_args->normalize_pass = 1;
-        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
-        fspt_node *current_node;
-        while ((current_node = (fspt_node *) list_pop(node_list))) {
-            if (current_node->type == LEAF) {
-                s_args->node = current_node;
-                current_node->score = fspt->score(s_args);
-            }
+        qsort(score_vol_n_array, leaves->size, sizeof(score_vol_n),
+                cmp_score_vol_n);
+        s_args->score_vol_n_array = score_vol_n_array;
+        for (int i = 0; i < leaves->size; ++i) {
+            s_args->node = leaves_array[i];
+            leaves_array[i]->score = fspt->score(s_args);
         }
-        free_list(node_list);
     }
+    free(score_vol_n_array);
+    free(leaves_array);
+    free_list(leaves);
 }
 
 /**

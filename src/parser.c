@@ -867,6 +867,19 @@ layer parse_fspt(list *options, size_params params)
         option_find_float_quiet(options, "volume_penalization", 0.);
     assert(0. <= s_args.volume_penalization
             && s_args.volume_penalization < 1.);
+    s_args.samples_p = option_find_float_quiet(options, "auto_samples_p", 0.8);
+    assert(0. < s_args.samples_p && s_args.samples_p <= 1.);
+    s_args.verify_density_thresh =
+        option_find_float_quiet(options, "verify_density_thresh", 0.);
+    assert(0. <= s_args.verify_density_thresh);
+    s_args.verify_n_nodes_p_thresh =
+        option_find_float_quiet(options, "verify_n_nodes_p_thresh", 0.);
+    assert(0. <= s_args.verify_n_nodes_p_thresh
+            && s_args.verify_n_nodes_p_thresh <= 1.);
+    s_args.auto_calibration_score =
+        option_find_float_quiet(options, "auto_calibration_score", 0.8);
+    assert(0. <= s_args.auto_calibration_score
+            && s_args.auto_calibration_score < 1.);
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,

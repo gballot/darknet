@@ -6,6 +6,8 @@
 #include <pthread.h>
 
 #include "fspt.h"
+#include "fspt_criterion.h"
+#include "fspt_score.h"
 #include "list.h"
 
 #ifdef GPU
@@ -306,8 +308,8 @@ struct layer{
     float **fspt_training_data;
     size_t *fspt_n_training_data;
     size_t *fspt_n_max_training_data;
-    criterion_args fspt_criterion_args;
-    score_args fspt_score_args;
+    struct criterion_args fspt_criterion_args;
+    struct score_args fspt_score_args;
     int save_samples;
     int load_samples;
 

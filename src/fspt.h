@@ -17,14 +17,17 @@
 
 
 
-typedef enum {LEAF, INNER} FSTP_NODE_TYPE;
+typedef enum {ALL_NODES = 0, LEAF = 1, INNER = 2} FSPT_NODE_TYPE;
 typedef enum {PRE_ORDER, IN_ORDER, POST_ORDER} FSPT_TRAVERSAL;
-typedef enum {SPLIT = 0, UNKNOWN_CAUSE, MAX_DEPTH, MIN_SAMPLES, MIN_VOLUME,
-    MIN_LENGTH, MAX_COUNT, NO_SAMPLE} NON_SPLIT_CAUSE;
+typedef enum {UNKNOWN_CAUSE = 0, SPLIT = 1, MAX_DEPTH = 2, MIN_SAMPLES = 3,
+    MIN_VOLUME = 4, MIN_LENGTH = 5, MAX_COUNT = 6, NO_SAMPLE = 7}
+    NON_SPLIT_CAUSE;
 
 
 struct fspt_node;
 struct fspt_t;
+struct criterion_args;
+struct score_args;
 struct criterion_args;
 struct score_args;
 typedef void (*criterion_func) (struct criterion_args *args);
@@ -34,7 +37,7 @@ typedef double (*score_func) (struct score_args *args);
  * Node of the FSPT.
  */
 typedef struct fspt_node {
-    FSTP_NODE_TYPE type;  // LEAF or INNER
+    FSPT_NODE_TYPE type;  // LEAF or INNER
     int n_features;
     struct fspt_t *fspt;   // the fspt that contains this node
     size_t n_empty;        // number of empty points (is a float)
@@ -74,58 +77,6 @@ typedef struct fspt_t {
     struct criterion_args *c_args;
     struct score_args *s_args;
 } fspt_t;
-
-
-typedef struct criterion_args {
-    /* messages to change fitting behaviour */
-    int merge_nodes;
-    /* messages between fspt_fit and all the criterion functions */
-    fspt_t *fspt;
-    fspt_node *node;
-    int max_depth;
-    size_t count_max_depth_hit;
-    int min_samples;
-    size_t count_min_samples_hit;
-    double min_volume_p;
-    size_t count_min_volume_p_hit;
-    double min_length_p;
-    size_t count_min_length_p_hit;
-    size_t count_max_count_hit;
-    size_t count_no_sample_hit;
-    int best_index;
-    float best_split;
-    int forbidden_split;
-    int increment_count;
-    int end_of_fitting;
-    /* messages for gini_criterion */
-    float max_tries_p;
-    float max_features_p;
-    double gini_gain_thresh;
-    int max_consecutive_gain_violations;
-    int middle_split;
-} criterion_args;
-
-typedef struct score_args {
-    /* messages to change fitting behaviour */
-    int score_during_fit;
-    /* messages for all score functions */
-    fspt_t *fspt;
-    fspt_node *node;
-    int discover;
-    int need_normalize;
-    int normalize_pass;
-    /* messages for euristic score */
-    int compute_euristic_hyperparam;
-    float euristic_hyperparam;
-    /* message for density score */
-    int exponential_normalization;
-    double calibration_score;
-    double calibration_n_samples_p;
-    double calibration_volume_p;
-    float calibration_feat_length_p;
-    double volume_penalization;
-    double calibration_tau;
-} score_args;
 
 typedef struct score_vol_n {
     double score;
@@ -317,8 +268,8 @@ extern void fspt_predict(size_t n, const fspt_t *fspt, const float *X, float *Y)
  * \param c_args Pointer to the score args.
  * \param fspt The feature space partitioning tree.
  */
-extern void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
-        score_args *s_args, fspt_t *fspt);
+extern void fspt_fit(size_t n_samples, float *X, struct criterion_args *c_args,
+        struct score_args *s_args, fspt_t *fspt);
 
 /**
  * Recompute the score of the leaves without fitting.
@@ -326,7 +277,7 @@ extern void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
  * \param fspt The fspt.
  * \param s_args The new score arguments.
  */
-extern void fspt_rescore(fspt_t *fspt, score_args *s_args);
+extern void fspt_rescore(fspt_t *fspt, struct score_args *s_args);
 
 /**
  * Save the fspt to a file.

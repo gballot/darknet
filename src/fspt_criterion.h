@@ -5,6 +5,36 @@
 
 #include "fspt.h"
 
+typedef struct criterion_args {
+    /* messages to change fitting behaviour */
+    int merge_nodes;
+    /* messages between fspt_fit and all the criterion functions */
+    fspt_t *fspt;
+    fspt_node *node;
+    int max_depth;
+    size_t count_max_depth_hit;
+    int min_samples;
+    size_t count_min_samples_hit;
+    double min_volume_p;
+    size_t count_min_volume_p_hit;
+    double min_length_p;
+    size_t count_min_length_p_hit;
+    size_t count_max_count_hit;
+    size_t count_no_sample_hit;
+    int best_index;
+    float best_split;
+    int forbidden_split;
+    int increment_count;
+    int end_of_fitting;
+    /* messages for gini_criterion */
+    float max_tries_p;
+    float max_features_p;
+    double gini_gain_thresh;
+    int max_consecutive_gain_violations;
+    int middle_split;
+} criterion_args;
+
+
 extern criterion_args *load_criterion_args_file(FILE *fp, int *succ);
 
 extern void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ);

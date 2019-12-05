@@ -11,7 +11,73 @@
 #define FLOAT_FORMAT__ "%-16g"
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
-#define SCORE_ARGS_VERSION 1
+#define LONGINT_FORMAT "%-16ld"
+#define SCORE_ARGS_VERSION 2
+
+static double auto_normalize(density_normalize_args a, double raw_score) {
+    if (!a.verification_passed) return 0.;
+    double score = 1. - exp(- a.tau * raw_score);
+    return score;
+}
+
+static void compute_norm_args(score_args *s_args) {
+    double samples_p = s_args->samples_p;
+    size_t samples_break = s_args->fspt->n_samples * samples_p;
+    size_t samples_count = 0;
+    double volume_p_count = 0.;
+    size_t i_break = 0;
+    for (i_break = 0; i_break < s_args->n_leaves; ++i_break) {
+        samples_count += s_args->score_vol_n_array[i_break].n_samples;
+        volume_p_count += s_args->score_vol_n_array[i_break].volume_p;
+        if (samples_count >= samples_break) break;
+    }
+    s_args->norm_args.verification_passed = 1;
+    if (s_args->verify_density_thresh) {
+        double density_count = (double) samples_count / volume_p_count
+            / s_args->fspt->n_samples;
+        if (density_count < s_args->verify_density_thresh)
+            s_args->norm_args.verification_passed = 0;
+    }
+    if (s_args->verify_n_nodes_p_thresh) {
+        size_t n_nodes_thresh =
+            ceil(s_args->n_leaves * s_args->verify_n_nodes_p_thresh);
+        if (i_break < n_nodes_thresh)
+            s_args->norm_args.verification_passed = 0;
+    }
+    double raw_score = s_args->score_vol_n_array[i_break].score;
+    debug_print("for i_break : score, volume_p, n_samples = %f, %f, %ld",
+            raw_score,s_args->score_vol_n_array[i_break].volume_p,
+            s_args->score_vol_n_array[i_break].n_samples);
+    debug_print("i_break, raw score = %ld, %f", i_break, raw_score);
+    assert(raw_score);
+    s_args->norm_args.tau =
+        - log(1. - s_args->auto_calibration_score) / raw_score;
+    debug_print("tau %f", s_args->norm_args.tau);
+}
+
+double auto_normalized_density_score(score_args *args) {
+    fspt_node *node = args->node;
+    fspt_t *fspt = args->fspt;
+    if (args->discover) {
+        args->discover = 0;
+        args->need_normalize = 1;
+        args->compute_norm_args = 1;
+        args->score_during_fit = 0;
+        return 0.;
+    }
+    if (args->normalize_pass) {
+        if (args->compute_norm_args) {
+            compute_norm_args(args);
+            args->compute_norm_args = 0;
+        }
+        return auto_normalize(args->norm_args, node->score);
+    } else {
+        if (fspt->n_samples == 0) return 0.;
+        double score = ((double) node->n_samples / fspt->n_samples)
+            * (fspt->volume / node->volume);
+        return score;
+    }
+}
 
 double density_score(score_args *args) {
     fspt_node *node = args->node;
@@ -114,6 +180,8 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │                    discover │"INTEGER_FORMAT"│\n\
 │              need_normalize │"INTEGER_FORMAT"│\n\
 │              normalize_pass │"INTEGER_FORMAT"│\n\
+│                    n_leaves │"LONGINT_FORMAT"│\n\
+│           score_vol_n_array │"POINTER_FORMAT"│\n\
 ├─────────────────────────────┴────────────────┤\n\
 │         Messages for euristic_score          │\n\
 ├─────────────────────────────┬────────────────┤\n\
@@ -129,13 +197,28 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │   calibration_feat_length_p │"FLOAT_FORMAT__"│\n\
 │         volume_penalization │"FLOAT_FORMAT__"│\n\
 │             calibration_tau │"FLOAT_FORMAT__"│\n\
+├─────────────────────────────┴────────────────┤\n\
+│         Messages for auto_density_score      │\n\
+├─────────────────────────────┬────────────────┤\n\
+│           compute_norm_args │"INTEGER_FORMAT"│\n\
+│                   samples_p │"FLOAT_FORMAT__"│\n\
+│       verify_density_thresh │"FLOAT_FORMAT__"│\n\
+│     verify_n_nodes_p_thresh │"FLOAT_FORMAT__"│\n\
+│      auto_calibration_score │"FLOAT_FORMAT__"│\n\
+│               norm_args.tau │"FLOAT_FORMAT__"│\n\
+│norm_args.verification_passed│"INTEGER_FORMAT"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
     a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
-    a->normalize_pass, a->compute_euristic_hyperparam, a->euristic_hyperparam,
+    a->normalize_pass, a->n_leaves,
+    a->score_vol_n_array,
+    a->compute_euristic_hyperparam, a->euristic_hyperparam,
     a->exponential_normalization,
     a->calibration_score, a->calibration_n_samples_p, a->calibration_volume_p,
     a->calibration_feat_length_p,
-    a->volume_penalization, a->calibration_tau);
+    a->volume_penalization, a->calibration_tau,
+    a->compute_norm_args, a->samples_p, a->verify_density_thresh,
+    a->verify_n_nodes_p_thresh, a->auto_calibration_score,
+    a->norm_args.tau, a->norm_args.verification_passed);
 }
 
 void save_score_args_file(FILE *fp, score_args *s, int *succ) {
@@ -184,6 +267,8 @@ score_func string_to_fspt_score(char *s) {
         return euristic_score;
     }  else if (strcmp(s, "density") == 0) {
         return density_score;
+    }  else if (strcmp(s, "auto_density") == 0) {
+        return auto_normalized_density_score;
     } else {
         return NULL;
     }
@@ -192,5 +277,6 @@ score_func string_to_fspt_score(char *s) {
 #undef FLOAT_FORMAT__
 #undef POINTER_FORMAT
 #undef INTEGER_FORMAT
+#undef LONGINT_FORMAT
 #undef SCORE_ARGS_VERSION
 

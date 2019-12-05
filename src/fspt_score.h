@@ -3,6 +3,43 @@
 
 #include "fspt.h"
 
+typedef struct density_normalize_args {
+    double tau;
+    int verification_passed;
+} density_normalize_args;
+
+typedef struct score_args {
+    /* messages to change fitting behaviour */
+    int score_during_fit;
+    /* messages for all score functions */
+    fspt_t *fspt;
+    fspt_node *node;
+    int discover;
+    int need_normalize;
+    int normalize_pass;
+    size_t n_leaves;
+    score_vol_n *score_vol_n_array; // size n_leaves.
+    /* messages for euristic score */
+    int compute_euristic_hyperparam;
+    float euristic_hyperparam;
+    /* message for density score */
+    int exponential_normalization;
+    double calibration_score;
+    double calibration_n_samples_p;
+    double calibration_volume_p;
+    float calibration_feat_length_p;
+    double volume_penalization;
+    double calibration_tau;
+    /* message for auto density score */
+    int compute_norm_args;
+    double samples_p;
+    double verify_density_thresh;
+    double verify_n_nodes_p_thresh;
+    double auto_calibration_score;
+    density_normalize_args norm_args;
+} score_args;
+
+
 extern score_args *load_score_args_file(FILE *fp, int *succ);
 
 extern void save_score_args_file(FILE *fp, score_args *s, int *succ);
@@ -32,6 +69,17 @@ extern void print_fspt_score_args(FILE *stream, score_args *a, char *title);
  *             the fspt.
  */
 extern double density_score(score_args *args);
+
+/**
+ * A score function called "auto_density".
+ * The raw score is the density of samples in the node normalized by the
+ * density of the whole fspt.
+ * Then it is normalized by some automatic technics.
+ *
+ * \param args The score arguments. Should at least contain the node and
+ *             the fspt.
+ */
+extern double auto_normalized_density_score(score_args *args);
 
 /**
  * An euristic score function called "euristic".

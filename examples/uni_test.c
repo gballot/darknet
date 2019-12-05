@@ -271,7 +271,7 @@ void uni_test() {
     memcpy(feat_imp_fit, (float []) {1.f, 1.f}, 2 * sizeof(float));
 
     fspt_t *fspt_fitted = make_fspt(2, feat_lim_fit, feat_imp_fit,
-            gini_criterion, density_score);
+            gini_criterion, auto_normalized_density_score);
     criterion_args args = {0};
     args.fspt = fspt_fitted;
     args.max_tries_p = 1.f;
@@ -288,6 +288,8 @@ void uni_test() {
     s_args.calibration_score = 0.5;
     s_args.calibration_n_samples_p = 0.75;
     s_args.calibration_volume_p = 0.05;
+    s_args.samples_p = 0.8;
+    s_args.auto_calibration_score = 0.8;
     fspt_fitted->c_args = &args;
     fspt_fitted->s_args = &s_args;
     fspt_fit(n_samples, samples_fit, &args, &s_args, fspt_fitted);
