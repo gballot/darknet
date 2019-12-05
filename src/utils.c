@@ -845,6 +845,20 @@ void qsort_float_on_index(size_t index, size_t n, size_t size,
     }
 }
 
+static int cmp_float(const void *fp1, const void *fp2) {
+    float f1 = *(float *) fp1;
+    float f2 = *(float *) fp2;
+    if (f1 < f2) {
+        return -1;
+    } else {
+        return (f1 > f2);
+    }
+}
+
+void qsort_float(size_t n, size_t size, float *base) {
+    qsort(base, n, size, cmp_float);
+}
+
 double median(const void *a, size_t n_elem, size_t size_elem,
         double (*accessor) (const void *)) {
     if (!n_elem) return 0.f;

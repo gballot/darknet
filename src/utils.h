@@ -71,6 +71,7 @@ extern int max_index_double(double *a, int n);
 extern int max_index_size_t(size_t *a, int n);
 extern size_t *random_index_order_size_t(size_t min, size_t max);
 extern char *itoa(int val, int base);
+extern void qsort_float(size_t n, size_t size, float *base);
 
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of
