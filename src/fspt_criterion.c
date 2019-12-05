@@ -58,14 +58,16 @@ static int respect_min_lenght_p(int n_features, const float* fspt_lim,
     return 1;
 }
 
-static void determine_cause(forbidden_split_cause cause,
+static void determine_cause(int n, forbidden_split_cause *causes,
         criterion_args *args) {
-    size_t tab[4] = {
-        cause.count_min_volume_p_hit,
-        cause.count_max_depth_hit,
-        cause.count_min_samples_hit,
-        cause.count_min_length_p_hit
-    };
+    size_t tab[4] = {0};
+    for (int i = 0; i < n; ++i) {
+        forbidden_split_cause cause = causes[i];
+        tab[0] += cause.count_min_volume_p_hit;
+        tab[1] += cause.count_max_depth_hit;
+        tab[2] += cause.count_min_samples_hit;
+        tab[3] += cause.count_min_length_p_hit;
+    }
     if (!tab[0] && !tab[1] && !tab[2] && !tab[3]) {
         args->node->cause = UNKNOWN_CAUSE;
         return;
@@ -209,14 +211,13 @@ unit_static void hist(size_t n, size_t step, const float *X, float lower_bond,
 
 typedef struct split_args {
     int feat;
-    int i;
     float node_min;
     float node_max;
     float *X;
     criterion_args *c_args;
     forbidden_split_cause *cause;
-    double *best_gains;
-    float *best_splits;
+    double *best_gain;
+    float *best_split;
     int *forbidden_split;
 } split_args;
 
@@ -258,12 +259,12 @@ static void best_split_on_feature(float node_min, float node_max,
     *best_index = local_best_gain_index;
 }
 
-static void fill_best_splits(void *args) {
+static void *fill_best_splits(void *args) {
     split_args *a = (split_args *)args;
     criterion_args *c_args = a->c_args;
     int feat = a->feat;
     float *X = a->X;
-    size_t n_samples = c_args->fspt->n_samples;
+    size_t n_samples = c_args->node->n_samples;
     int n_features = c_args->fspt->n_features;
     size_t n_bins = 0;
     size_t *cdf = malloc(2 * n_samples * sizeof(size_t));
@@ -274,13 +275,13 @@ static void fill_best_splits(void *args) {
     hist(n_samples, 1, x, a->node_min, &n_bins,
             cdf, bins);
     if (n_bins < 1) {
-        a->best_gains[a->i] = -1.;
-        a->best_splits[a->i] = 0.f;
+        *a->best_gain = -1.;
+        *a->best_split = 0.f;
         free(cdf);
         free(bins);
         free(x);
         free(a);
-        return;
+        return NULL;
     }
     int local_best_gain_index = 0;
     double local_best_gain = 0.;
@@ -297,15 +298,20 @@ static void fill_best_splits(void *args) {
         float fspt_max = c_args->fspt->feature_limit[2*feat + 1];
         double relative_length = (a->node_max - a->node_min)
             / (fspt_max - fspt_min);
-        a->best_gains[a->i] = local_best_gain
+        *a->best_gain = local_best_gain
             * c_args->fspt->feature_importance[feat]
             * relative_length;
-        a->best_splits[a->i] = bins[local_best_gain_index];
+        *a->best_split = bins[local_best_gain_index];
         *a->forbidden_split = 0;
     } else {
-        a->best_gains[a->i] = -1.;
-        a->best_splits[a->i] = 0.f;
+        *a->best_gain = -1.;
+        *a->best_split = 0.f;
     }
+    free(cdf);
+    free(bins);
+    free(x);
+    free(a);
+    return NULL;
 }
 
 void gini_criterion(criterion_args *args) {
@@ -345,60 +351,40 @@ void gini_criterion(criterion_args *args) {
         free(feature_limit);
         return;
     }
-    forbidden_split_cause cause = {0};
     double *best_gains = malloc(fspt->n_features * sizeof(double));
     float *best_splits = malloc(fspt->n_features * sizeof(float));
-    size_t *cdf = malloc(2 * node->n_samples * sizeof(size_t));
-    float *bins = malloc(2 * node->n_samples * sizeof(float));
     int *random_features = random_index_order(0, fspt->n_features);
     float *X = node->samples;
     int forbidden_split = 1;
     int max_features = floor(fspt->n_features * args->max_features_p);
+    pthread_t *threads = calloc(max_features, sizeof(pthread_t));
+    forbidden_split_cause *causes =
+        calloc(max_features, sizeof(forbidden_split_cause));
     for (int i = 0; i < max_features; ++i) {
         int feat = random_features[i];
         float node_min = feature_limit[2*feat];
         float node_max = feature_limit[2*feat + 1];
-        size_t n_bins = 0;
-        qsort_float_on_index(feat, node->n_samples, fspt->n_features, X);
-        hist(node->n_samples, fspt->n_features, X + feat, node_min, &n_bins,
-                cdf, bins);
-        if (n_bins < 1) {
-            best_gains[i] = -1.;
-            best_splits[i] = 0.f;
-            continue;
-        }
-        int local_best_gain_index = 0;
-        double local_best_gain = 0.;
-        int local_forbidden_split = 1;
-        best_split_on_feature(node_min, node_max, node->n_samples,
-                node->n_empty, node->volume, args->min_samples,
-                args->min_volume_p * fspt->volume, args->min_length_p, 
-                args->max_tries_p, n_bins,
-                bins, cdf, &local_best_gain, &local_best_gain_index,
-                &local_forbidden_split, &cause);
-
-        if (!local_forbidden_split) {
-            float fspt_min = fspt->feature_limit[2*feat];
-            float fspt_max = fspt->feature_limit[2*feat + 1];
-            double relative_length = (node_max - node_min)
-                / (fspt_max - fspt_min);
-            best_gains[i] = local_best_gain * fspt->feature_importance[feat]
-                * relative_length;
-            best_splits[i] = bins[local_best_gain_index];
-            forbidden_split = 0;
-        } else {
-            best_gains[i] = -1.;
-            best_splits[i] = 0.f;
-        }
+        split_args *sp_args = calloc(1, sizeof(split_args));
+        sp_args->feat = feat;
+        sp_args->node_min = node_min;
+        sp_args->node_max = node_max;
+        sp_args->X = X;
+        sp_args->c_args = args;
+        sp_args->cause = causes + i;
+        sp_args->best_gain = best_gains + i;
+        sp_args->best_split = best_splits + i;
+        sp_args->forbidden_split = &forbidden_split;
+        pthread_create(threads + i, 0, fill_best_splits, (void *)sp_args);
     }
     for (int i = max_features; i < fspt->n_features; ++i) {
         best_gains[i] = -1.;
         best_splits[i] = 0.f;
     }
-    free(bins);
-    free(cdf);
+    for (int i = 0; i < max_features; ++i) {
+        pthread_join(threads[i], 0);
+    }
     if (forbidden_split) {
-        determine_cause(cause, args);
+        determine_cause(max_features, causes, args);
         args->forbidden_split = 1;
     } else {
         int rand_idx = max_index_double(best_gains, fspt->n_features);
