@@ -278,9 +278,9 @@ void uni_test() {
     args.max_features_p = 1.f;
     args.gini_gain_thresh = 0.1f;
     args.max_depth = 10;
-    args.min_samples = 1;
+    args.min_samples = 0;
     args.min_volume_p = 0.00000013582763;
-    args.min_length_p = 0.001;
+    args.min_length_p = 0.00;
     args.merge_nodes = 0;
     args.max_consecutive_gain_violations = 4;
     args.middle_split = 1;

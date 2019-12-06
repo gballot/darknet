@@ -423,6 +423,7 @@ void gini_criterion(criterion_args *args) {
                     best_gain);
             if (node->count >= args->max_consecutive_gain_violations) {
                 ++args->count_max_count_hit;
+                node->cause = MAX_COUNT;
                 args->forbidden_split = 1;
             }
         } else {
