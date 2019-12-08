@@ -576,8 +576,10 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     if (only_fit) { 
         fprintf(stderr, "Only fit FSPTs...\n");
+        fit_fspts(net, classes, refit, one_thread, merge);
     } else if (only_score) {
         fprintf(stderr, "Only score FSPTs...\n");
+        score_fspts(net, classes, one_thread);
     } else {
         list *plist = get_paths(train_images);
         char **paths = (char **)list_to_array(plist);
@@ -636,12 +638,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         sprintf(buff, "%s/%s_data_extraction.weights", backup_directory, base);
         save_weights(net, buff);
         fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
-    } // end if (!only_fit && !only_score)
-    if (only_score) {
-        score_fspts(net, classes, one_thread);
-    } else {
         fit_fspts(net, classes, refit, one_thread, merge);
-    }
+    } // end if (!only_fit && !only_score)
     char buff[256];
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);

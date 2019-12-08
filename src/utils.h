@@ -33,6 +33,18 @@
             assert(bool); \
     } while (0)
 
+#define TIMEVAL_TO_TIMESPEC(tv, ts) \
+    do { \
+        (ts)->tv_sec = (tv)->tv_sec; \
+        (ts)->tv_nsec = (tv)->tv_usec * 1000; \
+    } while (0)
+
+#define TIMESPEC_TO_TIMEVAL(tv, ts) \
+    do { \
+        (tv)->tv_sec = (ts)->tv_sec; \
+        (tv)->tv_usec = (ts)->tv_nsec / 1000; \
+    } while (0)
+
 extern double what_time_is_it_now();
 extern void shuffle(void *arr, size_t n, size_t size);
 extern void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);
@@ -72,6 +84,11 @@ extern int max_index_size_t(size_t *a, int n);
 extern size_t *random_index_order_size_t(size_t min, size_t max);
 extern char *itoa(int val, int base);
 extern void qsort_float(size_t n, size_t size, float *base);
+extern void add_millis_to_timespec (struct timespec * ts, long msec);
+extern void delay_until(struct timespec * deadline);
+extern long elapsed_time();
+extern struct timespec get_start_time();
+extern void set_start_time();
 
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of

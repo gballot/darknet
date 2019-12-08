@@ -161,6 +161,7 @@ static void fspt_split(fspt_t *fspt, fspt_node *node, int index, float s,
     node->right = right;
     node->left = left;
     node->split_feature = index;
+    node->cause = SPLIT;
     /* update fspt */
     fspt->n_nodes += 2;
     if (right->depth > fspt->depth)
@@ -1073,28 +1074,42 @@ void fspt_rescore(fspt_t *fspt, score_args *s_args) {
     s_args->discover = 1;
     fspt->score(s_args);
     /* score */
-    list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
-    fspt_node *current_node;
-    while ((current_node = (fspt_node *) list_pop(node_list))) {
-        if (current_node->type == LEAF) {
-            s_args->node = current_node;
-            current_node->score = fspt->score(s_args);
+    list *leaves = fspt_leaves_to_list(fspt, PRE_ORDER);
+    s_args->n_leaves = leaves->size;
+    fspt_node **leaves_array = (fspt_node **) list_to_array(leaves);
+    score_vol_n *score_vol_n_array = NULL;;
+    if (s_args->need_normalize)
+        score_vol_n_array = calloc(leaves->size, sizeof(score_vol_n));
+    if (!s_args->score_during_fit) {
+        for (int i = 0; i < leaves->size; ++i) {
+            fspt_node *leaf = leaves_array[i];
+            s_args->node = leaf;
+            leaf->score = fspt->score(s_args);
+            if (s_args->need_normalize) {
+                score_vol_n_array[i] =
+                    (score_vol_n) {
+                        leaf->score,
+                        leaf->volume / fspt->volume,
+                        leaf->n_samples,
+                        leaf->cause
+                    };
+            }
         }
     }
-    free_list(node_list);
     /* normalize */
     if (s_args->need_normalize) {
         s_args->normalize_pass = 1;
-        list *node_list = fspt_nodes_to_list(fspt, PRE_ORDER);
-        fspt_node *current_node;
-        while ((current_node = (fspt_node *) list_pop(node_list))) {
-            if (current_node->type == LEAF) {
-                s_args->node = current_node;
-                current_node->score = fspt->score(s_args);
-            }
+        qsort(score_vol_n_array, leaves->size, sizeof(score_vol_n),
+                cmp_score_vol_n);
+        s_args->score_vol_n_array = score_vol_n_array;
+        for (int i = 0; i < leaves->size; ++i) {
+            s_args->node = leaves_array[i];
+            leaves_array[i]->score = fspt->score(s_args);
         }
-        free_list(node_list);
     }
+    free(score_vol_n_array);
+    free(leaves_array);
+    free_list(leaves);
 }
 
 void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,

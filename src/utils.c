@@ -11,18 +11,70 @@
 
 #include "utils.h"
 
+// Start time as a timespec
+struct timespec start_time;
 
-/*
-// old timing. is it better? who knows!!
-double get_wall_time()
-{
-    struct timeval time;
-    if (gettimeofday(&time,NULL)){
-        return 0;
-    }
-    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+// Add msec milliseconds to timespec ts (seconds, nanoseconds)
+void add_millis_to_timespec (struct timespec * ts, long msec) {
+  long nsec = (msec % (long) 1E3) * 1E6;
+  long  sec = msec / 1E3;
+  ts->tv_nsec = ts->tv_nsec + nsec;
+  if (1E9 <= ts->tv_nsec) {
+    ts->tv_nsec = ts->tv_nsec - 1E9;
+    ts->tv_sec++;
+  }
+  ts->tv_sec = ts->tv_sec + sec;
 }
-*/
+
+// Delay until an absolute time. Translate the absolute time into a
+// relative one and use nanosleep. This is incorrect (we fix that).
+void delay_until(struct timespec * deadline) {
+  struct timeval  tv_now;
+  struct timespec ts_now;
+  struct timespec ts_sleep;
+
+  gettimeofday(&tv_now, NULL);
+  TIMEVAL_TO_TIMESPEC(&tv_now, &ts_now);
+  ts_sleep.tv_nsec = deadline->tv_nsec - ts_now.tv_nsec;
+  ts_sleep.tv_sec = deadline->tv_sec - ts_now.tv_sec;
+  if (ts_sleep.tv_nsec < 0) {
+    ts_sleep.tv_nsec = 1E9 + ts_sleep.tv_nsec;
+    ts_sleep.tv_sec--;
+  }
+  if (ts_sleep.tv_sec < 0) return;
+  
+  nanosleep (&ts_sleep, &ts_now);
+}
+
+// Compute time elapsed from start time
+long elapsed_time() {
+  struct timeval  tv_now;
+  struct timespec ts_now;
+
+  gettimeofday(&tv_now, NULL);
+  TIMEVAL_TO_TIMESPEC(&tv_now, &ts_now);
+  
+  ts_now.tv_nsec = ts_now.tv_nsec - start_time.tv_nsec;
+  ts_now.tv_sec = ts_now.tv_sec - start_time.tv_sec;
+  if (ts_now.tv_nsec < 0) {
+    ts_now.tv_sec = ts_now.tv_sec - 1;
+    ts_now.tv_nsec = ts_now.tv_nsec + 1E9;
+  }
+  return (ts_now.tv_sec * 1E3) + (ts_now.tv_nsec / 1E6);
+}
+
+// Return the start time
+struct timespec get_start_time() {
+  return start_time;
+}
+
+// Store current time as the start time
+void set_start_time() {
+  struct timeval  tv_start_time; // start time as a timeval
+  
+  gettimeofday(&tv_start_time, NULL);
+  TIMEVAL_TO_TIMESPEC(&tv_start_time, &start_time);
+}
 
 double what_time_is_it_now()
 {
