@@ -8,7 +8,7 @@
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176
 
-full='-full'
+full='-small'
 datacfg='cfg/waymo'${full}'.data'
 netcfg='cfg/fspt-waymo'$full'.cfg'
 weightfile='weights/fspt-waymo'$full'.weights'

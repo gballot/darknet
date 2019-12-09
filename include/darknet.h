@@ -301,7 +301,6 @@ struct layer{
 
     float * binary_input;
 
-    float yolo_thresh;
     float *fspt_input;
     float *fspt_input_gpu;
     fspt_t **fspts;

@@ -252,11 +252,11 @@ score_args *load_score_args_file(FILE *fp, int *succ) {
         } else {
             fseek(fp, size, SEEK_CUR);
             fprintf(stderr, "Wrong score args version (%d) or size\
-(saved size = %ld and sizeof(score_args) = %ld).",
+(saved size = %ld and sizeof(score_args) = %ld).\n",
                     version, size, sizeof(score_args));
         }
     } else if (contains_args != 0) {
-        fprintf(stderr, "ERROR : in load_score_args_file - contains_args = %d",
+        fprintf(stderr, "ERROR : in load_score_args_file - contains_args = %d.\n",
                 contains_args);
     }
     return s;

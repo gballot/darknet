@@ -19,8 +19,6 @@
  *                     features are extracted.
  * \param yolo_layer The index of the yolo layer That this fspt layer checks.
  * \param net The network.
- * \param yolo_thresh The threshold for the yolo layer to consider its
- *                    predictions as inputs for fspt.
  * \param feature_limit The bounds for the input features.
  *                      Size [min, max]*n_features.
  * \param feature_importance The feature importance. Size n_features.
@@ -39,7 +37,7 @@
  * \return The newly created fspt_layer.
  */
 extern layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, float yolo_thresh,
+        int yolo_layer, network *net, 
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int batch,
         criterion_args c_args_template, score_args s_args_template,

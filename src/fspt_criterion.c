@@ -219,6 +219,7 @@ typedef struct split_args {
     double *best_gain;
     float *best_split;
     int *forbidden_split;
+    int multi_threads;
 } split_args;
 
 /**
@@ -269,17 +270,23 @@ static void *fill_best_splits(void *args) {
     size_t n_bins = 0;
     size_t *cdf = malloc(2 * n_samples * sizeof(size_t));
     float *bins = malloc(2 * n_samples * sizeof(float));
-    float *x = malloc(n_samples * sizeof(float));
-    copy_cpu(n_samples, X + feat, n_features, x, 1);
-    qsort_float(n_samples, sizeof(float), x);
-    hist(n_samples, 1, x, a->node_min, &n_bins,
-            cdf, bins);
+    if (a->multi_threads) {
+        float *x = malloc(n_samples * sizeof(float));
+        copy_cpu(n_samples, X + feat, n_features, x, 1);
+        qsort_float(n_samples, sizeof(float), x);
+        hist(n_samples, 1, x, a->node_min, &n_bins,
+                cdf, bins);
+        free(x);
+    } else {
+        qsort_float_on_index(feat, n_samples, n_features, X);
+        hist(n_samples, n_features, X + feat, a->node_min, &n_bins,
+                cdf, bins);
+    }
     if (n_bins < 1) {
         *a->best_gain = -1.;
         *a->best_split = 0.f;
         free(cdf);
         free(bins);
-        free(x);
         free(a);
         return NULL;
     }
@@ -309,7 +316,6 @@ static void *fill_best_splits(void *args) {
     }
     free(cdf);
     free(bins);
-    free(x);
     free(a);
     return NULL;
 }
@@ -357,9 +363,12 @@ void gini_criterion(criterion_args *args) {
     float *X = node->samples;
     int forbidden_split = 1;
     int max_features = floor(fspt->n_features * args->max_features_p);
-    pthread_t *threads = calloc(max_features, sizeof(pthread_t));
     forbidden_split_cause *causes =
         calloc(max_features, sizeof(forbidden_split_cause));
+    pthread_t *threads = NULL;
+    if (args->multi_threads) {
+        threads = calloc(max_features, sizeof(pthread_t));
+    }
     for (int i = 0; i < max_features; ++i) {
         int feat = random_features[i];
         float node_min = feature_limit[2*feat];
@@ -374,14 +383,22 @@ void gini_criterion(criterion_args *args) {
         sp_args->best_gain = best_gains + i;
         sp_args->best_split = best_splits + i;
         sp_args->forbidden_split = &forbidden_split;
-        pthread_create(threads + i, 0, fill_best_splits, (void *)sp_args);
+        sp_args->multi_threads = args->multi_threads;
+        if (args->multi_threads) {
+            pthread_create(threads + i, 0, fill_best_splits, (void *)sp_args);
+        } else {
+            fill_best_splits((void *)sp_args);
+        }
     }
     for (int i = max_features; i < fspt->n_features; ++i) {
         best_gains[i] = -1.;
         best_splits[i] = 0.f;
     }
-    for (int i = 0; i < max_features; ++i) {
-        pthread_join(threads[i], 0);
+    if (args->multi_threads) {
+        for (int i = 0; i < max_features; ++i) {
+            pthread_join(threads[i], 0);
+        }
+        free(threads);
     }
     if (forbidden_split) {
         determine_cause(max_features, causes, args);
@@ -432,6 +449,7 @@ void gini_criterion(criterion_args *args) {
             node->count = 0;
         }
     }
+    free(causes);
     free(feature_limit);
     free(best_gains);
     free(best_splits);
@@ -537,7 +555,7 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
                     version, size, sizeof(score_args));
         }
     } else if (contains_args != 0) {
-        fprintf(stderr, "ERROR : in load_criterion_args_file - contains_args = %d",
+        fprintf(stderr, "ERROR : in load_criterion_args_file - contains_args = %d.\n",
                 contains_args);
     }
     return c;

@@ -831,10 +831,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             what_time_is_it_now() - start_time);
 }
 
-static void validate_fspt_recall(char *cfgfile, char *weightfile) {
-    //TODO
-    error("TODO");
-}
 
 void run_fspt(int argc, char **argv)
 {
@@ -933,8 +929,6 @@ Options are :\n\
         validate_fspt(datacfg, cfg, weights, yolo_thresh, fspt_thresh,
                 hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
                 print_stats_val, outfile);
-    else if(0==strcmp(argv[2], "recall"))
-        validate_fspt_recall(cfg, weights);
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, yolo_thresh, fspt_thresh, outfile,
                 export_score_file);

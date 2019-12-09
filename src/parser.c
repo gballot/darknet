@@ -746,8 +746,6 @@ layer parse_fspt(list *options, size_params params)
         tmp_ref = strtok(NULL, ",");
         i++;
     }
-    /* yolo_thresh */
-    float yolo_thresh = option_find_float(options, "yolo_thresh", 0.7);
     /* n_features */
     int n_features = 0;
     for(int i = 0; i < n; i++)
@@ -883,7 +881,7 @@ layer parse_fspt(list *options, size_params params)
 
     /* build the layer */
     layer fspt_layer = make_fspt_layer(n, input_layers, yolo_layer_idx,
-            net, yolo_thresh, feature_limit, feature_importance,
+            net, feature_limit, feature_importance,
             criterion, score, params.batch, c_args, s_args, activation);
     fspt_layer.projection = params.projection;
     fspt_layer.prod_strides = params.prod_strides;

@@ -32,6 +32,7 @@ typedef struct criterion_args {
     double gini_gain_thresh;
     int max_consecutive_gain_violations;
     int middle_split;
+    int multi_threads;
 } criterion_args;
 
 

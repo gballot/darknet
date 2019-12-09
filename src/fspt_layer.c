@@ -16,7 +16,7 @@
 #include "yolo_layer.h"
 
 layer make_fspt_layer(int inputs, int *input_layers,
-        int yolo_layer, network *net, float yolo_thresh,
+        int yolo_layer, network *net, 
         float *feature_limit, float *feature_importance,
         criterion_func criterion, score_func score, int batch,
         criterion_args c_args_template, score_args s_args_template,
@@ -31,7 +31,6 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.input_layers = input_layers; 
     l.classes = net->layers[yolo_layer].classes;
     l.yolo_layer = yolo_layer;
-    l.yolo_thresh = yolo_thresh;
 
     l.batch=batch;
     l.batch_normalize = 1;
@@ -69,8 +68,10 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.forward = forward_fspt_layer;
 #ifdef GPU
     l.forward_gpu = forward_fspt_layer_gpu;
-    l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
-    l.fspt_input_gpu = cuda_make_array(l.fspt_input, l.total);
+    if (gpu_index >0 ) {
+        l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
+        l.fspt_input_gpu = cuda_make_array(l.fspt_input, l.total);
+    }
 #endif
     l.activation = activation;
 
@@ -441,12 +442,15 @@ void fspt_layer_rescore_class(layer l, int class) {
     assert(fspt);
     score_args *s_args = calloc(1, sizeof(score_args)); 
     *s_args = l.fspt_score_args;
-    fprintf(stderr, "[Fspt %s:%d]: Start rescore\n",
+    double start = what_time_is_it_now();
+    fprintf(stderr, "[Fspt %s:%d]: Start rescore...\n",
             l.ref, class);
     fspt_rescore(fspt, s_args);
+    long t = (what_time_is_it_now() - start) * 1000;
     fprintf(stderr,
-            "[Fspt %s:%d]: rescore successful\n",
-            l.ref, class);
+            "[Fspt %s:%d]: rescore successful in %ldh %ldm %lds %ldms.\n",
+            l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000),
+            t / 1000, t % 1000);
 #ifdef DEBUG
     if (fspt->root->type == INNER)
         print_fspt(fspt);
@@ -474,12 +478,15 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
         score_args *s_args = calloc(1, sizeof(score_args)); 
         *c_args = l.fspt_criterion_args;
         *s_args = l.fspt_score_args;
+        double start = what_time_is_it_now();
         fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %ld...\n",
                 l.ref, class, n);
         fspt_fit(n, X, c_args, s_args, fspt);
+        long t = (what_time_is_it_now() - start) * 1000;
         fprintf(stderr,
-                "[Fspt %s:%d]: fit successful n_nodes = %ld, depth = %d\n",
-                l.ref, class, fspt->n_nodes, fspt->depth);
+                "[Fspt %s:%d]: fit successful in %ldh %ldm %lds %ldms. n_nodes = %ld, depth = %d.\n",
+                l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000),
+                t / 1000, t % 1000, fspt->n_nodes, fspt->depth);
     }
 #ifdef DEBUG
     if (fspt->root->type == INNER)

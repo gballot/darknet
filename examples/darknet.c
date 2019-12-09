@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "utils.h"
+
 extern void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top);
 extern void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen);
 extern void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename, float yolo_thresh, float fspt_thresh, float hier_thresh, char *outfile, int fullscreen);
@@ -407,6 +409,7 @@ int main(int argc, char **argv)
     //test_resize("data/bad.jpg");
     //test_box();
     //test_convolutional_layer();
+    set_start_time();
     if(argc < 2){
         fprintf(stderr, "usage: %s <function>\n", argv[0]);
         return 0;
@@ -518,6 +521,12 @@ int main(int argc, char **argv)
     else {
         fprintf(stderr, "Not an option: %s\n", argv[1]);
     }
+    long t = elapsed_time();
+    fprintf(stderr, "Total time : %ldh %ldm %lds %ldms.\n",
+            t / 1000 / 60 / 60,
+            t / 1000 / 60,
+            t / 1000,
+            t);
     return 0;
 }
 

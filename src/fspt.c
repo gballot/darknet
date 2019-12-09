@@ -725,6 +725,9 @@ static char *cause_to_string(NON_SPLIT_CAUSE c) {
         case NO_SAMPLE:
             return " NO_SAMPLE  ";
             break;
+        case MERGE:
+            return "   MERGE    ";
+            break;
         default:
             return "????????????";
     }
