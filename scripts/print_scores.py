@@ -33,15 +33,14 @@ for i in range(len(files)):
     print(total_samples)
     x = data.T[0][:j_zero]
     #dy = [y[i+1] - y[i] for i in range(j_zero - 1)] + [y[j_zero - 1] - y[j_zero - 2]]
-    yy = np.power(y/y[0], 0.3)
-    plt.plot(x, yy, '.', label="yy")
-    plt.plot(x, n_samples/total_samples, '.', label="n_samples")
-    zz = (yy + (n_samples/total_samples))/2
-    plt.plot(x, zz, '-', label="zz")
+    plt.plot(x, y, '.', label="score")
+    plt.plot(x, n_samples/total_samples, '.', label="n_samples_p")
+    #zz = (yy + (n_samples/total_samples))/2
+    #plt.plot(x, zz, '-', label="zz")
     #plt.plot(x, dy, '.', label="dy")
     plt.title(files[i])
     plt.xlabel("ordered nodes (only non zero scores)");
-    plt.ylabel("yy");
+    plt.ylabel("y");
     plt.legend()
     #plt.yscale("log");
     plt.savefig(base + files[i] + ".png")

@@ -1013,7 +1013,7 @@ static void propagate_count(fspt_t *fspt, fspt_node *node) {
 /**
  * Helper function to merge subtrees with a non nul count. We assume that the
  * counts are correctly computed i.e. that all the subtrees with non nul count
- * have the same count value.
+ * have increasing count value.
  * This function does not update the fspt (like depth or n_nodes);
  *
  * \param node The node of the subtree to recursively merge if needed.
@@ -1026,6 +1026,7 @@ static void recursive_merge_nodes(fspt_node *node) {
         node->right = NULL;
         node->left = NULL;
         node->type = LEAF;
+        node->cause = MERGE;
         node->split_feature = 0;
         node->split_value = 0.f;
     } else {
@@ -1037,7 +1038,7 @@ static void recursive_merge_nodes(fspt_node *node) {
 /**
  * Merges the subtrees with a non nul count. We assume that the
  * counts are correctly computed i.e. that all the subtrees with non nul count
- * have the same count value.
+ * have increasing count value.
  *
  * \param fspt The fspt to merge.
  */
