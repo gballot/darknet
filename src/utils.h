@@ -45,6 +45,9 @@
         (tv)->tv_usec = (ts)->tv_nsec / 1000; \
     } while (0)
 
+#define MIN(a, b) (a) < (b) ? (a) : (b)
+#define MAX(a, b) (a) > (b) ? (a) : (b)
+
 extern double what_time_is_it_now();
 extern void shuffle(void *arr, size_t n, size_t size);
 extern void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);

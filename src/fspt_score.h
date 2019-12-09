@@ -35,6 +35,7 @@ typedef struct score_args {
     double samples_p;
     double verify_density_thresh;
     double verify_n_nodes_p_thresh;
+    double verify_n_uniform_p_thresh;
     double auto_calibration_score;
     density_normalize_args norm_args;
 } score_args;

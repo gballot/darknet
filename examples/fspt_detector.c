@@ -543,23 +543,25 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
-    network **nets = calloc(ngpus, sizeof(network));
+    int n_nets = MAX(ngpus, 1);
+    network **nets = calloc(n_nets, sizeof(network));
 
     srand(time(0));
     int seed = rand();
     int i;
-    for(i = 0; i < ngpus; ++i) {
+    for(i = 0; i < n_nets; ++i) {
         srand(seed);
 #ifdef GPU
-        cuda_set_device(gpus[i]);
+        if (ngpus > 0)
+            cuda_set_device(gpus[i]);
 #endif
         nets[i] = load_network(cfgfile, weightfile, clear);
-        nets[i]->learning_rate *= ngpus;
+        nets[i]->learning_rate *= n_nets;
     }
     srand(time(0));
     network *net = nets[0];
 
-    int imgs = net->batch * net->subdivisions * ngpus;
+    int imgs = net->batch * net->subdivisions * n_nets;
     data train, buffer;
 
     layer l = net->layers[0];
@@ -614,7 +616,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                     what_time_is_it_now()-time);
             time=what_time_is_it_now();
 #ifdef GPU
-            if(ngpus == 1){
+            if(n_nets == 1){
                 train_network_fspt(net, train);
             } else {
                 train_networks_fspt(nets, ngpus, train, 4);
@@ -630,7 +632,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             free_data(train);
         }
 #ifdef GPU
-        if(ngpus != 1) sync_nets(nets, ngpus, 0);
+        if(n_nets != 1) sync_nets(nets, n_nets, 0);
 #endif
         fspt_layers_set_samples(net, refit, merge);
         merge = 0;
@@ -680,21 +682,23 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int *map = 0;
     if (mapf) map = read_map(mapf);
 
-    network **nets = calloc(ngpus, sizeof(network));
+    int n_nets = MAX(ngpus, 1);
+    network **nets = calloc(n_nets, sizeof(network));
     srand(time(0));
     int seed = rand();
     int i;
-    for(i = 0; i < ngpus; ++i) {
+    for(i = 0; i < n_nets; ++i) {
         srand(seed);
 #ifdef GPU
-        cuda_set_device(gpus[i]);
+        if (ngpus > 0)
+            cuda_set_device(gpus[i]);
 #endif
         nets[i] = load_network(cfgfile, weightfile, 1);
     }
     srand(time(0));
     network *net = nets[0];
 
-    int imgs = net->batch * net->subdivisions * ngpus;
+    int imgs = net->batch * net->subdivisions * n_nets;
     data val, buffer;
 
     list *plist = get_paths(valid_images);
@@ -774,11 +778,11 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         fprintf(stderr, "Loaded: %lf seconds\n", what_time_is_it_now()-time);
         time=what_time_is_it_now();
 #ifdef GPU
-        if(ngpus == 1){
+        if(n_nets == 1){
             validate_network_fspt(net, val);
         } else {
             validate_network_fspt(net, val);
-            validate_networks_fspt(nets, ngpus, val, 4);
+            validate_networks_fspt(nets, n_nets, val, 4);
         }
 #else
         validate_network_fspt(net, val);
@@ -825,7 +829,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     if (outstream != stderr) fclose(outstream);
     free_validation_data(val_data);
 #ifdef GPU
-    if(ngpus != 1) sync_nets(nets, ngpus, 0);
+    if(n_nets != 1) sync_nets(nets, n_nets, 0);
 #endif
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start_time);
@@ -893,7 +897,6 @@ Options are :\n\
     int fullscreen = find_arg(argc, argv, "-fullscreen");
 
     int *gpus = 0;
-    int gpu = 0;
     int ngpus = 0;
     if(gpu_list){
         printf("%s\n", gpu_list);
@@ -908,10 +911,6 @@ Options are :\n\
             gpus[i] = atoi(gpu_list);
             gpu_list = strchr(gpu_list, ',')+1;
         }
-    } else {
-        gpu = gpu_index;
-        gpus = &gpu;
-        ngpus = 1;
     }
 
     char *datacfg = argv[3];

@@ -19,7 +19,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 4
+#define CRITERION_ARGS_VERSION 5
 
 typedef struct {
     size_t count_max_depth_hit;

@@ -12,7 +12,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONGINT_FORMAT "%-16ld"
-#define SCORE_ARGS_VERSION 2
+#define SCORE_ARGS_VERSION 3
 
 static double auto_normalize(density_normalize_args a, double raw_score) {
     if (!a.verification_passed) return 0.;
@@ -24,24 +24,40 @@ static void compute_norm_args(score_args *s_args) {
     double samples_p = s_args->samples_p;
     size_t samples_break = s_args->fspt->n_samples * samples_p;
     size_t samples_count = 0;
+    size_t uniform_leaves = 0;
     double volume_p_count = 0.;
     size_t i_break = 0;
     for (i_break = 0; i_break < s_args->n_leaves; ++i_break) {
-        samples_count += s_args->score_vol_n_array[i_break].n_samples;
-        volume_p_count += s_args->score_vol_n_array[i_break].volume_p;
+        score_vol_n svn = s_args->score_vol_n_array[i_break];
+        samples_count += svn.n_samples;
+        volume_p_count += svn.volume_p;
+        if (svn.cause == MERGE || svn.cause == MAX_COUNT)
+            ++uniform_leaves;
         if (samples_count >= samples_break) break;
     }
     s_args->norm_args.verification_passed = 1;
     if (s_args->verify_density_thresh) {
         double density_count = (double) samples_count / volume_p_count
             / s_args->fspt->n_samples;
+        debug_print("density_count density_thresh = %g, %g.\n", density_count,
+                s_args->verify_density_thresh);
         if (density_count < s_args->verify_density_thresh)
             s_args->norm_args.verification_passed = 0;
     }
     if (s_args->verify_n_nodes_p_thresh) {
         size_t n_nodes_thresh =
             ceil(s_args->n_leaves * s_args->verify_n_nodes_p_thresh);
-        if (i_break < n_nodes_thresh)
+        debug_print("i_break n_nodes_thresh = %ld, %ld.\n", i_break,
+                n_nodes_thresh);
+        if (i_break > n_nodes_thresh)
+            s_args->norm_args.verification_passed = 0;
+    }
+    if (s_args->verify_n_uniform_p_thresh) {
+        size_t n_uniform_thresh =
+            ceil(i_break * s_args->verify_n_uniform_p_thresh);
+        debug_print("uniform_leaves n_uniform_thresh = %ld, %ld.\n",
+                uniform_leaves, n_uniform_thresh);
+        if (uniform_leaves < n_uniform_thresh)
             s_args->norm_args.verification_passed = 0;
     }
     double raw_score = s_args->score_vol_n_array[i_break].score;

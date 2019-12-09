@@ -874,6 +874,10 @@ layer parse_fspt(list *options, size_params params)
         option_find_float_quiet(options, "verify_n_nodes_p_thresh", 0.);
     assert(0. <= s_args.verify_n_nodes_p_thresh
             && s_args.verify_n_nodes_p_thresh <= 1.);
+    s_args.verify_n_uniform_p_thresh =
+        option_find_float_quiet(options, "verify_n_uniform_p_thresh", 0.);
+    assert(0. <= s_args.verify_n_uniform_p_thresh
+            && s_args.verify_n_uniform_p_thresh <= 1.);
     s_args.auto_calibration_score =
         option_find_float_quiet(options, "auto_calibration_score", 0.8);
     assert(0. <= s_args.auto_calibration_score

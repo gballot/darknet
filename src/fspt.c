@@ -684,21 +684,6 @@ free_no_leaves:
     return stats;
 }
 
-void export_score_data(FILE *stream, fspt_stats *s) {
-    for (size_t i = 0; i < s->n_leaves; ++i) {
-        fprintf(stream, "\
-"LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT"\n",
-            i,
-            s->score_vol_n_array[i].score,
-            s->score_vol_n_array[i].volume_p,
-            pow(s->score_vol_n_array[i].volume_p, 1. / s->fspt->n_features),
-            s->score_vol_n_array[i].n_samples,
-            (double) s->score_vol_n_array[i].n_samples / s->n_samples,
-            (double) s->score_vol_n_array[i].n_samples
-                / (s->score_vol_n_array[i].volume_p * s->volume));
-    }
-}
-
 static char *cause_to_string(NON_SPLIT_CAUSE c) {
     switch (c) {
         case SPLIT:
@@ -733,6 +718,23 @@ static char *cause_to_string(NON_SPLIT_CAUSE c) {
     }
 }
 
+
+void export_score_data(FILE *stream, fspt_stats *s) {
+    for (size_t i = 0; i < s->n_leaves; ++i) {
+        fprintf(stream, "\
+"LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "INT_FORMAT" %s\n",
+            i,
+            s->score_vol_n_array[i].score,
+            s->score_vol_n_array[i].volume_p,
+            pow(s->score_vol_n_array[i].volume_p, 1. / s->fspt->n_features),
+            s->score_vol_n_array[i].n_samples,
+            (double) s->score_vol_n_array[i].n_samples / s->n_samples,
+            (double) s->score_vol_n_array[i].n_samples
+                / (s->score_vol_n_array[i].volume_p * s->volume),
+            s->score_vol_n_array[i].cause,
+            cause_to_string(s->score_vol_n_array[i].cause));
+    }
+}
 
 void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
     if (!s) return;
@@ -1084,20 +1086,18 @@ void fspt_rescore(fspt_t *fspt, score_args *s_args) {
     score_vol_n *score_vol_n_array = NULL;;
     if (s_args->need_normalize)
         score_vol_n_array = calloc(leaves->size, sizeof(score_vol_n));
-    if (!s_args->score_during_fit) {
-        for (int i = 0; i < leaves->size; ++i) {
-            fspt_node *leaf = leaves_array[i];
-            s_args->node = leaf;
-            leaf->score = fspt->score(s_args);
-            if (s_args->need_normalize) {
-                score_vol_n_array[i] =
-                    (score_vol_n) {
-                        leaf->score,
-                        leaf->volume / fspt->volume,
-                        leaf->n_samples,
-                        leaf->cause
-                    };
-            }
+    for (int i = 0; i < leaves->size; ++i) {
+        fspt_node *leaf = leaves_array[i];
+        s_args->node = leaf;
+        leaf->score = fspt->score(s_args);
+        if (s_args->need_normalize) {
+            score_vol_n_array[i] =
+                (score_vol_n) {
+                    leaf->score,
+                    leaf->volume / fspt->volume,
+                    leaf->n_samples,
+                    leaf->cause
+                };
         }
     }
     /* normalize */
