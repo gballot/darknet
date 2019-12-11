@@ -54,7 +54,7 @@ static void compute_norm_args(score_args *s_args) {
     }
     if (s_args->verify_n_uniform_p_thresh) {
         size_t n_uniform_thresh =
-            ceil(i_break * s_args->verify_n_uniform_p_thresh);
+            floor((i_break + 1) * s_args->verify_n_uniform_p_thresh);
         debug_print("uniform_leaves n_uniform_thresh = %ld, %ld.\n",
                 uniform_leaves, n_uniform_thresh);
         if (uniform_leaves < n_uniform_thresh)
@@ -220,6 +220,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │                   samples_p │"FLOAT_FORMAT__"│\n\
 │       verify_density_thresh │"FLOAT_FORMAT__"│\n\
 │     verify_n_nodes_p_thresh │"FLOAT_FORMAT__"│\n\
+│   verify_n_uniform_p_thresh │"FLOAT_FORMAT__"│\n\
 │      auto_calibration_score │"FLOAT_FORMAT__"│\n\
 │               norm_args.tau │"FLOAT_FORMAT__"│\n\
 │norm_args.verification_passed│"INTEGER_FORMAT"│\n\
@@ -233,7 +234,8 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
     a->calibration_feat_length_p,
     a->volume_penalization, a->calibration_tau,
     a->compute_norm_args, a->samples_p, a->verify_density_thresh,
-    a->verify_n_nodes_p_thresh, a->auto_calibration_score,
+    a->verify_n_nodes_p_thresh, a->verify_n_uniform_p_thresh,
+    a->auto_calibration_score,
     a->norm_args.tau, a->norm_args.verification_passed);
 }
 

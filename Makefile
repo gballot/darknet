@@ -4,7 +4,7 @@ OPENCV=0
 OPENMP=0
 DEBUG=0
 TRAIN=0
-VALID=0
+VALID=1
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -40,11 +40,14 @@ BREAKPOINTS=examples/fspt_detector.c:776
 FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
+NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
 #NETCONF=local_cfg/fspt-waymo-test.cfg
 #NETCONF=local_cfg/fspt-waymo-dontload-full-test.cfg
 DATACONF=cfg/$(CONF).data
 DATACONF=cfg/$(CONF)$(VERSION).data
+DATACONF=cfg/$(CONF)$(VERSION)-only-day.data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
+WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION)-80-percent-day.weights
 #WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
 #DATACONF=cfg/$(CONF)-full.data
 #WEIGHTS=weights/yolov3-waymo-full.weights
@@ -58,7 +61,7 @@ FILE= waymo/Day/images/training_00029.jpg
 FILE= waymo/Day/images/training_001111111.jpg
 FILE=
 endif
-NETCMD=stats
+#NETCMD=stats
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -92,7 +95,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV1003q,PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb

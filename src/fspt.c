@@ -722,7 +722,7 @@ static char *cause_to_string(NON_SPLIT_CAUSE c) {
 void export_score_data(FILE *stream, fspt_stats *s) {
     for (size_t i = 0; i < s->n_leaves; ++i) {
         fprintf(stream, "\
-"LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "INT_FORMAT" %s\n",
+"LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "LINTFORMAT" "FLT_FORMAT" "FLT_FORMAT" "FLT_FORMAT" "INT_FORMAT" %s\n",
             i,
             s->score_vol_n_array[i].score,
             s->score_vol_n_array[i].volume_p,
@@ -731,6 +731,8 @@ void export_score_data(FILE *stream, fspt_stats *s) {
             (double) s->score_vol_n_array[i].n_samples / s->n_samples,
             (double) s->score_vol_n_array[i].n_samples
                 / (s->score_vol_n_array[i].volume_p * s->volume),
+            (double) s->score_vol_n_array[i].n_samples
+                / s->score_vol_n_array[i].volume_p / s->n_samples,
             s->score_vol_n_array[i].cause,
             cause_to_string(s->score_vol_n_array[i].cause));
     }
@@ -844,24 +846,26 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Score **/
     fprintf(stream, "\
-┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
-│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │   cause    │\n\
-│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │   of the   │\n\
-│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    end     │\n\
-├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │  density   │   cause    │\n\
+│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │ proportion │   of the   │\n\
+│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    end     │\n\
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (size_t i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
-│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"STR_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"STR_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
             pow(s->score_vol_n_array[i].volume_p, 1. / n_features),
             s->score_vol_n_array[i].n_samples,
             ((double) s->score_vol_n_array[i].n_samples) / s->n_samples,
             ((double) s->score_vol_n_array[i].n_samples)
                 / (s->score_vol_n_array[i].volume_p * s->volume),
+            ((double) s->score_vol_n_array[i].n_samples)
+                / s->score_vol_n_array[i].volume_p / s->n_samples,
             cause_to_string(s->score_vol_n_array[i].cause));
     }
     fprintf(stream, "\
-└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Depth **/
     fprintf(stream, "\

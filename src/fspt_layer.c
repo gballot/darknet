@@ -68,7 +68,7 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.forward = forward_fspt_layer;
 #ifdef GPU
     l.forward_gpu = forward_fspt_layer_gpu;
-    if (gpu_index >0 ) {
+    if (gpu_index >= 0) {
         l.output_gpu = cuda_make_array(l.output, batch*l.outputs);
         l.fspt_input_gpu = cuda_make_array(l.fspt_input, l.total);
     }

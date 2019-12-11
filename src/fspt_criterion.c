@@ -19,7 +19,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 5
+#define CRITERION_ARGS_VERSION 4
 
 typedef struct {
     size_t count_max_depth_hit;
@@ -552,7 +552,7 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
             fseek(fp, size, SEEK_CUR);
             fprintf(stderr, "Wrong criterion args version (%d) or size \
 (saved size = %ld and sizeof(criterion_args) = %ld).\n",
-                    version, size, sizeof(score_args));
+                    version, size, sizeof(criterion_args));
         }
     } else if (contains_args != 0) {
         fprintf(stderr, "ERROR : in load_criterion_args_file - contains_args = %d.\n",
