@@ -1528,6 +1528,27 @@ void sync_nets(network **nets, int n, int interval)
     free(threads);
 }
 
+void sync_nets_only_fspt(network **nets, int n, int interval)
+{
+    int j;
+    int layers = nets[0]->n;
+    pthread_t *threads = (pthread_t *) calloc(layers, sizeof(pthread_t));
+
+    *(nets[0]->seen) += interval * (n-1) * nets[0]->batch * nets[0]->subdivisions;
+    for (j = 0; j < n; ++j){
+        *(nets[j]->seen) = *(nets[0]->seen);
+    }
+    for (j = 0; j < layers; ++j) {
+        if (nets[0]->layers[j].type == FSPT)
+            threads[j] = sync_layer_in_thread(nets, n, j);
+    }
+    for (j = 0; j < layers; ++j) {
+        if (nets[0]->layers[j].type == FSPT)
+            pthread_join(threads[j], 0);
+    }
+    free(threads);
+}
+
 float train_networks(network **nets, int n, data d, int interval)
 {
     int i;
