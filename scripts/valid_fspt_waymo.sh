@@ -11,7 +11,6 @@ module load cuda90/blas/9.0.176
 full='-full'
 cfgdir='cfg/'
 netcfg='fspt-waymo'$full'-val.cfg'
-#weightfile='weights/fspt-waymo'$full'-data-extraction.weights'
 weightfile='weights/fspt-waymo'$full'-80-percent-day.weights'
 
 datacfg='waymo'${full}'-only-day.data'

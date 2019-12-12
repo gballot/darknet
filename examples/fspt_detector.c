@@ -529,7 +529,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 }
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
-        char *outfile, int *gpus, int ngpus, int clear, int refit, int ordered,
+        char *outfile, char *save_weights_file, int *gpus, int ngpus,
+        int clear, int refit, int ordered,
         int start, int end, int one_thread, int merge, int only_fit,
         int only_score, int print_stats_val) {
     list *options = read_data_cfg(datacfg);
@@ -641,8 +642,12 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         fit_fspts(net, classes, refit, one_thread, merge);
     } // end if (!only_fit && !only_score)
     char buff[256];
-    sprintf(buff, "%s/%s_final.weights", backup_directory, base);
-    save_weights(net, buff);
+    if (save_weights_file) {
+        save_weights(net, save_weights_file);
+    } else {
+        sprintf(buff, "%s/%s_final.weights", backup_directory, base);
+        save_weights(net, buff);
+    }
     fprintf(stderr, "End of FSPT training\n");
     if (print_stats_val) {
         FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
@@ -664,6 +669,78 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         }
         if (outstream != stderr) fclose(outstream);
     }
+}
+
+typedef struct valid_args {
+    network *net;
+    float yolo_thresh;
+    float fspt_thresh;
+    float hier_thresh;
+    int *map;
+    int classes;
+    float nms;
+    validation_data *val_data;
+} valid_args;
+
+static void *validate_thread(void *ptr) {
+    valid_args args = *(valid_args *)ptr;
+    network *net = args.net;
+    int w = net->w;
+    int h = net->h;
+    float yolo_thresh = args.yolo_thresh;
+    float fspt_thresh = args.fspt_thresh;
+    float hier_thresh = args.hier_thresh;
+    int *map = args.map;
+    int classes = args.classes;
+    float nms = args.nms;
+    validation_data *val_data = args.val_data;
+    /* FSPT boxes. */
+    int *nboxes_fspt;
+    detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
+            yolo_thresh, fspt_thresh, hier_thresh, map, 1, 0,
+            &nboxes_fspt);
+    if (nms) {
+        for (int b = 0; b < net->batch; ++b)
+            do_nms_suppression(dets_fspt[b], &nboxes_fspt[b], classes, nms);
+    }
+    /* FSPT truth boxes */
+    int *nboxes_truth_fspt;
+    detection **dets_truth_fspt =
+        get_network_fspt_truth_boxes_batch(net, w, h,
+                yolo_thresh, fspt_thresh, hier_thresh, map, 1,
+                &nboxes_truth_fspt);
+
+    for (int b = 0; b < net->batch; ++b) {
+        update_validation_data(nboxes_fspt[b], dets_fspt[b],
+                nboxes_truth_fspt[b], dets_truth_fspt[b], val_data);
+        if (nboxes_fspt[b]) free_detections(dets_fspt[b], nboxes_fspt[b]);
+        if (nboxes_truth_fspt[b])
+            free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
+    }
+    free(dets_fspt);
+    free(dets_truth_fspt);
+    free(nboxes_fspt);
+    free(nboxes_truth_fspt);
+    free(ptr);
+    return NULL;
+}
+
+static pthread_t validate_in_thread(network *net, float yolo_thresh,
+        float fspt_thresh, float hier_thresh, int *map, int classes, 
+        float nms, validation_data *val_data) {
+    pthread_t thread;
+    valid_args *ptr = calloc(1, sizeof(valid_args));
+    ptr->net = net;
+    ptr->yolo_thresh = yolo_thresh;
+    ptr->fspt_thresh = fspt_thresh;
+    ptr->hier_thresh = hier_thresh;
+    ptr->map = map;
+    ptr->classes = classes;
+    ptr->nms = nms;
+    ptr->val_data = val_data;
+    if (pthread_create(&thread, 0, validate_thread, ptr))
+        error("Thread creation failed");
+    return thread;
 }
 
 static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
@@ -772,12 +849,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         validate_network_fspt(net, val);
 #endif
         i = get_current_batch(net);
-        fprintf(stderr,
-                "%ld: %lf seconds, %d images added to validation.\n",
-                get_current_batch(net), what_time_is_it_now()-time,
-                i*imgs);
-        int w = net->w; // ARE YOU SURE ?
-        int h = net->h;
+        pthread_t *threads =
+            calloc(n_yolo_thresh * n_fspt_thresh, sizeof(pthread_t));
         for (int i = 0; i < n_yolo_thresh; ++i) {
             for (int j = 0; j < n_fspt_thresh; ++j) {
                 int index = i * n_fspt_thresh + j;
@@ -785,50 +858,37 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
                 for (int k = 0; k < n_nets; ++k) {
-                /* FSPT boxes. */
-                int *nboxes_fspt;
-                detection **dets_fspt = get_network_fspt_boxes_batch(nets[k], w, h,
-                        yolo_thresh, fspt_thresh, hier_thresh, map, 1, 0,
-                        &nboxes_fspt);
-                if (nms) {
-                    for (int b = 0; b < net->batch; ++b)
-                        do_nms_suppression(dets_fspt[b], &nboxes_fspt[b], classes, nms);
-                }
-                /* FSPT truth boxes */
-                int *nboxes_truth_fspt;
-                detection **dets_truth_fspt =
-                    get_network_fspt_truth_boxes_batch(nets[k], w, h,
-                            yolo_thresh, fspt_thresh, hier_thresh, map, 1,
-                            &nboxes_truth_fspt);
-
-                for (int b = 0; b < net->batch; ++b) {
-                    update_validation_data(nboxes_fspt[b], dets_fspt[b],
-                            nboxes_truth_fspt[b], dets_truth_fspt[b], val_data);
-                    if (nboxes_fspt[b]) free_detections(dets_fspt[b], nboxes_fspt[b]);
-                    if (nboxes_truth_fspt[b])
-                        free_detections(dets_truth_fspt[b], nboxes_truth_fspt[b]);
-                }
-                free(dets_fspt);
-                free(dets_truth_fspt);
-                free(nboxes_fspt);
-                free(nboxes_truth_fspt);
+                    threads[index] = validate_in_thread(nets[k], yolo_thresh,
+                            fspt_thresh, hier_thresh, map, classes, nms,
+                            val_data);
                 }
             }
         }
+        for (int i = 0; i < n_yolo_thresh * n_fspt_thresh; ++i) {
+            pthread_join(threads[i], 0);
+        }
+        fprintf(stderr,
+                "%ld: %lf seconds, %d images added to validation.\n",
+                get_current_batch(net), what_time_is_it_now()-time,
+                i*imgs);
+        free(threads);
+        free_data(val);
     }
-    free_data(val);
     for (int i = 0; i < n_yolo_thresh; ++i) {
         for (int j = 0; j < n_fspt_thresh; ++j) {
             int index = i * n_fspt_thresh + j;
             validation_data *val_data = val_datas[index];
             float fspt_thresh = fspt_threshs[j];
             float yolo_thresh = yolo_threshs[i];
+            FILE *outstream;
             char outfile2[256] = {0};
             if (outfile) {
                 sprintf(outfile2,"%s_yolo_%g_fspt_%g",
                         outfile, yolo_thresh, fspt_thresh);
+                outstream = fopen(outfile2, "w");
+            } else {
+                outstream = stderr;
             }
-            FILE *outstream = outfile ? fopen(outfile2, "w") : stderr;
             assert(outstream);
             if (print_stats_val) {
                 list *fspt_layers = get_network_layers_by_type(net, FSPT);
@@ -879,6 +939,7 @@ Options are :\n\
     -hier        -> unused.\n\
     -gpus        -> coma separated list of gpus.\n\
     -out         -> ouput file for prints.\n\
+    -save_weights_file -> ouput file to save weights.\n\
     -export      -> ouput file for score raw data.\n\
     -clear       -> if set, the training number of seen images is reset.\n\
     -refit       -> if set, the fspts are refitted if they already exist.\n\
@@ -904,6 +965,8 @@ Options are :\n\
     float iou_thresh = find_float_arg(argc, argv, "-iou", .5);
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
     char *outfile = find_char_arg(argc, argv, "-out", 0);
+    char *save_weights_file =
+        find_char_arg(argc, argv, "-save_weights_file", 0);
     char *export_score_file = find_char_arg(argc, argv, "-export", 0);
     int clear = find_arg(argc, argv, "-clear");
     int refit_fspts = find_arg(argc, argv, "-refit");
@@ -963,7 +1026,8 @@ Options are :\n\
         test_fspt(datacfg, cfg, weights, filename, *yolo_threshs,
                 *fspt_threshs, hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train"))
-        train_fspt(datacfg, cfg, weights, outfile, gpus, ngpus, clear,
+        train_fspt(datacfg, cfg, weights, outfile, save_weights_file, gpus,
+                ngpus, clear,
                 refit_fspts, ordered, start, end, one_thread, merge, only_fit,
                 only_score, print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
