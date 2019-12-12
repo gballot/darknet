@@ -48,6 +48,10 @@
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
+#define safe_div(a, b) (b) ? (a) / (b) : 0
+#define safe_divf(a, b) (b) ? (float) (a) / (b) : 0.f
+#define safe_divd(a, b) (b) ? (double) (a) / (b) : 0.
+
 extern double what_time_is_it_now();
 extern void shuffle(void *arr, size_t n, size_t size);
 extern void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);

@@ -267,65 +267,64 @@ Parameters :\n\
     fprintf(stream, "    ┃ RESUME ┃\n");
     fprintf(stream, "    ┗━━━━━━━━┛\n\n");
     fprintf(stream, "\
-                 ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n\
-                 │True detect.│Wrong class │ Prediction │No detection│    True    │\n\
-                 │   by YOLO  │ prediction │while empty │   by YOLO  │    boxes   │\n\
-┌────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│ Total numberer │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
-├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│    Mean IOU    │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │\n\
-├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│ Fspt rejection │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
-├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│Rejection score │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
-├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│Fspt acceptance │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
-├────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
-│Acceptance score│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
-└────────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n",
+                      ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+                      │True detect.│Wrong class │ Prediction │No detection│    True    │\n\
+                      │   by YOLO  │ prediction │while empty │   by YOLO  │    boxes   │\n\
+┌─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Total numberer    │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│      Mean IOU       │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Fspt rejection    │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Rejection score   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Fspt acceptance   │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│  Acceptance score   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│Rejection proportion │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+└─────────────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n",
         // Total number
         v->tot_n_true_detection, v->tot_n_wrong_class_detection,
         v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth,
         // Mean iou
-        v->tot_n_true_detection ?
-            v->tot_sum_true_detection_iou / v->tot_n_true_detection : 0.f,
-        v->tot_n_wrong_class_detection ?
-            v->tot_sum_wrong_class_detection_iou
-            / v->tot_n_wrong_class_detection : 0.f,
-        v->tot_n_false_detection ? 
-            v->tot_sum_no_detection_iou / v->tot_n_false_detection : 0.f,
+        safe_divd(v->tot_sum_true_detection_iou, v->tot_n_true_detection),
+        safe_divd(v->tot_sum_wrong_class_detection_iou,
+            v->tot_n_wrong_class_detection),
+        safe_divd(v->tot_sum_no_detection_iou, v->tot_n_false_detection),
         // Fspt rejection
         v->tot_n_true_detection_rejection, v->tot_n_wrong_class_rejection,
         v->tot_n_false_detection_rejection, v->tot_n_rejection_of_truth,
         // Rejection score
-        v->tot_n_true_detection_rejection ?
-            v->tot_sum_true_detection_rejection_fspt_score
-            / v->tot_n_true_detection_rejection : 0.f,
-        v->tot_n_wrong_class_rejection ?
-            v->tot_sum_wrong_class_rejection_fspt_score
-            / v->tot_n_wrong_class_rejection : 0.f,
-        v->tot_n_false_detection_rejection ?
-            v->tot_sum_false_detection_rejection_fspt_score
-            / v->tot_n_false_detection_rejection : 0.f,
-        v->tot_n_rejection_of_truth ?
-            v->tot_sum_rejection_of_truth_fspt_score
-            / v->tot_n_rejection_of_truth : 0.f,
+        safe_divd(v->tot_sum_true_detection_rejection_fspt_score,
+            v->tot_n_true_detection_rejection),
+        safe_divd(v->tot_sum_wrong_class_rejection_fspt_score,
+            v->tot_n_wrong_class_rejection),
+        safe_divd(v->tot_sum_false_detection_rejection_fspt_score,
+            v->tot_n_false_detection_rejection),
+        safe_divd(v->tot_sum_rejection_of_truth_fspt_score,
+            v->tot_n_rejection_of_truth),
         // Fspt acceptance
         v->tot_n_true_detection_acceptance, v->tot_n_wrong_class_acceptance,
         v->tot_n_false_detection_acceptance, v->tot_n_acceptance_of_truth,
         // Acceptance score
-        v->tot_n_true_detection_acceptance  ?
-            v->tot_sum_true_detection_acceptance_fspt_score
-            / v->tot_n_true_detection_acceptance : 0.f,
-        v->tot_n_wrong_class_acceptance ?
-            v->tot_sum_wrong_class_acceptance_fspt_score
-            / v->tot_n_wrong_class_acceptance : 0.f,
-        v->tot_n_false_detection_acceptance ?
-            v->tot_sum_false_detection_acceptance_fspt_score
-            / v->tot_n_false_detection_acceptance : 0.f,
-        v->tot_n_acceptance_of_truth ?
-            v->tot_sum_acceptance_of_truth_fspt_score
-            / v->tot_n_acceptance_of_truth : 0.f);
+        safe_divd(v->tot_sum_true_detection_acceptance_fspt_score,
+            v->tot_n_true_detection_acceptance),
+        safe_divd(v->tot_sum_wrong_class_acceptance_fspt_score,
+            v->tot_n_wrong_class_acceptance),
+        safe_divd(v->tot_sum_false_detection_acceptance_fspt_score,
+                v->tot_n_false_detection_acceptance),
+        safe_divd(v->tot_sum_acceptance_of_truth_fspt_score,
+                v->tot_n_acceptance_of_truth),
+        // Rejection proportion
+        safe_divd(v->tot_n_true_detection_rejection, v->tot_n_true_detection),
+        safe_divd(v->tot_n_wrong_class_rejection,
+                v->tot_n_wrong_class_detection),
+        safe_divd(v->tot_n_false_detection_rejection,
+                v->tot_n_false_detection),
+        safe_divd(v->tot_n_rejection_of_truth, v->n_truth)
+        );
 }
 
 static validation_data *allocate_validation_data(int classes) {
@@ -715,27 +714,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     int classes = l.classes;
 
-    if (print_stats_val) {
-        FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
-        assert(outstream);
-        list *fspt_layers = get_network_layers_by_type(net, FSPT);
-        while (fspt_layers->size > 0) {
-            layer *l = (layer *) list_pop(fspt_layers);
-            for (int i = 0; i < l->classes; ++i) {
-                fspt_t *fspt = l->fspts[i];
-                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
-                char buf[256] = {0};
-                sprintf(buf, "%s class %s", l->ref, names[i]);
-                print_fspt_criterion_args(outstream, fspt->c_args,
-                        buf);
-                print_fspt_score_args(outstream, fspt->s_args, NULL);
-                print_fspt_stats(outstream, stats, NULL);
-                free_fspt_stats(stats);
-            }
-        }
-        if (outstream != stderr) fclose(outstream);
-    }
-
     double start_time = what_time_is_it_now();
 
     float nms = .45;
@@ -825,6 +803,23 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     }
     FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
     assert(outstream);
+    if (print_stats_val) {
+        list *fspt_layers = get_network_layers_by_type(net, FSPT);
+        while (fspt_layers->size > 0) {
+            layer *l = (layer *) list_pop(fspt_layers);
+            for (int i = 0; i < l->classes; ++i) {
+                fspt_t *fspt = l->fspts[i];
+                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+                char buf[256] = {0};
+                sprintf(buf, "%s class %s", l->ref, names[i]);
+                print_fspt_criterion_args(outstream, fspt->c_args,
+                        buf);
+                print_fspt_score_args(outstream, fspt->s_args, NULL);
+                print_fspt_stats(outstream, stats, NULL);
+                free_fspt_stats(stats);
+            }
+        }
+    }
     print_validation_data(outstream, val_data, "VALIDATION RESULT");
     if (outstream != stderr) fclose(outstream);
     free_validation_data(val_data);
@@ -912,6 +907,7 @@ Options are :\n\
             gpu_list = strchr(gpu_list, ',')+1;
         }
     }
+    fprintf(stderr, "ngpus = %d\n", ngpus);
 
     char *datacfg = argv[3];
     char *cfg = argv[4];

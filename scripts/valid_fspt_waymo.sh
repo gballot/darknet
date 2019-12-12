@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH -o gpu-job-valid-fspt-waymo.output
-#SBATCH -p NV100q,PV100q,GV1002q
+#SBATCH -p PV100q,GV1002q
 #SBATCH --gres=gpu:0
 #SBATCH -n 1
 #SBATCH -c 24
@@ -19,11 +19,11 @@ yolo_thresh=0.7
 fspt_thresh=0.8
 options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid'${full}'-day'
 
-/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt valid ${cfgdir}${datacfg} ${cfgdir}${netcfg} ${weightfile} ${options}
+/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt valid ${cfgdir}${datacfg} ${cfgdir}${netcfg} ${weightfile} ${options} -gpus 0
 
 datacfg='waymo'${full}'.data'
 yolo_thresh=0.7
 fspt_thresh=0.8
 options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid'${full}'-night'
 
-/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -nogpu fspt valid ${cfgdir}${datacfg} ${cfgdir}${netcfg} ${weightfile} ${options}
+/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 0 fspt valid ${cfgdir}${datacfg} ${cfgdir}${netcfg} ${weightfile} ${options} -gpus 0
