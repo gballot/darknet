@@ -830,9 +830,12 @@ detection **get_network_fspt_boxes_batch(network *net, int w, int h,
         float yolo_thresh, float fspt_thresh, float hier, int *map,
         int relative, int suppress, int **num)
 {
+    double start = what_time_is_it_now();
     detection **dets = make_network_boxes_batch(net, yolo_thresh, NULL);
+    fprintf(stderr, "end make in %gs.\n", what_time_is_it_now() - start);
     *num = fill_network_fspt_boxes_batch(net, w, h, yolo_thresh, fspt_thresh,
             hier, map, relative, suppress, dets);
+    fprintf(stderr, "end fill in %gs.\n", what_time_is_it_now() - start);
     return dets;
 }
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "box.h"
+#include "executor.h"
 #include "image.h"
 #include "utils.h"
 #include "fspt_layer.h"
@@ -683,6 +684,7 @@ typedef struct valid_args {
 } valid_args;
 
 static void *validate_thread(void *ptr) {
+    double start = what_time_is_it_now();
     valid_args args = *(valid_args *)ptr;
     network *net = args.net;
     int w = net->w;
@@ -694,6 +696,7 @@ static void *validate_thread(void *ptr) {
     int classes = args.classes;
     float nms = args.nms;
     validation_data *val_data = args.val_data;
+    fprintf(stderr, "[%p]start getting fspt_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
     /* FSPT boxes. */
     int *nboxes_fspt;
     detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
@@ -703,12 +706,15 @@ static void *validate_thread(void *ptr) {
         for (int b = 0; b < net->batch; ++b)
             do_nms_suppression(dets_fspt[b], &nboxes_fspt[b], classes, nms);
     }
+    fprintf(stderr, "[%p]get fspt_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
     /* FSPT truth boxes */
     int *nboxes_truth_fspt;
     detection **dets_truth_fspt =
         get_network_fspt_truth_boxes_batch(net, w, h,
                 yolo_thresh, fspt_thresh, hier_thresh, map, 1,
                 &nboxes_truth_fspt);
+
+    fprintf(stderr, "[%p]get truth_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
 
     for (int b = 0; b < net->batch; ++b) {
         update_validation_data(nboxes_fspt[b], dets_fspt[b],
@@ -722,6 +728,7 @@ static void *validate_thread(void *ptr) {
     free(nboxes_fspt);
     free(nboxes_truth_fspt);
     free(ptr);
+    fprintf(stderr, "[%p]end of thread in %gs.\n", ptr, what_time_is_it_now() - start);
     return NULL;
 }
 
@@ -831,6 +838,13 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     pthread_t load_thread = load_data(args);
     double time;
+    //pthread_t *threads = 
+    //    calloc(n_yolo_thresh * n_fspt_thresh * n_nets, sizeof(pthread_t));
+
+    executor_t *executor = executor_init(1, 1, 100, 12);
+    future_t **futures = 
+        calloc(n_yolo_thresh * n_fspt_thresh * n_nets, sizeof(future_t *));
+
     while (get_current_batch(net) < net->max_batches) {
         time=what_time_is_it_now();
         pthread_join(load_thread, 0);
@@ -848,9 +862,12 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 #else
         validate_network_fspt(net, val);
 #endif
+        fprintf(stderr,
+                "%ld: %lf seconds, %d images ready to add to validation.\n",
+                get_current_batch(net), what_time_is_it_now()-time,
+                i*imgs);
+        free_data(val);
         i = get_current_batch(net);
-        pthread_t *threads =
-            calloc(n_yolo_thresh * n_fspt_thresh, sizeof(pthread_t));
         for (int i = 0; i < n_yolo_thresh; ++i) {
             for (int j = 0; j < n_fspt_thresh; ++j) {
                 int index = i * n_fspt_thresh + j;
@@ -858,22 +875,40 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
                 for (int k = 0; k < n_nets; ++k) {
-                    threads[index] = validate_in_thread(nets[k], yolo_thresh,
+                    valid_args *ptr = calloc(1, sizeof(valid_args));
+                    ptr->net = net;
+                    ptr->yolo_thresh = yolo_thresh;
+                    ptr->fspt_thresh = fspt_thresh;
+                    ptr->hier_thresh = hier_thresh;
+                    ptr->map = map;
+                    ptr->classes = classes;
+                    ptr->nms = nms;
+                    ptr->val_data = val_data;
+                    callable_t *callable = calloc(1, sizeof(callable_t));
+                    callable->params = (void *)ptr;
+                    callable->run = validate_thread;
+                    callable->period = 0.;
+                    futures[index + k * n_yolo_thresh * n_fspt_thresh] =
+                        submit_callable(executor, callable);
+                    /*threads[index + k * n_yolo_thresh * n_fspt_thresh] =
+                        validate_in_thread(nets[k], yolo_thresh,
                             fspt_thresh, hier_thresh, map, classes, nms,
-                            val_data);
+                            val_data);*/
                 }
             }
         }
-        for (int i = 0; i < n_yolo_thresh * n_fspt_thresh; ++i) {
-            pthread_join(threads[i], 0);
+        for (int i = 0; i < n_yolo_thresh * n_fspt_thresh * n_nets; ++i) {
+            get_callable_result(futures[i]);
+            //pthread_join(threads[i], 0);
         }
+        //TODO: merge val_data across the nets.
         fprintf(stderr,
                 "%ld: %lf seconds, %d images added to validation.\n",
                 get_current_batch(net), what_time_is_it_now()-time,
                 i*imgs);
-        free(threads);
         free_data(val);
     }
+    //free(threads);
     for (int i = 0; i < n_yolo_thresh; ++i) {
         for (int j = 0; j < n_fspt_thresh; ++j) {
             int index = i * n_fspt_thresh + j;

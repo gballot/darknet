@@ -1,7 +1,7 @@
 #!/bin/sh
-#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-node04.output
+#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-with-time.output
 #SBATCH -p NV100q,PV1003q,GV1002q,PP1004q
-#SBATCH -w node04
+#xSBATCH -w node15
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
 #SBATCH -c 12
