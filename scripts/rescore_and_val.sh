@@ -1,9 +1,10 @@
 #!/bin/sh
-#SBATCH -o gpu-job-rescore-and-val-fspt-waymo2.output
-#SBATCH -p NV100q,PV100q,GV1002q
+#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-node04.output
+#SBATCH -p NV100q,PV1003q,GV1002q,PP1004q
+#SBATCH -w node04
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
-#SBATCH -c 24
+#SBATCH -c 12
 
 module load cuda90/toolkit
 module load cuda90/blas/9.0.176

@@ -524,9 +524,9 @@ int main(int argc, char **argv)
     long t = elapsed_time();
     fprintf(stderr, "Total time : %ldh %ldm %lds %ldms.\n",
             t / 1000 / 60 / 60,
-            t / 1000 / 60,
-            t / 1000,
-            t);
+            t / 1000 / 60 % 60,
+            t / 1000 % 60,
+            t % 1000);
     return 0;
 }
 

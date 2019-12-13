@@ -449,8 +449,8 @@ void fspt_layer_rescore_class(layer l, int class) {
     long t = (what_time_is_it_now() - start) * 1000;
     fprintf(stderr,
             "[Fspt %s:%d]: rescore successful in %ldh %ldm %lds %ldms.\n",
-            l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000),
-            t / 1000, t % 1000);
+            l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000) % 60,
+            t / 1000 % 60, t % 1000);
 #ifdef DEBUG
     if (fspt->root->type == INNER)
         print_fspt(fspt);
@@ -485,8 +485,8 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
         long t = (what_time_is_it_now() - start) * 1000;
         fprintf(stderr,
                 "[Fspt %s:%d]: fit successful in %ldh %ldm %lds %ldms. n_nodes = %ld, depth = %d.\n",
-                l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000),
-                t / 1000, t % 1000, fspt->n_nodes, fspt->depth);
+                l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000) % 60,
+                t / 1000 % 60, t % 1000, fspt->n_nodes, fspt->depth);
     }
 #ifdef DEBUG
     if (fspt->root->type == INNER)
