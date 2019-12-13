@@ -438,7 +438,7 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
         layer *l = (layer *) list_pop(fspt_layers);
         for (int i = 0; i < l->classes; ++i) {
             fspt_t *fspt = l->fspts[i];
-            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
             char buf[256] = {0};
             sprintf(buf, "%s class %s", l->ref, names[i]);
             print_fspt_criterion_args(outstream, fspt->c_args, buf);
@@ -657,7 +657,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             layer *l = (layer *) list_pop(fspt_layers);
             for (int i = 0; i < l->classes; ++i) {
                 fspt_t *fspt = l->fspts[i];
-                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
                 print_fspt_criterion_args(outstream, fspt->c_args,
@@ -896,7 +896,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                     layer *l = (layer *) list_pop(fspt_layers);
                     for (int i = 0; i < l->classes; ++i) {
                         fspt_t *fspt = l->fspts[i];
-                        fspt_stats *stats = get_fspt_stats(fspt, 0, NULL);
+                        fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
                         char buf[256] = {0};
                         sprintf(buf, "%s class %s", l->ref, names[i]);
                         print_fspt_criterion_args(outstream, fspt->c_args,

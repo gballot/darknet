@@ -8,6 +8,7 @@
 #include "fspt_criterion.h"
 #include "fspt_score.h"
 #include "list.h"
+#include "uniformity.h"
 #include "utils.h"
 
 #define N_THRESH_STATS_FSPT 11
@@ -376,7 +377,8 @@ static int cmp_score_vol_n(const void *n1, const void *n2) {
         return (node1->score < node2->score);
 }
 
-fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh) {
+fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
+        int do_uniformity_test) {
     if (!fspt) return NULL;
     if (!fspt->root) return NULL;
     /** Default values for thresh if NULL **/
@@ -480,12 +482,24 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh) {
         stats->mean_samples_leaves += node->n_samples;
         stats->mean_depth_leaves += node->depth;
         stats->mean_score += node->score;
+        double unf_score = 0;
+        if (do_uniformity_test) {
+            if (node->n_samples) {
+                struct unf_options options = {0};
+                // TODO: put the right options in order to keep the feature limits.
+                unf_score = unf_test_float(&options, node->samples, node->n_samples,
+                        node->n_features);
+            } else {
+                unf_score = 1.;
+            }
+        }
         stats->score_vol_n_array[i] =
             (score_vol_n) {
                 node->score,
                 node->volume / fspt->volume,
                 node->n_samples,
-                node->cause
+                node->cause,
+                unf_score
             };
         /* Thresholds */
         for (int j = 0; j < n_thresh; ++j) {
@@ -846,26 +860,27 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 
     /** Score **/
     fprintf(stream, "\
-┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
-│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │  density   │   cause    │\n\
-│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │ proportion │   of the   │\n\
-│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    end     │\n\
-├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
+┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┐\n\
+│   score    │   volume   │mean length │ n_samples  │ n_samples  │  density   │  density   │ uniformity │   cause    │\n\
+│    leaf    │ proportion │   in the   │   in the   │ proportion │   of the   │ proportion │   score    │   of the   │\n\
+│  (sorted)  │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    leaf    │    end     │\n\
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
     for (size_t i = 0; i < s->n_leaves && i < 100 ; ++i) {
         fprintf(stream, "\
-│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"STR_FORMAT"│\n",
+│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"STR_FORMAT"│\n",
             s->score_vol_n_array[i].score, s->score_vol_n_array[i].volume_p,
             pow(s->score_vol_n_array[i].volume_p, 1. / n_features),
             s->score_vol_n_array[i].n_samples,
-            ((double) s->score_vol_n_array[i].n_samples) / s->n_samples,
-            ((double) s->score_vol_n_array[i].n_samples)
-                / (s->score_vol_n_array[i].volume_p * s->volume),
-            ((double) s->score_vol_n_array[i].n_samples)
-                / s->score_vol_n_array[i].volume_p / s->n_samples,
+            safe_divd(s->score_vol_n_array[i].n_samples, s->n_samples),
+            safe_divd(s->score_vol_n_array[i].n_samples,
+                s->score_vol_n_array[i].volume_p * s->volume),
+            safe_divd(s->score_vol_n_array[i].n_samples,
+                s->score_vol_n_array[i].volume_p * s->n_samples),
+            s->score_vol_n_array[i].unf_score,
             cause_to_string(s->score_vol_n_array[i].cause));
     }
     fprintf(stream, "\
-└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n");
 
     /** Depth **/
     fprintf(stream, "\
@@ -1100,7 +1115,8 @@ void fspt_rescore(fspt_t *fspt, score_args *s_args) {
                     leaf->score,
                     leaf->volume / fspt->volume,
                     leaf->n_samples,
-                    leaf->cause
+                    leaf->cause,
+                    0.   // TODO: compute uniformity score
                 };
         }
     }
@@ -1208,7 +1224,8 @@ void fspt_fit(size_t n_samples, float *X, criterion_args *c_args,
                         leaf->score,
                         leaf->volume / fspt->volume,
                         leaf->n_samples,
-                        leaf->cause
+                        leaf->cause,
+                        0. //TODO: compute uniformity score
                     };
             }
         }

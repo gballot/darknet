@@ -20,20 +20,15 @@
 #include <stdlib.h>
 #include "uniformity.h"
 
-static void *
-standard_alloc (size_t n) 
-{
-  return malloc (n);
+static void *standard_alloc (size_t n) {
+    return malloc (n);
 }
 
-static void 
-standard_free (void *p) 
-{
-  free (p);
+static void standard_free (void *p) {
+    free (p);
 }
 
-struct unf_mem unf_mem_malloc = 
-  {
+struct unf_mem unf_mem_malloc = {
     standard_alloc, 
     standard_free
-  };
+};

@@ -12,7 +12,7 @@ datacfg='cfg/waymo-full.data'
 netcfg='cfg/fspt-waymo-full.cfg'
 #weightfile='weights/fspt-waymo-data-extraction-day.weights'
 #weightfile='weights/yolov3-waymo.weights'
-weightfile='weights/fspt-waymo-full.weights'
+weightfile='weights/fspt-waymo-full-80-percent-day.weights'
 options='-export results/job-print-fspt-full'
 
 #/home/gballot/NTU/FSPT\ Yolo/darknet/darknet -i 1 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0,1

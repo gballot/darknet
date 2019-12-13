@@ -83,6 +83,7 @@ typedef struct score_vol_n {
     double volume_p;
     size_t n_samples;
     NON_SPLIT_CAUSE cause;
+    double unf_score;
 } score_vol_n;
 
 typedef struct fspt_stats {
@@ -400,9 +401,10 @@ extern list *fspt_nodes_to_list(fspt_t *fspt, FSPT_TRAVERSAL traversal);
  * \param n_thresh The number of thresholds in fspt_thresh or 0 for automatic
  *                 fspt_thresh. @see N_THRESH_STATS_FSPT.
  * \param fspt_thresh Array of thresholds for stats or NULL for automatic.
+ * \param do_uniformity_test Will compute the uniformity test for each leaf.
  */
 extern fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh,
-        double *fspt_thresh);
+        double *fspt_thresh, int do_uniformity_test);
 
 /**
  * Frees the fspt_stats except the fspt himself.

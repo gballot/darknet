@@ -278,11 +278,11 @@ void uni_test() {
     args.max_features_p = 1.f;
     args.gini_gain_thresh = 0.1f;
     args.max_depth = 10;
-    args.min_samples = 0;
+    args.min_samples = 1;
     args.min_volume_p = 0.00000013582763;
     args.min_length_p = 0.00;
-    args.merge_nodes = 0;
-    args.max_consecutive_gain_violations = 4;
+    args.merge_nodes = 1;
+    args.max_consecutive_gain_violations = 3;
     args.middle_split = 1;
     score_args s_args = {0};
     s_args.calibration_score = 0.5;
@@ -295,7 +295,7 @@ void uni_test() {
     fspt_fit(n_samples, samples_fit, &args, &s_args, fspt_fitted);
     print_fspt(fspt_fitted);
 
-    fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL);
+    fspt_stats *stats = get_fspt_stats(fspt_fitted, 0, NULL, 1);
     print_fspt_criterion_args(stderr, &args, "FITTED FSPT STATS");
     print_fspt_score_args(stderr, &s_args, NULL);
     print_fspt_stats(stderr, stats, NULL); 
