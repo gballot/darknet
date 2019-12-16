@@ -32,7 +32,11 @@ typedef struct _executor_t {
 extern executor_t *executor_init(int  core_pool_size, int  max_pool_size,
         long keep_alive_time, int  callable_array_size);
 
+// Non blocking submit callable.
 extern future_t *submit_callable(executor_t * executor, callable_t * callable);
+
+// Blocking submit callable.
+extern future_t *submit_callable_blocking (executor_t *executor, callable_t *callable);
 
 // Get result from callalbe execution. Block if not available.
 void * get_callable_result(future_t * future);

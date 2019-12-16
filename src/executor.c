@@ -31,9 +31,28 @@ future_t *submit_callable (executor_t *executor, callable_t *callable) {
         if (try_put == 0) {
             int try_force = pool_thread_create(executor->thread_pool,
                     callable_run, future, 1);
-            if (try_force == -1)
-            return NULL;
+            if (try_force == -1) {
+                free(future);
+                return NULL;
+            }
         }
+    }
+    return future;
+}
+
+future_t *submit_callable_blocking(executor_t *executor, callable_t *callable){
+    future_t *future = (future_t *) malloc(sizeof(future_t));
+    callable->executor = executor;
+    future->callable  = callable;
+    future->completed = 0;
+    pthread_mutex_init(&future->mutex, NULL);
+    pthread_cond_init(&future->var, NULL);
+    if(executor->thread_pool->size < executor->thread_pool->core_pool_size) {
+        pool_thread_create(executor->thread_pool, callable_run, future, 0);
+    } else {
+        fprintf(stderr, "try put...\n");
+        protected_buffer_put(executor->futures, future);
+        fprintf(stderr, "put ok.\n");
     }
     return future;
 }
@@ -47,8 +66,8 @@ void *get_callable_result (future_t *future) {
         pthread_cond_wait(&future->var, &future->mutex);
     result = (void *) future->result;
     // deallocate future
-    free(future);
     pthread_mutex_unlock(&future->mutex);
+    free(future);
     return result;
 }
 

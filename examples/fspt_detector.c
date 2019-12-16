@@ -684,7 +684,6 @@ typedef struct valid_args {
 } valid_args;
 
 static void *validate_thread(void *ptr) {
-    double start = what_time_is_it_now();
     valid_args args = *(valid_args *)ptr;
     network *net = args.net;
     int w = net->w;
@@ -696,7 +695,6 @@ static void *validate_thread(void *ptr) {
     int classes = args.classes;
     float nms = args.nms;
     validation_data *val_data = args.val_data;
-    fprintf(stderr, "[%p]start getting fspt_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
     /* FSPT boxes. */
     int *nboxes_fspt;
     detection **dets_fspt = get_network_fspt_boxes_batch(net, w, h,
@@ -706,16 +704,13 @@ static void *validate_thread(void *ptr) {
         for (int b = 0; b < net->batch; ++b)
             do_nms_suppression(dets_fspt[b], &nboxes_fspt[b], classes, nms);
     }
-    fprintf(stderr, "[%p]get fspt_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
     /* FSPT truth boxes */
     int *nboxes_truth_fspt;
     detection **dets_truth_fspt =
         get_network_fspt_truth_boxes_batch(net, w, h,
                 yolo_thresh, fspt_thresh, hier_thresh, map, 1,
                 &nboxes_truth_fspt);
-
-    fprintf(stderr, "[%p]get truth_boxes in %gs.\n", ptr, what_time_is_it_now() - start);
-
+    /* Update validation */
     for (int b = 0; b < net->batch; ++b) {
         update_validation_data(nboxes_fspt[b], dets_fspt[b],
                 nboxes_truth_fspt[b], dets_truth_fspt[b], val_data);
@@ -728,7 +723,6 @@ static void *validate_thread(void *ptr) {
     free(nboxes_fspt);
     free(nboxes_truth_fspt);
     free(ptr);
-    fprintf(stderr, "[%p]end of thread in %gs.\n", ptr, what_time_is_it_now() - start);
     return NULL;
 }
 
@@ -825,8 +819,10 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     validation_data **val_datas =
         calloc(n_yolo_thresh * n_fspt_thresh, sizeof(validation_data *));
     for (int i = 0; i < n_yolo_thresh; ++i) {
+        fprintf(stderr, "yolo_threshs[%d] = %g\n", i, yolo_threshs[i]);
         for (int j = 0; j < n_fspt_thresh; ++j) {
             int index = i * n_fspt_thresh + j;
+            fprintf(stderr, "fspt_threshs[%d] = %g\n", j, fspt_threshs[j]);
             val_datas[index] = allocate_validation_data(classes);
             validation_data *val_data = val_datas[index];
             val_data->n_images = net->max_batches * imgs;
@@ -841,7 +837,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     //pthread_t *threads = 
     //    calloc(n_yolo_thresh * n_fspt_thresh * n_nets, sizeof(pthread_t));
 
-    executor_t *executor = executor_init(1, 1, 100, 12);
+    executor_t *executor = executor_init(4, 4, 0, 12);
     future_t **futures = 
         calloc(n_yolo_thresh * n_fspt_thresh * n_nets, sizeof(future_t *));
 
@@ -862,11 +858,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 #else
         validate_network_fspt(net, val);
 #endif
-        fprintf(stderr,
-                "%ld: %lf seconds, %d images ready to add to validation.\n",
-                get_current_batch(net), what_time_is_it_now()-time,
-                i*imgs);
-        free_data(val);
         i = get_current_batch(net);
         for (int i = 0; i < n_yolo_thresh; ++i) {
             for (int j = 0; j < n_fspt_thresh; ++j) {
@@ -889,7 +880,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                     callable->run = validate_thread;
                     callable->period = 0.;
                     futures[index + k * n_yolo_thresh * n_fspt_thresh] =
-                        submit_callable(executor, callable);
+                        submit_callable_blocking(executor, callable);
                     /*threads[index + k * n_yolo_thresh * n_fspt_thresh] =
                         validate_in_thread(nets[k], yolo_thresh,
                             fspt_thresh, hier_thresh, map, classes, nms,
@@ -1038,7 +1029,7 @@ Options are :\n\
     }
     float *fspt_threshs = calloc(n_fspt_thresh, sizeof(float));
     for(int i = 0; i < n_fspt_thresh; ++i){
-        fspt_threshs[i] = atoi(fspt_thresh_list);
+        fspt_threshs[i] = atof(fspt_thresh_list);
         fspt_thresh_list = strchr(fspt_thresh_list, ',') + 1;
     }
     /* yolo threshs */
@@ -1049,7 +1040,7 @@ Options are :\n\
     }
     float *yolo_threshs = calloc(n_yolo_thresh, sizeof(float));
     for(int i = 0; i < n_yolo_thresh; ++i){
-        yolo_threshs[i] = atoi(yolo_thresh_list);
+        yolo_threshs[i] = atof(yolo_thresh_list);
         yolo_thresh_list = strchr(yolo_thresh_list, ',') + 1;
     }
 
