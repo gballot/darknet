@@ -15,20 +15,22 @@
 #define INT_FORMAT "%12d"
 
 typedef struct validation_data {
-    float iou_thresh;
-    float fspt_thresh;
+    float iou_thresh;       // Intersection Over Union threshold.
+    float fspt_thresh;      // FSPT threshold for this validation.
     int n_images;           // Number of images.
-    int tot_n_truth;            // Number of true boxes.
-    int *n_truth;           // Size classes. Number of true boxes per class.
     int n_yolo_detections;  // Total number of yolo prediction.
     int classes;            // Number of classes.
     char **names;           // Size classes. Name of the classes.
     /* True yolo detection */
-    int tot_n_true_detection;
+    int tot_n_true_detection; // Number of true prediction by Yolo.
     int *n_true_detection;  // Size classes. n_true_detection[i] is the number
                             // of true prediction for class `i` made by yolo.
-    float tot_sum_true_detection_iou;
-    float *sum_true_detection_iou;
+    float tot_sum_true_detection_iou;  // Divided by tot_n_true_detection,
+                                       // gives the average IOU of true
+                                       // detections.
+    float *sum_true_detection_iou;  // i^th element divided by
+                                    //  n_ture_detection[i] gives the average
+                                    //  IOU for the true detections of class i.
     int tot_n_true_detection_rejection;
     int *n_true_detection_rejection;
     int tot_n_true_detection_acceptance;
@@ -82,6 +84,8 @@ typedef struct validation_data {
     float tot_sum_no_detection_iou;
     float *sum_no_detection_iou;
     /* Fspt on truth */
+    int tot_n_truth;        // Number of true boxes.
+    int *n_truth;           // Size classes. Number of true boxes per class.
     int tot_n_rejection_of_truth;
     int *n_rejection_of_truth;
     int tot_n_acceptance_of_truth;
@@ -462,6 +466,7 @@ static validation_data *allocate_validation_data(int classes, char **names) {
     v->n_no_detection = calloc(classes, sizeof(int));
     v->sum_no_detection_iou = calloc(classes, sizeof(float));
     /* Fspt on truth */
+    v->n_truth = calloc(classes, sizeof(int));
     v->n_rejection_of_truth = calloc(classes, sizeof(int));
     v->n_acceptance_of_truth = calloc(classes, sizeof(int));
     v->sum_rejection_of_truth_fspt_score = calloc(classes, sizeof(float));
@@ -503,6 +508,7 @@ static void free_validation_data(validation_data *v) {
     free(v->n_no_detection);
     free(v->sum_no_detection_iou);
     /* Fspt on truth */
+    free(v->n_truth);
     free(v->n_rejection_of_truth);
     free(v->n_acceptance_of_truth);
     free(v->sum_rejection_of_truth_fspt_score);
@@ -951,7 +957,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
                 for (int k = 0; k < n_nets; ++k) {
-                    threads[index] = validate_in_thread(nets[k], yolo_thresh,
+                    threads[index /* + k *...TODO */] = validate_in_thread(nets[k], yolo_thresh,
                             fspt_thresh, hier_thresh, map, classes, nms,
                             val_data);
                 }
