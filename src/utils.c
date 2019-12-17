@@ -545,6 +545,14 @@ float *parse_fields(char *line, int n)
     return field;
 }
 
+int sum_array_int(int *a, int n)
+{
+    int i;
+    int sum = 0;
+    for(i = 0; i < n; ++i) sum += a[i];
+    return sum;
+}
+
 float sum_array(float *a, int n)
 {
     int i;

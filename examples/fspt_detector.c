@@ -18,9 +18,11 @@ typedef struct validation_data {
     float iou_thresh;
     float fspt_thresh;
     int n_images;           // Number of images.
-    int n_truth;            // Number of true boxes.
+    int tot_n_truth;            // Number of true boxes.
+    int *n_truth;           // Size classes. Number of true boxes per class.
     int n_yolo_detections;  // Total number of yolo prediction.
-    int classes;            // Number of class.
+    int classes;            // Number of classes.
+    char **names;           // Size classes. Name of the classes.
     /* True yolo detection */
     int tot_n_true_detection;
     int *n_true_detection;  // Size classes. n_true_detection[i] is the number
@@ -123,7 +125,7 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
     debug_print("nboxes_fspt = %d, nboxes_truth = %d",
             nboxes_fspt, nboxes_truth);
     val->n_yolo_detections += nboxes_fspt;
-    val->n_truth += nboxes_truth;
+    val->tot_n_truth += nboxes_truth;
     float iou_thresh = val->iou_thresh;
     float fspt_thresh = val->fspt_thresh;
     int classes = val->classes;
@@ -131,6 +133,7 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
     for (int i = 0; i < nboxes_truth; ++i) {
         detection det_truth = dets_truth[i];
         int class_truth = max_index(det_truth.prob, classes);
+        ++val->n_truth[class_truth];
         int index = 0;
         float iou = 0.f;
         if (find_corresponding_detection(det_truth, remaining_nboxes_fspt,
@@ -259,7 +262,7 @@ Parameters :\n\
     -Number of true boxe = %d\n\
     -Number of yolo detection = %d\n\
     -Number of class = %d\n\n",
-    v->iou_thresh, v->fspt_thresh, v->n_images, v->n_truth,
+    v->iou_thresh, v->fspt_thresh, v->n_images, v->tot_n_truth,
     v->n_yolo_detections, classes);
 
     /* Resume */
@@ -287,7 +290,7 @@ Parameters :\n\
 └─────────────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n",
         // Total number
         v->tot_n_true_detection, v->tot_n_wrong_class_detection,
-        v->tot_n_false_detection, v->tot_n_no_detection, v->n_truth,
+        v->tot_n_false_detection, v->tot_n_no_detection, v->tot_n_truth,
         // Mean iou
         safe_divd(v->tot_sum_true_detection_iou, v->tot_n_true_detection),
         safe_divd(v->tot_sum_wrong_class_detection_iou,
@@ -323,12 +326,102 @@ Parameters :\n\
                 v->tot_n_wrong_class_detection),
         safe_divd(v->tot_n_false_detection_rejection,
                 v->tot_n_false_detection),
-        safe_divd(v->tot_n_rejection_of_truth, v->n_truth)
+        safe_divd(v->tot_n_rejection_of_truth, v->tot_n_truth)
         );
+
+    /* Per class */
+    fprintf(stream, "    ┏━━━━━━━━━━━┓\n");
+    fprintf(stream, "    ┃ PER CLASS ┃\n");
+    fprintf(stream, "    ┗━━━━━━━━━━━┛\n\n");
+    for (int i = 0; i < classes; ++i) {
+        fprintf(stream, "\
+                      ┌────────────────────────────────────────────────────────────────┐\n\
+                      │ Class : %54s │\n\
+                      ├────────────┬────────────┬────────────┬────────────┬────────────┤\n\
+                      │True detect.│Wrong class │ Prediction │No detection│    True    │\n\
+                      │   by YOLO  │ prediction │while empty │   by YOLO  │    boxes   │\n\
+┌─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Total numberer    │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│      Mean IOU       │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │     //     │\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Fspt rejection    │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Rejection score   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│   Fspt acceptance   │"INT_FORMAT"│"INT_FORMAT"│"INT_FORMAT"│     //     │"INT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│  Acceptance score   │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+├─────────────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n\
+│Rejection proportion │"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│     //     │"FLT_FORMAT"│\n\
+└─────────────────────┴────────────┴────────────┴────────────┴────────────┴────────────┘\n\n",
+                // Class name
+                v->names[i],
+                // Total number
+                v->n_true_detection[i],
+                sum_array_int(v->n_wrong_class_detection[i], classes),
+                v->n_false_detection[i], v->n_no_detection[i], v->n_truth[i],
+                // Mean iou
+                safe_divd(v->sum_true_detection_iou[i],
+                        v->n_true_detection[i]),
+                safe_divd(
+                        sum_array(v->sum_wrong_class_detection_iou[i],
+                            classes),
+                        sum_array_int(v->n_wrong_class_detection[i], classes)
+                        ),
+                safe_divd(v->sum_no_detection_iou[i],
+                        v->n_false_detection[i]),
+                // Fspt rejection
+                v->n_true_detection_rejection[i],
+                sum_array_int(v->n_wrong_class_rejection[i], classes),
+                v->n_false_detection_rejection[i],
+                v->n_rejection_of_truth[i],
+                // Rejection score
+                safe_divd(v->sum_true_detection_rejection_fspt_score[i],
+                        v->n_true_detection_rejection[i]),
+                safe_divd(
+                        sum_array(v->sum_wrong_class_rejection_fspt_score[i],
+                            classes),
+                        sum_array_int(v->n_wrong_class_rejection[i], classes)
+                        ),
+                safe_divd(v->sum_false_detection_rejection_fspt_score[i],
+                        v->n_false_detection_rejection[i]),
+                safe_divd(v->sum_rejection_of_truth_fspt_score[i],
+                        v->n_rejection_of_truth[i]),
+                // Fspt acceptance
+                v->n_true_detection_acceptance[i],
+                sum_array_int(v->n_wrong_class_acceptance[i], classes),
+                v->n_false_detection_acceptance[i],
+                v->n_acceptance_of_truth[i],
+                // Acceptance score
+                safe_divd(v->sum_true_detection_acceptance_fspt_score[i],
+                        v->n_true_detection_acceptance[i]),
+                safe_divd(
+                        sum_array(v->sum_wrong_class_acceptance_fspt_score[i],
+                            classes),
+                        sum_array_int(v->n_wrong_class_acceptance[i], classes)
+                        ),
+                safe_divd(v->sum_false_detection_acceptance_fspt_score[i],
+                        v->n_false_detection_acceptance[i]),
+                safe_divd(v->sum_acceptance_of_truth_fspt_score[i],
+                        v->n_acceptance_of_truth[i]),
+                // Rejection proportion
+                safe_divd(v->n_true_detection_rejection[i],
+                        v->n_true_detection[i]),
+                safe_divd(
+                        sum_array_int(v->n_wrong_class_rejection[i], classes),
+                        sum_array_int(v->n_wrong_class_detection[i], classes)
+                        ),
+                safe_divd(v->n_false_detection_rejection[i],
+                        v->n_false_detection[i]),
+                safe_divd(v->n_rejection_of_truth[i], v->n_truth[i])
+                    );
+    }
 }
 
-static validation_data *allocate_validation_data(int classes) {
+static validation_data *allocate_validation_data(int classes, char **names) {
     validation_data *v = calloc(1, sizeof(validation_data));
+    v->names = names;
     /* True yolo detection */
     v->n_true_detection = calloc(classes, sizeof(int));
     v->sum_true_detection_iou = calloc(classes, sizeof(float));
@@ -820,7 +913,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     for (int i = 0; i < n_yolo_thresh; ++i) {
         for (int j = 0; j < n_fspt_thresh; ++j) {
             int index = i * n_fspt_thresh + j;
-            val_datas[index] = allocate_validation_data(classes);
+            val_datas[index] = allocate_validation_data(classes, names);
             validation_data *val_data = val_datas[index];
             val_data->n_images = net->max_batches * imgs;
             val_data->classes = classes;
@@ -1003,7 +1096,7 @@ Options are :\n\
     }
     float *fspt_threshs = calloc(n_fspt_thresh, sizeof(float));
     for(int i = 0; i < n_fspt_thresh; ++i){
-        fspt_threshs[i] = atoi(fspt_thresh_list);
+        fspt_threshs[i] = atof(fspt_thresh_list);
         fspt_thresh_list = strchr(fspt_thresh_list, ',') + 1;
     }
     /* yolo threshs */
@@ -1014,7 +1107,7 @@ Options are :\n\
     }
     float *yolo_threshs = calloc(n_yolo_thresh, sizeof(float));
     for(int i = 0; i < n_yolo_thresh; ++i){
-        yolo_threshs[i] = atoi(yolo_thresh_list);
+        yolo_threshs[i] = atof(yolo_thresh_list);
         yolo_thresh_list = strchr(yolo_thresh_list, ',') + 1;
     }
 

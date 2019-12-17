@@ -2,7 +2,7 @@ GPU=1
 CUDNN=1
 OPENCV=0
 OPENMP=0
-DEBUG=0
+DEBUG=1
 TRAIN=0
 VALID=1
 
@@ -41,7 +41,7 @@ FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
-#NETCONF=local_cfg/fspt-waymo-test.cfg
+NETCONF=local_cfg/fspt-waymo-test.cfg
 #NETCONF=local_cfg/fspt-waymo-dontload-full-test.cfg
 DATACONF=cfg/$(CONF).data
 DATACONF=cfg/$(CONF)$(VERSION).data

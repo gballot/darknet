@@ -96,6 +96,7 @@ extern void delay_until(struct timespec * deadline);
 extern long elapsed_time();
 extern struct timespec get_start_time();
 extern void set_start_time();
+extern int sum_array_int(int *a, int n);
 
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of
