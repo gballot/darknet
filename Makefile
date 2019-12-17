@@ -5,6 +5,7 @@ OPENMP=0
 DEBUG=1
 TRAIN=0
 VALID=1
+STATS=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
@@ -41,8 +42,8 @@ FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
-NETCONF=local_cfg/fspt-waymo-test.cfg
-#NETCONF=local_cfg/fspt-waymo-dontload-full-test.cfg
+#NETCONF=local_cfg/fspt-waymo-test.cfg
+NETCONF=local_cfg/fspt-waymo-full-test.cfg
 DATACONF=cfg/$(CONF).data
 DATACONF=cfg/$(CONF)$(VERSION).data
 DATACONF=cfg/$(CONF)$(VERSION)-only-day.data
@@ -55,13 +56,14 @@ ifeq ($(TRAIN), 1)
 NETCMD=train
 else ifeq ($(VALID), 1)
 NETCMD=valid
+else ifeq($(STATS), 1)
+NETCMD=stats
 else
 NETCMD=test
 FILE= waymo/Day/images/training_00029.jpg
 FILE= waymo/Day/images/training_001111111.jpg
 FILE=
 endif
-#NETCMD=stats
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
