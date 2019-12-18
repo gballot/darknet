@@ -256,12 +256,16 @@ void uni_test() {
     /* Test fspt fit       */
     /***********************/
     
-    int n_samples = 4;
+    int n_samples = 8;
     float *feat_lim_fit = malloc(2*2 * sizeof(float));
     memcpy(feat_lim_fit, (float []) {0.f, 1.f, -1.f, 0.f}, 4 * sizeof(float));
     float * samples_fit = malloc(n_samples * 2 *sizeof(float));
     float samples_init[] = {
         0.2f, -0.8f,
+        0.18f, -0.85f,
+        0.9f, -0.2f,
+        0.6f, -0.99f,
+        0.21f, -0.8f,
         0.1f, -0.9f,
         0.2f, -0.9f,
         0.1f, -0.8f
@@ -279,11 +283,13 @@ void uni_test() {
     args.gini_gain_thresh = 0.1f;
     args.max_depth = 10;
     args.min_samples = 1;
-    args.min_volume_p = 0.00000013582763;
+    args.min_volume_p = 0.000000000013582763;
     args.min_length_p = 0.00;
-    args.merge_nodes = 1;
+    args.merge_nodes = 0;
     args.max_consecutive_gain_violations = 3;
     args.middle_split = 1;
+    args.uniformity_test_level = 1;
+    args.unf_score_thresh = 0.8;
     score_args s_args = {0};
     s_args.calibration_score = 0.5;
     s_args.calibration_n_samples_p = 0.75;

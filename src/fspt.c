@@ -484,11 +484,11 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
         stats->mean_score += node->score;
         double unf_score = 0;
         if (do_uniformity_test) {
-            if (node->n_samples) {
+            if (node->n_samples > (size_t) n_features) {
                 struct unf_options options = {0};
                 // TODO: put the right options in order to keep the feature limits.
-                unf_score = unf_test_float(&options, node->samples, node->n_samples,
-                        node->n_features);
+                unf_score = unf_test_float(&options, node->samples,
+                        node->n_samples, node->n_features);
             } else {
                 unf_score = 1.;
             }
@@ -726,6 +726,9 @@ static char *cause_to_string(NON_SPLIT_CAUSE c) {
             break;
         case MERGE:
             return "   MERGE    ";
+            break;
+        case UNIFORMITY:
+            return " UNIFORMITY ";
             break;
         default:
             return "????????????";

@@ -31,7 +31,9 @@ static void compute_norm_args(score_args *s_args) {
         score_vol_n svn = s_args->score_vol_n_array[i_break];
         samples_count += svn.n_samples;
         volume_p_count += svn.volume_p;
-        if (svn.cause == MERGE || svn.cause == MAX_COUNT)
+        if (svn.cause == MERGE
+                || svn.cause == MAX_COUNT
+                || svn.cause == UNIFORMITY)
             ++uniform_leaves;
         if (samples_count >= samples_break) break;
     }

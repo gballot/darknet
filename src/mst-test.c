@@ -32,7 +32,7 @@ main (int argc, char *argv[])
 
   int n = 100;
   struct unf_mst *mst_alg = &unf_mst_prim_binary;
-  unsigned seed = time_seed ();
+  unsigned seed = rand();
   
   if (argc <= 1)
     {

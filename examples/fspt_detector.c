@@ -949,7 +949,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 #endif
         i = get_current_batch(net);
         pthread_t *threads =
-            calloc(n_yolo_thresh * n_fspt_thresh, sizeof(pthread_t));
+            calloc(n_yolo_thresh * n_fspt_thresh * n_nets, sizeof(pthread_t));
         for (int i = 0; i < n_yolo_thresh; ++i) {
             for (int j = 0; j < n_fspt_thresh; ++j) {
                 int index = i * n_fspt_thresh + j;
@@ -957,7 +957,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
                 for (int k = 0; k < n_nets; ++k) {
-                    threads[index /* + k *...TODO */] = validate_in_thread(nets[k], yolo_thresh,
+                    // TODO: NOT THREAD SAFE IF N_NETS > 1
+                    threads[index + k * n_yolo_thresh * n_fspt_thresh] =
+                        validate_in_thread(nets[k], yolo_thresh,
                             fspt_thresh, hier_thresh, map, classes, nms,
                             val_data);
                 }

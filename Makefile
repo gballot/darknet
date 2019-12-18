@@ -1,5 +1,5 @@
-GPU=1
-CUDNN=1
+GPU=0
+CUDNN=0
 OPENCV=0
 OPENMP=0
 DEBUG=1
@@ -31,12 +31,12 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
+CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 CONF=waymo
 VERSION=-full
 MAINCMD=fspt
-BREAKPOINTS=examples/fspt_detector.c:776
+BREAKPOINTS= unf_test
 FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
@@ -170,7 +170,7 @@ test: $(EXEC)
 	./$(EXEC) -nogpu uni_test
 
 gdb-test: $(EXEC)
-	$(GDB) ./$(EXEC) -ex "run -nogpu uni_test"
+	$(GDB) $(addprefix $(addprefix -ex "b , $(BREAKPOINTS)), ") ./$(EXEC) -ex "run -nogpu uni_test"
 
 tag:
 	ctags src/* include/* examples/*

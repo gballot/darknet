@@ -5,6 +5,12 @@
 
 #include "fspt.h"
 
+typedef enum unf_test_level {
+    NO_TEST_UNIFORMITY = 0,
+    MIXED_TEST_UNIFORMITY = 1,
+    ALLWAYS_TEST_UNIFORMITY = 2
+} UNF_TEST_LEVEL;
+
 typedef struct criterion_args {
     /* messages to change fitting behaviour */
     int merge_nodes;
@@ -21,6 +27,7 @@ typedef struct criterion_args {
     size_t count_min_length_p_hit;
     size_t count_max_count_hit;
     size_t count_no_sample_hit;
+    size_t count_uniformity_hit;
     int best_index;
     float best_split;
     int forbidden_split;
@@ -33,6 +40,8 @@ typedef struct criterion_args {
     int max_consecutive_gain_violations;
     int middle_split;
     int multi_threads;
+    UNF_TEST_LEVEL uniformity_test_level;
+    float unf_score_thresh;
 } criterion_args;
 
 

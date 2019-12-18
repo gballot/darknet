@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "fspt.h"
+#include "uniformity.h"
 #include "utils.h"
 
 #ifndef DEBUG
@@ -19,7 +20,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 4
+#define CRITERION_ARGS_VERSION 5
 
 typedef struct {
     size_t count_max_depth_hit;
@@ -348,6 +349,28 @@ void gini_criterion(criterion_args *args) {
         args->forbidden_split = 1;
         return;
     }
+    if (args->uniformity_test_level == ALLWAYS_TEST_UNIFORMITY) {
+        double unf_score;
+        if (args->unf_score_thresh < 1.
+                && node->n_samples > (size_t) fspt->n_features) {
+            struct unf_options options = {0};
+            // TODO: put the right options in order to keep the feature limits.
+            unf_score = unf_test_float(&options, node->samples,
+                    node->n_samples, node->n_features);
+            debug_print("uniformity_score = %g", unf_score);
+            if (unf_score > args->unf_score_thresh) {
+                ++args->count_uniformity_hit;
+                node->cause = UNIFORMITY;
+                args->forbidden_split = 1;
+                return;
+            }
+        } else {
+            ++args->count_min_samples_hit;
+            node->cause = MIN_SAMPLES;
+            args->forbidden_split = 1;
+            return;
+        }
+    }
     float *feature_limit = get_feature_limit(node);
     if (!respect_min_lenght_p(fspt->n_features, fspt->feature_limit,
                 feature_limit, args->min_length_p)) {
@@ -409,38 +432,57 @@ void gini_criterion(criterion_args *args) {
         double best_gain = best_gains[rand_idx];
         args->best_split = best_splits[rand_idx];
         args->forbidden_split = 0;
-        if (best_gain < args->gini_gain_thresh) {
-            if (args->middle_split) {
-                /* split in the middle of the largest feature */
-                int new_index = 0;
-                float new_best_split = 0.f;
-                double max_dlim = 0.;
-                for (int i = 0; i < fspt->n_features; ++i) {
-                    float node_min = feature_limit[2*i];
-                    float node_max = feature_limit[2*i + 1];
-                    float fspt_min = fspt->feature_limit[2*i];
-                    float fspt_max = fspt->feature_limit[2*i + 1];
-                    double relative_length = (node_max - node_min)
-                        / (fspt_max - fspt_min);
-                    if (relative_length > max_dlim) {
-                        max_dlim = relative_length;
-                        new_index = i;
-                        new_best_split = (node_max + node_min) / 2;
-                    }
-                }
-                debug_print("new index, new best split = %d,%f",
-                        new_index, new_best_split);
-                args->best_index = new_index;
-                args->best_split = new_best_split;
+        if (args->uniformity_test_level != ALLWAYS_TEST_UNIFORMITY
+                && best_gain < args->gini_gain_thresh) {
+            double unf_score = 0.;
+            if (args->uniformity_test_level == MIXED_TEST_UNIFORMITY
+                    && args->unf_score_thresh < 1.
+                    && node->n_samples > (size_t) fspt->n_features) {
+                struct unf_options options = {0};
+                // TODO: put the right options in order to keep the feature limits.
+                unf_score = unf_test_float(&options, node->samples,
+                        node->n_samples, node->n_features);
+                debug_print("uniformity_score = %g", unf_score);
             }
-            args->increment_count = 1;
-            debug_print(
-                    "gain thresh violation at depth %d and count %d, gain %f",
-                    node->depth, node->parent ? node->parent->count : 0,
-                    best_gain);
-            if (node->count >= args->max_consecutive_gain_violations) {
-                ++args->count_max_count_hit;
-                node->cause = MAX_COUNT;
+            if ((args->uniformity_test_level == MIXED_TEST_UNIFORMITY
+                        && unf_score <= args->unf_score_thresh)
+                    || args->uniformity_test_level != MIXED_TEST_UNIFORMITY) {
+                if (args->middle_split) {
+                    /* split in the middle of the largest feature */
+                    int new_index = 0;
+                    float new_best_split = 0.f;
+                    double max_dlim = 0.;
+                    for (int i = 0; i < fspt->n_features; ++i) {
+                        float node_min = feature_limit[2*i];
+                        float node_max = feature_limit[2*i + 1];
+                        float fspt_min = fspt->feature_limit[2*i];
+                        float fspt_max = fspt->feature_limit[2*i + 1];
+                        double relative_length = (node_max - node_min)
+                            / (fspt_max - fspt_min);
+                        if (relative_length > max_dlim) {
+                            max_dlim = relative_length;
+                            new_index = i;
+                            new_best_split = (node_max + node_min) / 2;
+                        }
+                    }
+                    debug_print("new index, new best split = %d,%f",
+                            new_index, new_best_split);
+                    args->best_index = new_index;
+                    args->best_split = new_best_split;
+                }
+                args->increment_count = 1;
+                debug_print(
+                        "gain thresh violation at depth %d and count %d, gain %f",
+                        node->depth, node->parent ? node->parent->count : 0,
+                        best_gain);
+                if (node->count >= args->max_consecutive_gain_violations) {
+                    ++args->count_max_count_hit;
+                    node->cause = MAX_COUNT;
+                    args->forbidden_split = 1;
+                }
+            } else {
+                ++args->count_uniformity_hit;
+                node->cause = UNIFORMITY;
                 args->forbidden_split = 1;
             }
         } else {
@@ -494,6 +536,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │      count_min_length_p_hit │"LONG_INTFORMAT"│\n\
 │         count_max_count_hit │"LONG_INTFORMAT"│\n\
 │         count_no_sample_hit │"LONG_INTFORMAT"│\n\
+│        count_uniformity_hit │"LONG_INTFORMAT"│\n\
 │                  best_index │"INTEGER_FORMAT"│\n\
 │                  best_split │"FLOAT_FORMAT__"│\n\
 │             forbidden_split │"INTEGER_FORMAT"│\n\
@@ -507,6 +550,8 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │            gini_gain_thresh │"FLOAT_FORMAT__"│\n\
 │max_consecutive_gain_violati │"INTEGER_FORMAT"│\n\
 │                middle_split │"INTEGER_FORMAT"│\n\
+│       uniformity_test_level │"INTEGER_FORMAT"│\n\
+│            unf_score_thresh │"FLOAT_FORMAT__"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
     a->merge_nodes, a->fspt, a->node,
     a->max_depth, a->count_max_depth_hit,
@@ -515,9 +560,11 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
     a->min_length_p, a->count_min_length_p_hit,
     a->count_max_count_hit,
     a->count_no_sample_hit,
+    a->count_uniformity_hit,
     a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
-    a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split);
+    a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split,
+    a->uniformity_test_level, a->unf_score_thresh);
 }
 
 void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ) {
