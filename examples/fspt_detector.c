@@ -975,6 +975,19 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         free(threads);
         free_data(val);
     }
+    list *fspt_layers = get_network_layers_by_type(net, FSPT);
+    layer **fspt_layers_array = (layer **) list_to_array(fspt_layers);
+    fspt_stats **stats =
+        calloc(fspt_layers->size * classes, sizeof(fspt_stats *));
+    if (print_stats_val) {
+        for (int i = 0; i < fspt_layers->size; ++i) {
+            layer *l = fspt_layers_array[i];
+            for (int j = 0; j < l->classes; ++j) {
+                fspt_t *fspt = l->fspts[j];
+                stats[i * classes + j] = get_fspt_stats(fspt, 0, NULL, 1);
+            }
+        }
+    }
     for (int i = 0; i < n_yolo_thresh; ++i) {
         for (int j = 0; j < n_fspt_thresh; ++j) {
             int index = i * n_fspt_thresh + j;
@@ -992,19 +1005,18 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             }
             assert(outstream);
             if (print_stats_val) {
-                list *fspt_layers = get_network_layers_by_type(net, FSPT);
-                while (fspt_layers->size > 0) {
-                    layer *l = (layer *) list_pop(fspt_layers);
-                    for (int i = 0; i < l->classes; ++i) {
-                        fspt_t *fspt = l->fspts[i];
-                        fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
+                for (int i = 0; i < fspt_layers->size; ++i) {
+                    layer *l = fspt_layers_array[i];
+                    for (int j = 0; j < l->classes; ++j) {
+                        fspt_t *fspt = l->fspts[j];
                         char buf[256] = {0};
-                        sprintf(buf, "%s class %s", l->ref, names[i]);
+                        sprintf(buf, "%s class %s", l->ref, names[j]);
                         print_fspt_criterion_args(outstream, fspt->c_args,
                                 buf);
                         print_fspt_score_args(outstream, fspt->s_args, NULL);
-                        print_fspt_stats(outstream, stats, NULL);
-                        free_fspt_stats(stats);
+                        print_fspt_stats(outstream, stats[i * classes + j],
+                                NULL);
+                        free_fspt_stats(stats[i * classes + j]);
                     }
                 }
             }
@@ -1013,6 +1025,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             free_validation_data(val_data);
         }
     }
+    free(fspt_layers_array);
+    free(stats);
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start_time);
 }
