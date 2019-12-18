@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "distance_to_boundary.h"
 #include "fspt.h"
 #include "uniformity.h"
 #include "utils.h"
@@ -274,7 +275,7 @@ static void *fill_best_splits(void *args) {
     if (a->multi_threads) {
         float *x = malloc(n_samples * sizeof(float));
         copy_cpu(n_samples, X + feat, n_features, x, 1);
-        qsort_float(n_samples, sizeof(float), x);
+        qsort_float(n_samples, x);
         hist(n_samples, 1, x, a->node_min, &n_bins,
                 cdf, bins);
         free(x);
@@ -349,8 +350,10 @@ void gini_criterion(criterion_args *args) {
         args->forbidden_split = 1;
         return;
     }
+    float *feature_limit = get_feature_limit(node);
     if (args->uniformity_test_level == ALLWAYS_TEST_UNIFORMITY) {
         double unf_score;
+        /*
         if (args->unf_score_thresh < 1.
                 && node->n_samples > (size_t) fspt->n_features) {
             struct unf_options options = {0};
@@ -370,8 +373,17 @@ void gini_criterion(criterion_args *args) {
             args->forbidden_split = 1;
             return;
         }
+        */
+        unf_score = dist_to_bound_test(fspt->n_features, node->n_samples,
+                node->samples, feature_limit);
+        debug_print("uniformity_score = %g", unf_score);
+        if (unf_score > args->unf_score_thresh) {
+            ++args->count_uniformity_hit;
+            node->cause = UNIFORMITY;
+            args->forbidden_split = 1;
+            return;
+        }
     }
-    float *feature_limit = get_feature_limit(node);
     if (!respect_min_lenght_p(fspt->n_features, fspt->feature_limit,
                 feature_limit, args->min_length_p)) {
         ++args->count_min_length_p_hit;
@@ -436,13 +448,18 @@ void gini_criterion(criterion_args *args) {
                 && best_gain < args->gini_gain_thresh) {
             double unf_score = 0.;
             if (args->uniformity_test_level == MIXED_TEST_UNIFORMITY
-                    && args->unf_score_thresh < 1.
-                    && node->n_samples > (size_t) fspt->n_features) {
+                    && args->unf_score_thresh < 1.) {
+                unf_score = dist_to_bound_test(fspt->n_features,
+                        node->n_samples, node->samples,
+                        feature_limit);
+                debug_print("uniformity_score = %g", unf_score);
+                /*
                 struct unf_options options = {0};
                 // TODO: put the right options in order to keep the feature limits.
                 unf_score = unf_test_float(&options, node->samples,
                         node->n_samples, node->n_features);
                 debug_print("uniformity_score = %g", unf_score);
+                */
             }
             if ((args->uniformity_test_level == MIXED_TEST_UNIFORMITY
                         && unf_score <= args->unf_score_thresh)

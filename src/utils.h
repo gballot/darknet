@@ -47,6 +47,7 @@
 
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
+#define ABS(a) (a) >= 0 ? (a) : -(a)
 
 #define safe_div(a, b) (b) != 0 ? (a) / (b) : 0
 #define safe_divf(a, b) (b) != 0 ? (float) (a) / (b) : 0.f
@@ -90,7 +91,7 @@ extern int max_index_double(double *a, int n);
 extern int max_index_size_t(size_t *a, int n);
 extern size_t *random_index_order_size_t(size_t min, size_t max);
 extern char *itoa(int val, int base);
-extern void qsort_float(size_t n, size_t size, float *base);
+extern void qsort_float(size_t n, float *base);
 extern void add_millis_to_timespec (struct timespec * ts, long msec);
 extern void delay_until(struct timespec * deadline);
 extern long elapsed_time();

@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "distance_to_boundary.h"
 #include "fspt_criterion.h"
 #include "fspt_score.h"
 #include "list.h"
@@ -484,6 +485,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
         stats->mean_score += node->score;
         double unf_score = 0;
         if (do_uniformity_test) {
+            /*
             if (node->n_samples > (size_t) n_features) {
                 struct unf_options options = {0};
                 // TODO: put the right options in order to keep the feature limits.
@@ -492,6 +494,9 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
             } else {
                 unf_score = 1.;
             }
+            */
+            unf_score = dist_to_bound_test(n_features, node->n_samples,
+                    node->samples, get_feature_limit(node));
         }
         stats->score_vol_n_array[i] =
             (score_vol_n) {

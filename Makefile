@@ -37,7 +37,7 @@ CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unknown-pragmas -Wfatal-errors -
 CONF=waymo
 VERSION=-full
 MAINCMD=fspt
-BREAKPOINTS= unf_test
+BREAKPOINTS= unf_KS_test
 FSPT_OP= -clear -ordered
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
@@ -56,7 +56,7 @@ ifeq ($(TRAIN), 1)
 NETCMD=train
 else ifeq ($(VALID), 1)
 NETCMD=valid
-else ifeq($(STATS), 1)
+else ifeq ($(STATS), 1)
 NETCMD=stats
 else
 NETCMD=test
@@ -116,7 +116,8 @@ OBJ=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o i
 	gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o l2norm_layer.o yolo_layer.o iseg_layer.o image_opencv.o\
 	fspt_layer.o fspt.o fspt_criterion.o fspt_score.o\
 	circular_buffer.o protected_buffer.o executor.o thread_pool.o\
-	mem-std.o mst-prim.o mst-test.o pq-bin-heap.o pq-fib-heap.o rng-mt.o rng-std.o set-rect.o uniformity.o
+	mem-std.o mst-prim.o mst-test.o pq-bin-heap.o pq-fib-heap.o rng-mt.o rng-std.o set-rect.o uniformity.o\
+	kolmogorov.o distance_to_boundary.o
 EXECOBJA=captcha.o lsd.o super.o art.o tag.o cifar.o go.o rnn.o segmenter.o regressor.o classifier.o coco.o yolo.o detector.o nightmare.o instance-segmenter.o fspt_detector.o uni_test.o darknet.o
 ifeq ($(GPU), 1) 
 LDFLAGS+= -lstdc++ 
