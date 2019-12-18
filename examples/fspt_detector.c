@@ -983,6 +983,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         for (int i = 0; i < fspt_layers->size; ++i) {
             layer *l = fspt_layers_array[i];
             for (int j = 0; j < l->classes; ++j) {
+                fprintf(stderr, "Computing fspt stats %s:%s.\n",
+                        l->ref, names[j]);
                 fspt_t *fspt = l->fspts[j];
                 stats[i * classes + j] = get_fspt_stats(fspt, 0, NULL, 1);
             }
