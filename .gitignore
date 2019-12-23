@@ -17,6 +17,7 @@ mnist/
 data/
 caffe/
 grasp/
+KS-test/
 images/
 opencv/
 convnet/

@@ -66,6 +66,7 @@ double unf_test (const struct unf_options *user_options,
         }
     }
 
+    fprintf(stderr, "allocate uniforme.\n");
     r = options.unf_mem->unf_alloc (sizeof *r * ((2 + n * 2) * d));
     if (r == NULL)
         return -1.0;
@@ -75,6 +76,7 @@ double unf_test (const struct unf_options *user_options,
         struct unf_a_set *s;
         int i;
 
+        fprintf(stderr, "unf_create.\n");
         s = options.unf_set->unf_create (options.unf_mem, p, n, d);
         if (s == NULL) {
             options.unf_mem->unf_free (r);
@@ -84,9 +86,17 @@ double unf_test (const struct unf_options *user_options,
         memcpy (r, p, sizeof *r * n * d);
         for (i = 0; i < n; ) {
             double *y = r + (n + i) * d;
+            fprintf(stderr, "unf_random.\n");
             options.unf_set->unf_random (s, options.unf_rng, y);
-            if (unf_inside_hull (p, n, d, y, tmp))
+            int count_outside = 0;
+            if (unf_inside_hull (p, n, d, y, tmp)) {
+                fprintf(stderr, "inside_hull.\n");
                 i++;
+            } else {
+                ++count_outside;
+                if (count_outside % 1000 == 0)
+                    fprintf(stderr, "outside_hull = %d.\n", count_outside);
+            }
         }
 
         options.unf_set->unf_discard (s);

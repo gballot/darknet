@@ -1,3 +1,5 @@
+#include "utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +11,10 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "utils.h"
+#include "prng.h"
+
+#define RAND() prng_get_int()
+#define L_RAND_MAX INT_MAX
 
 // Start time as a timespec
 struct timespec start_time;
@@ -139,7 +144,7 @@ void shuffle(void *arr, size_t n, size_t size)
     size_t i;
     void *swp = calloc(1, size);
     for(i = 0; i < n-1; ++i){
-        size_t j = i + rand()/(RAND_MAX / (n-i)+1);
+        size_t j = i + RAND()/(L_RAND_MAX / (n-i)+1);
         memcpy(swp,          arr+(j*size), size);
         memcpy(arr+(j*size), arr+(i*size), size);
         memcpy(arr+(i*size), swp,          size);
@@ -156,7 +161,7 @@ size_t *random_index_order_size_t(size_t min, size_t max)
     if (max == 0) return inds;
     for(i = min; i < max-1; ++i){
         int swap = inds[i];
-        int index = i + rand()%(max-i);
+        int index = i + RAND()%(max-i);
         inds[i] = inds[index];
         inds[index] = swap;
     }
@@ -172,7 +177,7 @@ int *random_index_order(int min, int max)
     }
     for(i = min; i < max-1; ++i){
         int swap = inds[i];
-        int index = i + rand()%(max-i);
+        int index = i + RAND()%(max-i);
         inds[i] = inds[index];
         inds[index] = swap;
     }
@@ -751,7 +756,7 @@ int rand_int(int min, int max)
         min = max;
         max = s;
     }
-    int r = (rand()%(max - min + 1)) + min;
+    int r = (RAND()%(max - min + 1)) + min;
     return r;
 }
 
@@ -769,10 +774,10 @@ float rand_normal()
 
     haveSpare = 1;
 
-    rand1 = rand() / ((double) RAND_MAX);
+    rand1 = RAND() / ((double) L_RAND_MAX);
     if(rand1 < 1e-100) rand1 = 1e-100;
     rand1 = -2 * log(rand1);
-    rand2 = (rand() / ((double) RAND_MAX)) * TWO_PI;
+    rand2 = (RAND() / ((double) L_RAND_MAX)) * TWO_PI;
 
     return sqrt(rand1) * cos(rand2);
 }
@@ -783,21 +788,21 @@ float rand_normal()
    int n = 12;
    int i;
    float sum= 0;
-   for(i = 0; i < n; ++i) sum += (float)rand()/RAND_MAX;
+   for(i = 0; i < n; ++i) sum += (float)RAND()/L_RAND_MAX;
    return sum-n/2.;
    }
  */
 
 size_t rand_size_t()
 {
-    return  ((size_t)(rand()&0xff) << 56) | 
-        ((size_t)(rand()&0xff) << 48) |
-        ((size_t)(rand()&0xff) << 40) |
-        ((size_t)(rand()&0xff) << 32) |
-        ((size_t)(rand()&0xff) << 24) |
-        ((size_t)(rand()&0xff) << 16) |
-        ((size_t)(rand()&0xff) << 8) |
-        ((size_t)(rand()&0xff) << 0);
+    return  ((size_t)(RAND()&0xff) << 56) | 
+        ((size_t)(RAND()&0xff) << 48) |
+        ((size_t)(RAND()&0xff) << 40) |
+        ((size_t)(RAND()&0xff) << 32) |
+        ((size_t)(RAND()&0xff) << 24) |
+        ((size_t)(RAND()&0xff) << 16) |
+        ((size_t)(RAND()&0xff) << 8) |
+        ((size_t)(RAND()&0xff) << 0);
 }
 
 float rand_uniform(float min, float max)
@@ -807,13 +812,13 @@ float rand_uniform(float min, float max)
         min = max;
         max = swap;
     }
-    return ((float)rand()/RAND_MAX * (max - min)) + min;
+    return ((float)RAND()/L_RAND_MAX * (max - min)) + min;
 }
 
 float rand_scale(float s)
 {
     float scale = rand_uniform(1, s);
-    if(rand()%2) return scale;
+    if(RAND()%2) return scale;
     return 1./scale;
 }
 
@@ -971,3 +976,20 @@ double third_quartile(const void *a, size_t n_elem, size_t size_elem,
                     + 3 * accessor((const void *) b + size_elem * (N / 4))) /4;
     }
 }
+
+void solve_polynome(polynome_t *poly) {
+    poly->solved = 1;
+    double a = poly->a;
+    double b = poly->b;
+    double c = poly->c;
+    assert(a);
+    double delta = b*b - 4*a*c;
+    poly->delta = delta;
+    if (delta < 0.) return;
+    poly->x1 = ( -b - pow(delta, 0.5) ) / 2 * a;
+    poly->x2 = ( -b + pow(delta, 0.5) ) / 2 * a;
+}
+
+#undef RAND
+#undef L_RAND_MAX
+

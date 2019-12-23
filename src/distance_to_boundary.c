@@ -3,7 +3,8 @@
 #include <assert.h>
 #include <math.h>
 
-#include "kolmogorov.h"
+//#include "kolmogorov.h"
+#include "kolmogorov_smirnov_dist.h"
 #include "utils.h"
 
 static float dist_to_bound_cpu(int d, const float *x,
@@ -31,12 +32,12 @@ static float min_half_length(int d, const float *lim) {
 }
 
 static float max_dist(int d, const float *lim) {
-    float cum = 0.f;
+    float max = 0.f;
     for (int i = 0; i < d; ++i) {
         float d = (lim[2*i + 1] - lim[2*i]) / 2;
-        cum += d * d;
+        if (d > max) max = d;
     }
-    return pow(cum, 0.5);
+    return max;
 }
 
 static float *relative_depth_cpu(int d, int n, const float *X,
@@ -58,26 +59,34 @@ static float null_hypothesis_dist(int d, const float *lim, float R, float y) {
         debug_assert(0 <= ki && ki <= 1);
         cum *= 1.f - ki * y;
     }
+    debug_assert(0.f <= cum && cum <= 1.f);
     return 1.f - cum;
 }
 
 static float KS_stat_cpu(int d, int n, const float *X, const float *lim) {
     float *depths = relative_depth_cpu(d, n, X, lim);
+    qsort_float(n, depths);
     float R = min_half_length(d, lim);
     float sup = 0.f;
     for (int i = 0; i < n; ++i) {
         float empirical = (float) i / n;
-        float diff =
-            empirical - null_hypothesis_dist(d, lim, R, depths[i]);
+        float theoretical = null_hypothesis_dist(d, lim, R, depths[i]);
+        float diff = empirical - theoretical;
         diff = ABS(diff);
+        //debug_print("i = %d, diff = %g, empirical = %g, theoretical = %g, depth = %g",
+        //        i, diff, empirical, theoretical, depths[i]);
         if (diff > sup) sup = diff;
     }
     float empirical = 1.f;
-    float diff =
-        empirical - null_hypothesis_dist(d, lim, R, depths[n-1]);
+    float theoretical = null_hypothesis_dist(d, lim, R, depths[n-1]);
+    float diff = empirical - theoretical;
     diff = ABS(diff);
+    //debug_print("i = %d, diff = %g, empirical = %g, theoretical = %g, depth = %g",
+    //        n, diff, empirical, theoretical, depths[n-1]);
     if (diff > sup) sup = diff;
-    return pow(n, 0.5) * sup;
+    debug_assert(0.f <= sup && sup <= 1.f);
+    debug_print("sup = %g", sup);
+    return sup;
 }
 
 double dist_to_bound_test(int d, int n, const float *X, const float *lim) {
@@ -85,14 +94,17 @@ double dist_to_bound_test(int d, int n, const float *X, const float *lim) {
     if (n == 1) return 0.;
 #ifndef GPU
     float KS_stat = KS_stat_cpu(d, n, X, lim);
-    double p_value = kolmogorov_p_value(n, KS_stat);
-    return 1. - p_value;
+    debug_print("n = %d, sup = %g, sup * sqrt(n) = %g", n, KS_stat, pow(n, 0.5) * KS_stat);
+    double p_value = KSfbar(n, KS_stat);
+    return p_value;
 #else /* GPU */
     float KS_stat;
     if (n < 100)
         KS_stat = KS_stat_cpu(d, n, X, lim);
     else
-        KS_stat = KS_stat_gpu(d, n, X, lim);
-    return kolmogorov_p_value(n, KS_stat);
+        KS_stat = KS_stat_cpu(d, n, X, lim);
+    debug_print("n = %d, sup = %g, sup * sqrt(n) = %g", n, KS_stat, pow(n, 0.5) * KS_stat);
+    double p_value = KSfbar(n, KS_stat);
+    return p_value;
 #endif /* GPU */
 }

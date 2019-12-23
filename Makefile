@@ -32,13 +32,13 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wextra -Wno-unused-parameter -Wno-unknown-pragmas -Wfatal-errors -fPIC
+CFLAGS=-Wall -Wextra -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
 CONF=waymo
 VERSION=-full
 MAINCMD=fspt
 BREAKPOINTS= unf_KS_test
-FSPT_OP= -clear -ordered
+FSPT_OP= -clear -print_stats
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
@@ -46,7 +46,7 @@ NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
 NETCONF=local_cfg/fspt-waymo-full-test.cfg
 DATACONF=cfg/$(CONF).data
 DATACONF=cfg/$(CONF)$(VERSION).data
-DATACONF=cfg/$(CONF)$(VERSION)-only-day.data
+#DATACONF=cfg/$(CONF)$(VERSION)-only-day.data
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION).weights
 WEIGHTS=weights/$(MAINCMD)-$(CONF)$(VERSION)-80-percent-day.weights
 #WEIGHTS=weights/fspt-waymo-data-extraction-day.weights
@@ -114,10 +114,11 @@ OBJ=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o i
 	maxpool_layer.o softmax_layer.o data.o matrix.o network.o connected_layer.o cost_layer.o parser.o option_list.o detection_layer.o route_layer.o\
 	upsample_layer.o box.o normalization_layer.o avgpool_layer.o layer.o local_layer.o shortcut_layer.o logistic_layer.o activation_layer.o rnn_layer.o\
 	gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o l2norm_layer.o yolo_layer.o iseg_layer.o image_opencv.o\
-	fspt_layer.o fspt.o fspt_criterion.o fspt_score.o\
+	fspt_layer.o fspt.o fspt_criterion.o fspt_score.o gini_utils.o\
 	circular_buffer.o protected_buffer.o executor.o thread_pool.o\
 	mem-std.o mst-prim.o mst-test.o pq-bin-heap.o pq-fib-heap.o rng-mt.o rng-std.o set-rect.o uniformity.o\
-	kolmogorov.o distance_to_boundary.o
+	kolmogorov.o distance_to_boundary.o kolmogorov_smirnov_dist.o\
+	prng.o
 EXECOBJA=captcha.o lsd.o super.o art.o tag.o cifar.o go.o rnn.o segmenter.o regressor.o classifier.o coco.o yolo.o detector.o nightmare.o instance-segmenter.o fspt_detector.o uni_test.o darknet.o
 ifeq ($(GPU), 1) 
 LDFLAGS+= -lstdc++ 

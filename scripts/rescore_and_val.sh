@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-rescore-and-val-fspt-waymo.output
+#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-KS-test.output
 #SBATCH -p NV100q,PV1003q,GV1002q,PP1004q
 #xSBATCH -w node04
 #SBATCH --gres=gpu:1
@@ -29,12 +29,12 @@ options='-only_score -print_stats -one_thread -save_weights_file '${save_weights
 datacfg='cfg/waymo'${full}'-only-day.data'
 yolo_thresh='0.7'
 fspt_thresh='0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99,0.999'
-options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid'${full}'-day'
+options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid-dist-to-bound'${full}'-day'
 
 "${tmpprog}" -i 0 fspt valid ${datacfg} ${netcfg} ${save_weights_file} ${options} -gpus 0
 
 datacfg='cfg/waymo'${full}'.data'
-options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid'${full}'-night'
+options='-ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out results/valid-dist-to-bound'${full}'-night'
 
 "${tmpprog}" -i 0 fspt valid ${datacfg} ${netcfg} ${save_weights_file} ${options} -gpus 0
 

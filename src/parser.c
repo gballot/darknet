@@ -845,8 +845,8 @@ layer parse_fspt(list *options, size_params params)
     c_args.middle_split = option_find_int_quiet(options, "middle_split", 1);
     c_args.uniformity_test_level = option_find_int_quiet(options,
             "uniformity_test_level", 0);
-    c_args.unf_score_thresh = option_find_float_quiet(options,
-            "uniformity_score_thresh", .8);
+    c_args.unf_alpha = option_find_float_quiet(options,
+            "uniformity_alpha", .05);
     /* score args */
     score_args s_args = {0};
     s_args.exponential_normalization =

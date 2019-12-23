@@ -537,7 +537,7 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
         layer *l = (layer *) list_pop(fspt_layers);
         for (int i = 0; i < l->classes; ++i) {
             fspt_t *fspt = l->fspts[i];
-            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
+            fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 1);
             char buf[256] = {0};
             sprintf(buf, "%s class %s", l->ref, names[i]);
             print_fspt_criterion_args(outstream, fspt->c_args, buf);
@@ -756,7 +756,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             layer *l = (layer *) list_pop(fspt_layers);
             for (int i = 0; i < l->classes; ++i) {
                 fspt_t *fspt = l->fspts[i];
-                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 0);
+                fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 1);
                 char buf[256] = {0};
                 sprintf(buf, "%s class %s", l->ref, names[i]);
                 print_fspt_criterion_args(outstream, fspt->c_args,
@@ -1016,18 +1016,27 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                         print_fspt_criterion_args(outstream, fspt->c_args,
                                 buf);
                         print_fspt_score_args(outstream, fspt->s_args, NULL);
-                        print_fspt_stats(outstream, stats[i * classes + j],
-                                NULL);
-                        free_fspt_stats(stats[i * classes + j]);
+                        if (stats[i * classes + j]) {
+                            print_fspt_stats(outstream, stats[i * classes + j],
+                                    NULL);
+                            free_fspt_stats(stats[i * classes + j]);
+                        } else {
+                            fprintf(outstream, "No statistics.\n\n");
+                        }
                     }
                 }
             }
-            print_validation_data(outstream, val_data, "VALIDATION RESULT");
+            if (val_data) {
+                print_validation_data(outstream, val_data, "VALIDATION RESULT");
+                free_validation_data(val_data);
+            } else {
+                fprintf(outstream, "No validation data.\n\n");
+            }
             if (outstream != stderr) fclose(outstream);
-            free_validation_data(val_data);
         }
     }
     free(fspt_layers_array);
+    free_list(fspt_layers);
     free(stats);
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start_time);
@@ -1043,6 +1052,7 @@ With :\n\
     train -> train fspts on an already trained yolo network.\n\
     test  -> test fspt predictions.\n\
     valid -> validate fspt.\n\
+    stats -> print statistics of the fspts.\n\
 And :\n\
     <datacfg>   -> path to the data configuration file.\n\
     <netcfg>    -> path to the network configuration file.\n\

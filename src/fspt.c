@@ -485,7 +485,7 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
         stats->mean_score += node->score;
         double unf_score = 0;
         if (do_uniformity_test) {
-            /*
+            // TODO : change comments place
             if (node->n_samples > (size_t) n_features) {
                 struct unf_options options = {0};
                 // TODO: put the right options in order to keep the feature limits.
@@ -494,9 +494,10 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
             } else {
                 unf_score = 1.;
             }
-            */
+            /*
             unf_score = dist_to_bound_test(n_features, node->n_samples,
                     node->samples, get_feature_limit(node));
+            */
         }
         stats->score_vol_n_array[i] =
             (score_vol_n) {
@@ -1329,7 +1330,7 @@ void fspt_save(const char *filename, fspt_t fspt, int save_samples, int *succ){
  * \return Pointer to the newly created fspt_node.
  */
 static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
-        float *samples, int *succ) {
+        float *samples, fspt_node *parent, fspt_t * fspt, int *succ) {
     /* load node */
     fspt_node *node = malloc(sizeof(fspt_node));
     *succ &= fread(node, sizeof(fspt_node), 1, fp);
@@ -1337,6 +1338,8 @@ static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
     /* point on samples */
     node->samples = samples;
     node->n_samples = n_samples;
+    node->parent = parent;
+    node->fspt = fspt;
     /* load children */
     float *samples_r = NULL;
     float *samples_l = NULL;
@@ -1357,9 +1360,11 @@ static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
         }
     }
     if (node->left)
-        node->left = pre_order_node_load(fp, n_samples_l, samples_l, succ);
+        node->left = pre_order_node_load(fp, n_samples_l, samples_l, node,
+                fspt, succ);
     if (node->right)
-        node->right = pre_order_node_load(fp, n_samples_r, samples_r, succ);
+        node->right = pre_order_node_load(fp, n_samples_r, samples_r, node,
+                fspt, succ);
     return node;
 }
 
@@ -1420,7 +1425,8 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         *succ &= fread(&version, sizeof(int), 1, fp);
         if (version == NODE_VERSION) {
             fspt->root =
-                pre_order_node_load(fp, fspt->n_samples, fspt->samples, succ);
+                pre_order_node_load(fp, fspt->n_samples, fspt->samples, NULL,
+                        fspt, succ);
         } else {
             fprintf(stderr, "Nodes not load : wrong version (%d)", version);
         }

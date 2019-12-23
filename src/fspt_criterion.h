@@ -5,6 +5,13 @@
 
 #include "fspt.h"
 
+typedef struct {
+    size_t count_max_depth_hit;
+    size_t count_min_samples_hit;
+    size_t count_min_volume_p_hit;
+    size_t count_min_length_p_hit;
+} forbidden_split_cause;
+
 typedef enum unf_test_level {
     NO_TEST_UNIFORMITY = 0,
     MIXED_TEST_UNIFORMITY = 1,
@@ -41,7 +48,7 @@ typedef struct criterion_args {
     int middle_split;
     int multi_threads;
     UNF_TEST_LEVEL uniformity_test_level;
-    float unf_score_thresh;
+    float unf_alpha;
 } criterion_args;
 
 
@@ -49,6 +56,11 @@ extern criterion_args *load_criterion_args_file(FILE *fp, int *succ);
 
 extern void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ);
 
+extern int respect_min_lenght_p(int n_features, const float* fspt_lim,
+        const float *node_lim, double min_length_p);
+
+extern void determine_cause(int n, forbidden_split_cause *causes,
+        criterion_args *args);
 /**
  * Convert a string representing the name of a criterion function
  * to a pointer to this function.
@@ -58,16 +70,6 @@ extern void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ);
  *         NULL.
  */
 extern criterion_func string_to_fspt_criterion(char *s);
-
-/**
- * The gini criterion function.
- * This criterion function from Toward Safe Machine Learning paper returns
- * the splits that maximize the gain in the gini index before and after the
- * potential split.
- *
- * \param args Input/Output parameter.
- */
-extern void gini_criterion(criterion_args *args);
 
 /**
  * Prints a criterion_args to a file.

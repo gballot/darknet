@@ -2,6 +2,7 @@
 #define UTILS_H
 #include <stdio.h>
 #include <time.h>
+#include <assert.h>
 #include "darknet.h"
 #include "list.h"
 
@@ -52,6 +53,16 @@
 #define safe_div(a, b) (b) != 0 ? (a) / (b) : 0
 #define safe_divf(a, b) (b) != 0 ? (float) (a) / (b) : 0.f
 #define safe_divd(a, b) (b) != 0 ? (double) (a) / (b) : 0.
+
+typedef struct polynome_t {
+    double a;
+    double b;
+    double c;
+    int solved;
+    double delta;
+    double x1;
+    double x2;
+} polynome_t;
 
 extern double what_time_is_it_now();
 extern void shuffle(void *arr, size_t n, size_t size);
@@ -144,6 +155,13 @@ extern double first_quartile(const void *a, size_t n_elem, size_t size_elem,
 extern double third_quartile(const void *a, size_t n_elem, size_t size_elem,
         double (*accessor) (const void *));
 
+/**
+ * Computes the roots and delta of a polynome.
+ *
+ * \param poly The polynome structure that will be completed.
+ *             poly->a must be non null.
+ */
+extern void solve_polynome(polynome_t *poly);
 
 #endif
 
