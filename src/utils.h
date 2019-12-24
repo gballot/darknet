@@ -90,8 +90,6 @@ extern float *parse_fields(char *line, int n);
 extern void translate_array(float *a, int n, float s);
 extern float constrain(float min, float max, float a);
 extern double constrain_double(double min, double max, double a);
-extern long double constrain_long_double(long double min, long double max,
-        long double a);
 extern int constrain_int(int a, int min, int max);
 extern float rand_scale(float s);
 extern int rand_int(int min, int max);
@@ -168,14 +166,13 @@ extern void solve_polynome(polynome_t *poly);
 
 /**
  * Computes the binomial coefficients
- * k among n. Uses a static pascal triangle and is probably
- * non thread safe.
+ * k among n.
  *
  * \param k The number of elements to choose among n.
  * \param n the total number of elements.
  * \return k among n.
  */
-extern long binomial(int k, int n);
+extern int binomial(int k, int n);
 
 #endif
 
