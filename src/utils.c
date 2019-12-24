@@ -1001,11 +1001,11 @@ double third_quartile(const void *a, size_t n_elem, size_t size_elem,
 
 void solve_polynome(polynome_t *poly) {
     poly->solved = 1;
-    double a = poly->a;
-    double b = poly->b;
-    double c = poly->c;
+    long double a = poly->a;
+    long double b = poly->b;
+    long double c = poly->c;
     assert(a);
-    double delta = b*b - 4*a*c;
+    long double delta = b*b - 4*a*c;
     poly->delta = delta;
     if (delta < 0.) return;
     poly->x1 = ( -b - pow(delta, 0.5) ) / (2 * a);

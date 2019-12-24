@@ -55,13 +55,13 @@
 #define safe_divd(a, b) ((b) != 0 ? (double) (a) / (b) : 0.)
 
 typedef struct polynome_t {
-    double a;
-    double b;
-    double c;
+    long double a;
+    long double b;
+    long double c;
     int solved;
-    double delta;
-    double x1;
-    double x2;
+    long double delta;
+    long double x1;
+    long double x2;
 } polynome_t;
 
 extern double what_time_is_it_now();
