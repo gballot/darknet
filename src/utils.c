@@ -1013,29 +1013,30 @@ void solve_polynome(polynome_t *poly) {
 }
 
 long binomial(int n, int k) {
+    if (n < 0 || k < 0 || k > n) return 0;
     if (pascal.n_max == 0) {
         pascal.t = calloc(n + 1, sizeof(long *));
 
-        for (int i = 0; i <= n; ++i) {
+        for (int i = 0; i < n + 1; ++i) {
             pascal.t[i] = calloc(i + 1, sizeof(long));
             pascal.t[i][0] = 1;
             for(int j = 1; j < i; ++j)
                 pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
             pascal.t[i][i] = 1;
         }
-        pascal.n_max = n + 1;
+        pascal.n_max = n;
     }
 
-    if (pascal.n_max < n + 1) {
+    if (pascal.n_max < n) {
         pascal.t = realloc(pascal.t, (n + 1)* sizeof(long *));
-        for (int i = pascal.n_max; i <= n; ++i) {
+        for (int i = pascal.n_max; i < n + 1; ++i) {
             pascal.t[i] = calloc(i + 1, sizeof(long));
             pascal.t[i][0] = 1;
             for(int j = 1; j < i; ++j)
                 pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
             pascal.t[i][i] = 1;
         }
-        pascal.n_max = n + 1;
+        pascal.n_max = n;
     }
 
     return pascal.t[n][k] ;
