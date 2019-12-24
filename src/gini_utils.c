@@ -35,22 +35,28 @@ static double proba_uninform_count(double A, double B, int n, double s) {
 double proba_gain_inferior_to(double t, double s, int n) {
     if (t <= 0.) return 0.;
     if (t >= 0.5) return 1.;
-    double r = 0.5 - s;
     polynome_t poly = {0};
-    poly.a = 1.;
+    poly.a = 2. * t + 1.;
     //poly.b = - (2 * t * (1. - s) + s) / (t + 0.5);
     //poly.c = (-3 * s * s + 2 * t * s * (2 + s)) / (2 * t + 1);
-    poly.b = (2. * r * (1. - 2. * t)) / (2. * t + 1.);
-    poly.c = r * r - 1. / (2. * t + 1.);
+    //poly.b = (2. * r * (1. - 2. * t)) / (2. * t + 1.);
+    //poly.c = r * r - 1. / (2. * t + 1.);
+    poly.b = 2. * t * s - s - 2. * t;
+    poly.c = 2. * s * (s*(t + 0.5)*(t + 0.5) + (3. - 2.*t)*t) / (2.*t + 1.);
     solve_polynome(&poly);
     if (poly.delta < 0.) return 0.;
     double A = poly.x1;
     double B = poly.x2;
-    //A = constrain_double(0., 1., A);
-    //B = constrain_double(0., 1., B);
+    A = constrain_double(0., 1., A);
+    B = constrain_double(0., 1., B);
+    double A2 = (2.*t + s - 2.*t*s - 2.*pow(t*t + 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
+    double B2 = (2.*t + s - 2.*t*s + 2.*pow(t*t + 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
     debug_assert(A <= B);
-    fprintf(stderr, "A=%g, B=%g, A2=%g, B2=%g\n", A, B, 0.5 - B, 0.5 - A);
-    double p = proba_uninform_count(0.5 - B, 0.5 - A, n, s);
+    fprintf(stderr, "A=%g, B=%g, A2=%g, B2=%g\n", A, B, A2, B2);
+    //debug_assert(ABS(A - A2) < 10E-8);
+    //debug_assert(ABS(B - B2) < 10E-8);
+    //double p = proba_uninform_count(0.5 - B, 0.5 - A, n, s);
+    double p = proba_uninform_count(A2, B2, n, s);
     return p;
 }
 

@@ -398,8 +398,8 @@ void uni_test() {
 
     FILE *f = fopen("tmp/proba.data", "w");
     int n = 1;
-    int s_max = 1000;
-    int t_max = 10;
+    int s_max = 10000;
+    int t_max = 20;
     for (int t = 1; t < t_max; ++t) {
         double tt = (double) t / (2*t_max);
         for (int s = -1; s < s_max + 20; ++s) {
