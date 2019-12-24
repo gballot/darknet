@@ -16,6 +16,13 @@
 #define RAND() prng_get_int()
 #define L_RAND_MAX INT_MAX
 
+typedef struct pascal_t {
+    int n_max;
+    long **t;
+} pascal_t;
+
+static pascal_t pascal = {0};
+
 // Start time as a timespec
 struct timespec start_time;
 
@@ -624,6 +631,14 @@ double constrain_double(double min, double max, double a)
     return a;
 }
 
+long double constrain_long_double(long double min, long double max,
+        long double a)
+{
+    if (a < min) return min;
+    if (a > max) return max;
+    return a;
+}
+
 float dist_array(float *a, float *b, int n, int sub)
 {
     int i;
@@ -995,6 +1010,35 @@ void solve_polynome(polynome_t *poly) {
     if (delta < 0.) return;
     poly->x1 = ( -b - pow(delta, 0.5) ) / (2 * a);
     poly->x2 = ( -b + pow(delta, 0.5) ) / (2 * a);
+}
+
+long binomial(int n, int k) {
+    if (pascal.n_max == 0) {
+        pascal.t = calloc(n + 1, sizeof(long *));
+
+        for (int i = 0; i <= n; ++i) {
+            pascal.t[i] = calloc(i + 1, sizeof(long));
+            pascal.t[i][0] = 1;
+            for(int j = 1; j < i; ++j)
+                pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
+            pascal.t[i][i] = 1;
+        }
+        pascal.n_max = n + 1;
+    }
+
+    if (pascal.n_max < n + 1) {
+        pascal.t = realloc(pascal.t, (n + 1)* sizeof(long *));
+        for (int i = pascal.n_max; i <= n; ++i) {
+            pascal.t[i] = calloc(i + 1, sizeof(long));
+            pascal.t[i][0] = 1;
+            for(int j = 1; j < i; ++j)
+                pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
+            pascal.t[i][i] = 1;
+        }
+        pascal.n_max = n + 1;
+    }
+
+    return pascal.t[n][k] ;
 }
 
 #undef RAND

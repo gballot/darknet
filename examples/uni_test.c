@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "distance_to_boundary.h"
 #include "list.h"
@@ -396,19 +397,30 @@ void uni_test() {
     /* Test proba gain gini*/
     /***********************/
 
-    FILE *f = fopen("tmp/proba.data", "w");
-    int n = 1;
-    int s_max = 10000;
-    int t_max = 20;
-    for (int t = 1; t < t_max; ++t) {
-        double tt = (double) t / (2*t_max);
-        for (int s = -1; s < s_max + 20; ++s) {
-            double ss = (double) s / s_max;
-            double p = proba_gain_inferior_to(tt, ss, n);
-            fprintf(f, "%12g %12g %12g\n", tt, ss, p);
+    int n_n = 2;
+    int n_tab[2] = {1, 128};
+
+    int n_t = 4;
+    double t_tab[4] = {0.01, 0.05, 0.1, 0.2};
+
+    for (int i = 0; i < n_n; ++i) {
+        int n = n_tab[i];
+        char buf[200] = {0};
+        sprintf(buf, "tmp/proba-n_%d.data", n);
+        FILE *f = fopen(buf, "w");
+        int s_max = 1000;
+        for (int t = 0; t < n_t; ++t) {
+            // linear or from tab :
+            double tt = (double) t / (2*n_t);
+            tt = t_tab[t];
+            for (int s = 0; s < s_max; ++s) {
+                double ss = (double) s / s_max;
+                double p = proba_gain_inferior_to(tt, ss, n);
+                fprintf(f, "%12g %12g %12g\n", tt, ss, p);
+            }
         }
+        fclose(f);
     }
-    fclose(f);
 
     /***********************/
     /* Test uniformity     */

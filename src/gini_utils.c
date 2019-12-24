@@ -1,5 +1,6 @@
 #include "gini_utils.h"
 
+#include <math.h>
 #include "distance_to_boundary.h"
 #include "utils.h"
 
@@ -21,42 +22,66 @@
  * \param s The threshold for the X_i
  * \return The probability.
  */
-static double proba_uninform_count(double A, double B, int n, double s) {
+static long double proba_uninform_count(long double A, long double B,
+        int n, long double s) {
     if (s <= 0.) return 0.;
     if (s >= 1.) return 1.;
-    double p;
+    long double p = 0.;
+    A = constrain_long_double(0., 1., A);
+    B = constrain_long_double(0., 1., B);
+    /*
     if (n*A - floor(n*A) < 1E-10) {
         p = pow(1 - s, n - floor(n * B)) - pow(1 - s, n - floor(n * A) + 1);
     } else 
         p = pow(1 - s, n - floor(n * B)) - pow(1 - s, n - floor(n * A));
-    return p;
+    */
+    int to = floor(n * B);
+    int from = (n*A - floor(n*A) <= 1E-12) ? floor(n*A) : ceil(n*A);
+    for (int i = from; i <= to; ++i) {
+        p += binomial(i, n) * powl(s, i) * powl(1. - s, n - i);
+    }
+    // sitch the computation to put the biggest exponents on the smallest
+    // value between s and 1-s.
+    //if (n - from > to && s < 0.5) {
+    //     normal
+    /*} else {
+        p = 1.;
+        s = 1. - s;
+        for (int i = from; i <= to; ++i) {
+            p -= binomial(i, n) * powl(s, i) * powl(1. - s, n - i);
+        }
+    }
+    */
+    return p / n;
 }
 
 double proba_gain_inferior_to(double t, double s, int n) {
     if (t <= 0.) return 0.;
     if (t >= 0.5) return 1.;
+    // To avoid divisions by very low numbers. By symetry.
+    //if (s > 0.9) return proba_gain_inferior_to(t, 1 - s, n);
     polynome_t poly = {0};
-    poly.a = 2. * t + 1.;
+    poly.a = t + 0.5;
     //poly.b = - (2 * t * (1. - s) + s) / (t + 0.5);
     //poly.c = (-3 * s * s + 2 * t * s * (2 + s)) / (2 * t + 1);
     //poly.b = (2. * r * (1. - 2. * t)) / (2. * t + 1.);
     //poly.c = r * r - 1. / (2. * t + 1.);
     poly.b = 2. * t * s - s - 2. * t;
-    poly.c = 2. * s * (s*(t + 0.5)*(t + 0.5) + (3. - 2.*t)*t) / (2.*t + 1.);
+    poly.c = 0.5 * s * (2. * (s - 2) * t + s); 
     solve_polynome(&poly);
     if (poly.delta < 0.) return 0.;
     double A = poly.x1;
     double B = poly.x2;
-    A = constrain_double(0., 1., A);
-    B = constrain_double(0., 1., B);
-    double A2 = (2.*t + s - 2.*t*s - 2.*pow(t*t + 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
-    double B2 = (2.*t + s - 2.*t*s + 2.*pow(t*t + 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
+    //A = constrain_double(0., 1., A);
+    //B = constrain_double(0., 1., B);
+    double A2 = (2.*t + s - 2.*t*s - 2.*pow(t*t - 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
+    double B2 = (2.*t + s - 2.*t*s + 2.*pow(t*t - 2.*t*s*s + 2.*t*s, 0.5)) / (2.*t + 1.);
     debug_assert(A <= B);
     fprintf(stderr, "A=%g, B=%g, A2=%g, B2=%g\n", A, B, A2, B2);
-    //debug_assert(ABS(A - A2) < 10E-8);
-    //debug_assert(ABS(B - B2) < 10E-8);
+    debug_assert(ABS(A - A2) < 10E-5);
+    debug_assert(ABS(B - B2) < 10E-5);
     //double p = proba_uninform_count(0.5 - B, 0.5 - A, n, s);
-    double p = proba_uninform_count(A2, B2, n, s);
+    long double p = proba_uninform_count(A2, B2, n, s);
     return p;
 }
 

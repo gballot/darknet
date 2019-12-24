@@ -46,13 +46,13 @@
         (tv)->tv_usec = (ts)->tv_nsec / 1000; \
     } while (0)
 
-#define MIN(a, b) (a) < (b) ? (a) : (b)
-#define MAX(a, b) (a) > (b) ? (a) : (b)
-#define ABS(a) (a) >= 0 ? (a) : -(a)
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(a) ((a) >= 0 ? (a) : -(a))
 
-#define safe_div(a, b) (b) != 0 ? (a) / (b) : 0
-#define safe_divf(a, b) (b) != 0 ? (float) (a) / (b) : 0.f
-#define safe_divd(a, b) (b) != 0 ? (double) (a) / (b) : 0.
+#define safe_div(a, b) ((b) != 0 ? (a) / (b) : 0)
+#define safe_divf(a, b) ((b) != 0 ? (float) (a) / (b) : 0.f)
+#define safe_divd(a, b) ((b) != 0 ? (double) (a) / (b) : 0.)
 
 typedef struct polynome_t {
     double a;
@@ -90,6 +90,8 @@ extern float *parse_fields(char *line, int n);
 extern void translate_array(float *a, int n, float s);
 extern float constrain(float min, float max, float a);
 extern double constrain_double(double min, double max, double a);
+extern long double constrain_long_double(long double min, long double max,
+        long double a);
 extern int constrain_int(int a, int min, int max);
 extern float rand_scale(float s);
 extern int rand_int(int min, int max);
@@ -163,6 +165,17 @@ extern double third_quartile(const void *a, size_t n_elem, size_t size_elem,
  *             poly->a must be non null.
  */
 extern void solve_polynome(polynome_t *poly);
+
+/**
+ * Computes the binomial coefficients
+ * k among n. Uses a static pascal triangle and is probably
+ * non thread safe.
+ *
+ * \param k The number of elements to choose among n.
+ * \param n the total number of elements.
+ * \return k among n.
+ */
+extern long binomial(int k, int n);
 
 #endif
 
