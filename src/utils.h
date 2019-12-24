@@ -55,13 +55,13 @@
 #define safe_divd(a, b) ((b) != 0 ? (double) (a) / (b) : 0.)
 
 typedef struct polynome_t {
-    double a;
-    double b;
-    double c;
+    long double a;
+    long double b;
+    long double c;
     int solved;
-    double delta;
-    double x1;
-    double x2;
+    long double delta;
+    long double x1;
+    long double x2;
 } polynome_t;
 
 extern double what_time_is_it_now();
@@ -90,6 +90,8 @@ extern float *parse_fields(char *line, int n);
 extern void translate_array(float *a, int n, float s);
 extern float constrain(float min, float max, float a);
 extern double constrain_double(double min, double max, double a);
+extern long double constrain_long_double(long double min, long double max,
+        long double a);
 extern int constrain_int(int a, int min, int max);
 extern float rand_scale(float s);
 extern int rand_int(int min, int max);
@@ -168,11 +170,11 @@ extern void solve_polynome(polynome_t *poly);
  * Computes the binomial coefficients
  * k among n.
  *
- * \param k The number of elements to choose among n.
  * \param n the total number of elements.
+ * \param k The number of elements to choose among n.
  * \return k among n.
  */
-extern int binomial(int k, int n);
+extern long binomial(int n, int k);
 
 #endif
 

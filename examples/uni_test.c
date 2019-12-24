@@ -398,7 +398,7 @@ void uni_test() {
     /***********************/
 
     int n_n = 3;
-    int n_tab[3] = {1, 4,128};
+    int n_tab[3] = {1, 4, 128};
 
     int n_t = 4;
     double t_tab[4] = {0.01, 0.05, 0.1, 0.2};
@@ -420,6 +420,12 @@ void uni_test() {
             }
         }
         fclose(f);
+    }
+    
+    for (int n = 1; n < 128; ++n) {
+        for (int k = 0; k < n + 1; ++k) {
+            assert(binomial(n, k) == binomial(n-1, k-1) + binomial(n-1,k));
+        }
     }
 
     /***********************/
