@@ -89,6 +89,7 @@ extern int count_fields(char *line);
 extern float *parse_fields(char *line, int n);
 extern void translate_array(float *a, int n, float s);
 extern float constrain(float min, float max, float a);
+extern double constrain_double(double min, double max, double a);
 extern int constrain_int(int a, int min, int max);
 extern float rand_scale(float s);
 extern int rand_int(int min, int max);

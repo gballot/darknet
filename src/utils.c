@@ -617,6 +617,13 @@ float constrain(float min, float max, float a)
     return a;
 }
 
+double constrain_double(double min, double max, double a)
+{
+    if (a < min) return min;
+    if (a > max) return max;
+    return a;
+}
+
 float dist_array(float *a, float *b, int n, int sub)
 {
     int i;
@@ -986,8 +993,8 @@ void solve_polynome(polynome_t *poly) {
     double delta = b*b - 4*a*c;
     poly->delta = delta;
     if (delta < 0.) return;
-    poly->x1 = ( -b - pow(delta, 0.5) ) / 2 * a;
-    poly->x2 = ( -b + pow(delta, 0.5) ) / 2 * a;
+    poly->x1 = ( -b - pow(delta, 0.5) ) / (2 * a);
+    poly->x2 = ( -b + pow(delta, 0.5) ) / (2 * a);
 }
 
 #undef RAND

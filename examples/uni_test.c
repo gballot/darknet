@@ -1,6 +1,7 @@
 #ifdef DEBUG
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "distance_to_boundary.h"
 #include "list.h"
@@ -8,6 +9,7 @@
 #include "fspt.h"
 #include "fspt_criterion.h"
 #include "fspt_score.h"
+#include "gini_utils.h"
 #include "kolmogorov_smirnov_dist.h"
 
 static int eq_float_array(int n, const float *X, const float *Y) {
@@ -391,6 +393,24 @@ void uni_test() {
     }
 
     /***********************/
+    /* Test proba gain gini*/
+    /***********************/
+
+    FILE *f = fopen("tmp/proba.data", "w");
+    int n = 1;
+    int s_max = 1000;
+    int t_max = 10;
+    for (int t = 1; t < t_max; ++t) {
+        double tt = (double) t / (2*t_max);
+        for (int s = -1; s < s_max + 20; ++s) {
+            double ss = (double) s / s_max;
+            double p = proba_gain_inferior_to(tt, ss, n);
+            fprintf(f, "%12g %12g %12g\n", tt, ss, p);
+        }
+    }
+    fclose(f);
+
+    /***********************/
     /* Test uniformity     */
     /***********************/
 
@@ -398,7 +418,7 @@ void uni_test() {
         float min = 0.f;
         float max = 1.f;
         int d = 100;
-        size_t n = 100000;
+        size_t n = 100;
         float *rand_array = malloc(n * d *sizeof(float));
         for (size_t i = 0; i < n * d; ++i) rand_array[i] = rand_uniform(min, max);
         float *lim = malloc(2 * d *sizeof(float));

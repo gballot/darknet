@@ -32,6 +32,7 @@ coco/
 waymo/
 local_cfg/
 unf/
+tmp/
 darknet
 .fuse*
 gpu-job*

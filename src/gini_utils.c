@@ -11,6 +11,48 @@
 
 #define EPS 0.00001
 
+/**
+ * Computes P(A <= 1/n sum_{i=1}^n 1_{X_i <= s} <= B).
+ * Where X_i are independant uniform probabilities over [0, 1].
+ *
+ * \param A The inferior bound.
+ * \param B The superior bound.
+ * \param n The number of X_i.
+ * \param s The threshold for the X_i
+ * \return The probability.
+ */
+static double proba_uninform_count(double A, double B, int n, double s) {
+    if (s <= 0.) return 0.;
+    if (s >= 1.) return 1.;
+    double p;
+    if (n*A - floor(n*A) < 1E-10) {
+        p = pow(1 - s, n - floor(n * B)) - pow(1 - s, n - floor(n * A) + 1);
+    } else 
+        p = pow(1 - s, n - floor(n * B)) - pow(1 - s, n - floor(n * A));
+    return p;
+}
+
+double proba_gain_inferior_to(double t, double s, int n) {
+    if (t <= 0.) return 0.;
+    if (t >= 0.5) return 1.;
+    double r = 0.5 - s;
+    polynome_t poly = {0};
+    poly.a = 1.;
+    //poly.b = - (2 * t * (1. - s) + s) / (t + 0.5);
+    //poly.c = (-3 * s * s + 2 * t * s * (2 + s)) / (2 * t + 1);
+    poly.b = (2. * r * (1. - 2. * t)) / (2. * t + 1.);
+    poly.c = r * r - 1. / (2. * t + 1.);
+    solve_polynome(&poly);
+    if (poly.delta < 0.) return 0.;
+    double A = poly.x1;
+    double B = poly.x2;
+    //A = constrain_double(0., 1., A);
+    //B = constrain_double(0., 1., B);
+    debug_assert(A <= B);
+    fprintf(stderr, "A=%g, B=%g, A2=%g, B2=%g\n", A, B, 0.5 - B, 0.5 - A);
+    double p = proba_uninform_count(0.5 - B, 0.5 - A, n, s);
+    return p;
+}
 
 /**
  * Computes the Gini index of a two classes set.

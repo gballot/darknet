@@ -13,5 +13,12 @@
  */
 extern void gini_criterion(criterion_args *args);
 
+/**
+ * Computes the probability that n samples from a uniform distribution
+ * over [0,1], makes a gain in the gini index greater than t by splitting
+ * at s.
+ */
+extern double proba_gain_inferior_to(double t, double s, int n);
+
 
 #endif /* GINI_UTILS_H */
