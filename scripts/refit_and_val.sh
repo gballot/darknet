@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-refit-and-val-fspt-waymo-new.output
+#SBATCH -o gpu-job-refit-and-val-fspt-waymo-consecutive.output
 #SBATCH -p NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -14,14 +14,14 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-output_valid_files='results/refit-and-val-new'
+output_valid_files='results/refit-and-val-conscutive'
 
 full='-full'
 datacfg='cfg/waymo'${full}'.data'
 netcfg='cfg/fspt-waymo'$full'-refit-and-val.cfg'
 #weightfile='weights/fspt-waymo'$full'-data-extraction.weights'
 weightfile='weights/fspt-waymo'$full'-80-percent-day.weights'
-save_weights_file='backup/tmp_weigths_refit_and_val-new'
+save_weights_file='backup/tmp_weigths_refit_and_val-consecutive'
 options='-refit -only_fit -print_stats -save_weights_file '${save_weights_file}
 
 "${tmpprog}" -i 0 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0

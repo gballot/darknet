@@ -761,7 +761,6 @@ void export_score_data(FILE *stream, fspt_stats *s) {
 }
 
 void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
-    if (!s) return;
     /** Title **/
     if (title) {
         int len = strlen(title);
@@ -772,6 +771,10 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
         fprintf(stream, "      ╚═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n\n");
+    }
+    if (!s) {
+        fprintf(stream, "No fspt statistics.\n");
+        return;
     }
 
     /** Node Types **/

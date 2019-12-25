@@ -246,7 +246,6 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
 
 static void print_validation_data(FILE *stream, validation_data *v,
         char *title) {
-    int classes = v->classes;
     /** Title **/
     if (title) {
         int len = strlen(title);
@@ -258,6 +257,11 @@ static void print_validation_data(FILE *stream, validation_data *v,
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n");
     }
+    if (!v) {
+        fprintf(stream, "No validation data.\n\n");
+        return;
+    }
+    int classes = v->classes;
     fprintf(stream, "\
 Parameters :\n\
     -IOU threshold = %f\n\
@@ -996,6 +1000,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             validation_data *val_data = val_datas[index];
             float fspt_thresh = fspt_threshs[j];
             float yolo_thresh = yolo_threshs[i];
+            fprintf(stderr,"Yolo treshold is %g and fspt threshold is %g.\n",
+                    yolo_thresh, fspt_thresh);
             FILE *outstream;
             char outfile2[256] = {0};
             if (outfile) {
@@ -1007,6 +1013,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             }
             assert(outstream);
             if (print_stats_val) {
+                fprintf(stderr, "Print stats...\n");
                 for (int i = 0; i < fspt_layers->size; ++i) {
                     layer *l = fspt_layers_array[i];
                     for (int j = 0; j < l->classes; ++j) {
@@ -1016,21 +1023,18 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                         print_fspt_criterion_args(outstream, fspt->c_args,
                                 buf);
                         print_fspt_score_args(outstream, fspt->s_args, NULL);
+                        print_fspt_stats(outstream, stats[i * classes + j],
+                                NULL);
                         if (stats[i * classes + j]) {
-                            print_fspt_stats(outstream, stats[i * classes + j],
-                                    NULL);
                             free_fspt_stats(stats[i * classes + j]);
-                        } else {
-                            fprintf(outstream, "No statistics.\n\n");
                         }
                     }
                 }
             }
+            fprintf(stderr, "Print validation...\n");
+            print_validation_data(outstream, val_data, "VALIDATION RESULT");
             if (val_data) {
-                print_validation_data(outstream, val_data, "VALIDATION RESULT");
                 free_validation_data(val_data);
-            } else {
-                fprintf(outstream, "No validation data.\n\n");
             }
             if (outstream != stderr) fclose(outstream);
         }

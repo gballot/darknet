@@ -168,10 +168,6 @@ double euristic_score(score_args *args) {
 }
 
 void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
-    if (!a) {
-        fprintf(stream, "No score args.\n");
-        return;
-    }
     /** Title **/
     if (title) {
         int len = strlen(title);
@@ -182,6 +178,10 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
         fprintf(stream, "      ╚═");
         for (int i = 0; i < len; ++ i) fprintf(stream, "═");
         fprintf(stream, "═╝\n\n");
+    }
+    if (!a) {
+        fprintf(stream, "No score args.\n");
+        return;
     }
     fprintf(stream, "\
 ┌──────────────────────────────────────────────┐\n\

@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-KS-test.output
+#SBATCH -o gpu-job-rescore-and-val-fspt-waymo-consecutive.output
 #SBATCH -p NV100q,PV1003q,GV1002q,PP1004q
 #xSBATCH -w node04
 #SBATCH --gres=gpu:1
@@ -21,8 +21,9 @@ datacfg='cfg/waymo'${full}'.data'
 netcfg='cfg/fspt-waymo'$full'-rescore-and-val.cfg'
 #weightfile='weights/fspt-waymo'$full'-data-extraction.weights'
 weightfile='weights/fspt-waymo'$full'-80-percent-day.weights'
-save_weights_file='backup/tmp_weigths_rescore_and_val'
-options='-only_score -print_stats -one_thread -save_weights_file '${save_weights_file}
+weightfile='weights/fspt-waymo'$full'-80-percent-day-consecutive.weights'
+save_weights_file='backup/tmp_weigths_rescore_and_val_consecutive'
+options='-only_score -print_stats -save_weights_file '${save_weights_file}
 
 "${tmpprog}" -i 0 fspt train ${datacfg} ${netcfg} ${weightfile} ${options} -gpus 0
 
