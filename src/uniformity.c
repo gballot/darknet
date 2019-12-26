@@ -26,7 +26,7 @@
 
 /**
  * Tests for uniformity of |p|, a set of |n| points in |d| dimensions.
- * |p| is an array of |n * d| doubles, where the first point is stored
+ * |p| is an array of |n * d| floats, where the first point is stored
  * in the first |d| elements, the second in the next |d| elements, and
  * so on.
  * The contents in |user_options|, if non-|NULL|, are used to control
@@ -37,9 +37,9 @@
  * error.
  */
 double unf_test (const struct unf_options *user_options, 
-        const double *p, int n, int d) {
+        const float *p, int n, int d, const float *lim) {
     struct unf_options options;   /* Local copy of options. */
-    double *r;                    /* Stores |p| plus generated points. */
+    float *r;                    /* Stores |p| plus generated points. */
 
     assert (p != NULL && n > 0 && d > 0);
 
@@ -66,18 +66,18 @@ double unf_test (const struct unf_options *user_options,
         }
     }
 
-    fprintf(stderr, "allocate uniforme.\n");
+    //fprintf(stderr, "allocate uniforme.\n");
     r = options.unf_mem->unf_alloc (sizeof *r * ((2 + n * 2) * d));
     if (r == NULL)
         return -1.0;
 
     {
-        double *const tmp = r + (n * 2) * d;
+        //float *const tmp = r + (n * 2) * d;
         struct unf_a_set *s;
         int i;
 
-        fprintf(stderr, "unf_create.\n");
-        s = options.unf_set->unf_create (options.unf_mem, p, n, d);
+        //fprintf(stderr, "unf_create.\n");
+        s = options.unf_set->unf_create (options.unf_mem, p, n, d, lim);
         if (s == NULL) {
             options.unf_mem->unf_free (r);
             return -1.0;
@@ -85,18 +85,21 @@ double unf_test (const struct unf_options *user_options,
 
         memcpy (r, p, sizeof *r * n * d);
         for (i = 0; i < n; ) {
-            double *y = r + (n + i) * d;
-            fprintf(stderr, "unf_random.\n");
+            float *y = r + (n + i) * d;
+            //fprintf(stderr, "unf_random %d.\n", i);
             options.unf_set->unf_random (s, options.unf_rng, y);
-            int count_outside = 0;
+            ++i;
+            /*
+            //int count_outside = 0;
             if (unf_inside_hull (p, n, d, y, tmp)) {
-                fprintf(stderr, "inside_hull.\n");
+                //fprintf(stderr, "inside_hull.\n");
                 i++;
             } else {
-                ++count_outside;
-                if (count_outside % 1000 == 0)
-                    fprintf(stderr, "outside_hull = %d.\n", count_outside);
+                //++count_outside;
+                //if (count_outside % 1000 == 0)
+                //    fprintf(stderr, "outside_hull = %d.\n", count_outside);
             }
+            */
         }
 
         options.unf_set->unf_discard (s);
@@ -112,18 +115,6 @@ double unf_test (const struct unf_options *user_options,
     }
 }
 
-/**
- * Naive float version of unf_test with a hard copy.
- */
-double unf_test_float (const struct unf_options *user_option,
-        const float *p, int n, int d) {
-    double *p2 = malloc(n * d * sizeof(double));
-    for (double *cursor = p2; cursor < p2 + n * d; ++cursor)
-        *cursor = (double) *p++;
-    double score = unf_test(user_option, p2, n, d);
-    free(p2);
-    return score;
-}
 
 /**
  * Calculates vector |n_star_est| at point |y| within points |p|.
@@ -131,8 +122,8 @@ double unf_test_float (const struct unf_options *user_option,
  * There are |d| elements in each of |n_star|, |tmp|, and |y|, and |n * 
  * d| elements in |p|.
  */
-static void calc_n_star_est (double *n_star_est, double *tmp,
-        const double *p, int n, int d, const double *y) {
+static void calc_n_star_est (float *n_star_est, float *tmp,
+        const float *p, int n, int d, const float *y) {
     int i;
 
     assert (n_star_est != NULL && tmp != NULL && p != NULL
@@ -142,12 +133,12 @@ static void calc_n_star_est (double *n_star_est, double *tmp,
         n_star_est[i] = 0.0;
 
     for (i = 0; i < n; i++) {
-        double length = 0.0;
-        double factor;
+        float length = 0.0;
+        float factor;
         int j;
 
         for (j = 0; j < d; j++) {
-            double diff = tmp[j] = p[j] - y[j];
+            float diff = tmp[j] = p[j] - y[j];
             length += diff * diff;
         }
         factor = 1.0 / pow (length, d + 1.0);
@@ -166,11 +157,11 @@ static void calc_n_star_est (double *n_star_est, double *tmp,
  * Returns nonzero only if point |y| is within the (approximate) convex
  * hull of the |n| points in array |p|.
  * Each point has |d| dimensions, and |tmp| must point to a modifiable
- * scratch array with room for |2 * d| doubles.
+ * scratch array with room for |2 * d| floats.
  */
-int unf_inside_hull (const double *p, int n, int d, const double *y, 
-        double *tmp) {
-    double *n_star_est;
+int unf_inside_hull (const float *p, int n, int d, const float *y, 
+        float *tmp) {
+    float *n_star_est;
     int i;
 
     assert (p != NULL && n > 0 && d > 0 && y != NULL && tmp != NULL);
@@ -179,7 +170,7 @@ int unf_inside_hull (const double *p, int n, int d, const double *y,
     calc_n_star_est (n_star_est, tmp, p, n, d, y);
 
     for (i = 0; i < n; i++) {
-        double dot;
+        float dot;
         int j;
 
         dot = 0.0;
@@ -204,7 +195,7 @@ int unf_inside_hull (const double *p, int n, int d, const double *y,
  * occurred.
  */
 int unf_run_mst (struct unf_mem *mem_class, struct unf_mst *mst_class,
-        int *c, int *t, const double *r, int n, int d) {
+        int *c, int *t, const float *r, int n, int d) {
     unf_mst_result *mst;
     int i;
 

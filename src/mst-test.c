@@ -26,7 +26,7 @@ const char *pgm_name = "mst-test";
 int
 main (int argc, char *argv[])
 {
-  double *data;
+  float *data;
   unf_mst_result *mst;
   int i;
 
@@ -77,8 +77,8 @@ main (int argc, char *argv[])
 
   for (i = 0; i < n; i++)
     {
-      double x = data[i * 2] = (double) rand () / RAND_MAX;
-      double y = data[i * 2 + 1] = (double) rand () / RAND_MAX;
+      float x = data[i * 2] = (float) rand () / RAND_MAX;
+      float y = data[i * 2 + 1] = (float) rand () / RAND_MAX;
 
       printf ("newcurve marktype circle pts %g %g\n", x, y);
     }
@@ -92,10 +92,10 @@ main (int argc, char *argv[])
   
   for (i = 0; i < n - 1; i++)
     {
-      double x0 = data[mst[i][0] * 2];
-      double y0 = data[mst[i][0] * 2 + 1];
-      double x1 = data[mst[i][1] * 2];
-      double y1 = data[mst[i][1] * 2 + 1];
+      float x0 = data[mst[i][0] * 2];
+      float y0 = data[mst[i][0] * 2 + 1];
+      float x1 = data[mst[i][1] * 2];
+      float y1 = data[mst[i][1] * 2 + 1];
 	
       printf ("newline pts %g %g %g %g\n", x0, y0, x1, y1);
     }

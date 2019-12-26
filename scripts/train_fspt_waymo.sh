@@ -10,7 +10,6 @@ module load cuda90/blas/9.0.176
 
 datacfg='cfg/waymo-full.data'
 netcfg='local_cfg/fspt-waymo-dontload-full.cfg'
-#weightfile='weights/fspt-waymo-data-extraction-day.weights'
 weightfile='weights/yolov3-waymo-full-80-percent-day.weights'
 options='-clear -ordered -print_stats'
 

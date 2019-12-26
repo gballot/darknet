@@ -1014,19 +1014,19 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             assert(outstream);
             if (print_stats_val) {
                 fprintf(stderr, "Print stats...\n");
-                for (int i = 0; i < fspt_layers->size; ++i) {
-                    layer *l = fspt_layers_array[i];
-                    for (int j = 0; j < l->classes; ++j) {
-                        fspt_t *fspt = l->fspts[j];
+                for (int k = 0; k < fspt_layers->size; ++k) {
+                    layer *l = fspt_layers_array[k];
+                    for (int c = 0; c < l->classes; ++c) {
+                        fspt_t *fspt = l->fspts[c];
                         char buf[256] = {0};
-                        sprintf(buf, "%s class %s", l->ref, names[j]);
+                        sprintf(buf, "%s class %s", l->ref, names[c]);
                         print_fspt_criterion_args(outstream, fspt->c_args,
                                 buf);
                         print_fspt_score_args(outstream, fspt->s_args, NULL);
-                        print_fspt_stats(outstream, stats[i * classes + j],
+                        print_fspt_stats(outstream, stats[k * classes + c],
                                 NULL);
-                        if (stats[i * classes + j]) {
-                            free_fspt_stats(stats[i * classes + j]);
+                        if (stats[k * classes + c]) {
+                            free_fspt_stats(stats[k * classes + c]);
                         }
                     }
                 }

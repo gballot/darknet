@@ -53,6 +53,7 @@ typedef struct fspt_node {
     int depth;
     double score;
     double volume;
+    double uniformity;
     int count;          // keeps the successive violation of gain threshold
     NON_SPLIT_CAUSE cause;
 } fspt_node;

@@ -6,6 +6,7 @@
 
 #include "distance_to_boundary.h"
 #include "list.h"
+#include "uniformity.h"
 #include "utils.h"
 #include "fspt.h"
 #include "fspt_criterion.h"
@@ -435,13 +436,14 @@ void uni_test() {
     {
         float min = 0.f;
         float max = 1.f;
-        int d = 100;
-        size_t n = 100;
+        int d = 1;
+        size_t n = 10000;
         float *rand_array = malloc(n * d *sizeof(float));
         for (size_t i = 0; i < n * d; ++i) rand_array[i] = rand_uniform(min, max);
         float *lim = malloc(2 * d *sizeof(float));
         for (int i = 0; i < d; ++i) {
             lim[2*i] = min;
+            //if (i == 0) lim[2*i] = min -1;
             lim[2*i + 1] = max;
         }
         float *imp = malloc(d *sizeof(float));
@@ -454,6 +456,9 @@ void uni_test() {
         fprintf(stderr, "P(D_1000000 <= 0.58 / pow(1000000, 0.5)) = 1 - %g.\n\n", KSfbar(1000000, 0.58 / pow(1000000, 0.5)));
         fprintf(stderr, "P(D_1000000 <= 1.36 / pow(1000000, 0.5)) = 1 - %g.\n\n", KSfbar(1000000, 1.36 / pow(1000000, 0.5)));
         fprintf(stderr, "P(D_1000000 <= 2.36 / pow(1000000, 0.5)) = 1 - %g.\n\n", KSfbar(1000000, 2.36 / pow(1000000, 0.5)));
+
+        double mst_test = unf_test(NULL, rand_array, n, d, lim);
+        fprintf(stderr, "MST test uniformity = %g.\n\n", mst_test);
 
         /* fit on uniformity */
         fspt_t *fspt = make_fspt(d, lim, imp,

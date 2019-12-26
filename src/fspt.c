@@ -19,7 +19,7 @@
 #define INT_FORMAT "%12d"
 #define LINTFORMAT "%12ld"
 #define LEFTINTFOR "%-12d"
-#define NODE_VERSION 2
+#define NODE_VERSION 3
 
 /**
  * Computes the volume of a feature space.
@@ -852,9 +852,9 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 ┌────────────┬──────────────────────────────────────┬───────────────────────────────────────────────────┐\n\
 │            │ absolute values above fspt thresholds│     relative values above fspt thresholds         │\n\
 │    fspt    ├────────────┬────────────┬────────────┼────────────┬────────────┬────────────┬────────────┤\n\
-│            │   volume   │ n_samples  │  n_leaves  │   volume   │mean_length │ n_samples  │  n_leaves  │\n\
+│  threshold │   volume   │ n_samples  │  n_leaves  │   volume   │mean_length │ n_samples  │  n_leaves  │\n\
 ├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    for (int i = 0; i < s->n_thresh; ++i) {
+    for (int i = 0; i < s->n_thresh && i < 100; ++i) {
         fprintf(stream,"\
 │"FLT_FORMAT"│"FLT_FORMAT"│"LINTFORMAT"│"LINTFORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
             s->fspt_thresh[i],
@@ -898,7 +898,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 ┌─────┬─────────────────────────────────────────────────────────────────────────┬─────┐\n\
 │depth│100%%    75%%      50%%      25%%       0%%      25%%      50%%      75%%    100%%│ tot │\n\
 ├─────┼┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬┼─────┤\n");
-    for (int d = 0; d < s->depth; ++d) {
+    for (int d = 0; d < s->depth && d < 1000; ++d) {
         double prop = s->n_nodes_by_depth_p[d];
         const int half = 36;
         const int length = 2 * half + 1;
@@ -925,7 +925,7 @@ void print_fspt_stats(FILE *stream, fspt_stats *s, char * title) {
 ├────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬────────────┤\n\
 │feat│   count    │  count_p   │    mean    │    min     │     Q1     │   median   │     Q3     │    max     │\n\
 ├────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼────────────┤\n");
-    for (int feat = 0; feat < s->fspt->n_features; ++feat) {
+    for (int feat = 0; feat < s->fspt->n_features && feat < 1000; ++feat) {
         if (!s->split_features_count[feat]) continue;
         fprintf(stream, "\
 │% 4d│"INT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│"FLT_FORMAT"│\n",
@@ -1304,8 +1304,12 @@ void fspt_save_file(FILE *fp, fspt_t fspt, int save_samples, int *succ) {
     if (fspt.root) {
         have_root = 1;
         int version = NODE_VERSION;
+        size_t size = sizeof(fspt_node);
+        size_t n_nodes = fspt.n_nodes;
         *succ &= fwrite(&have_root, sizeof(int), 1, fp);
         *succ &= fwrite(&version, sizeof(int), 1, fp);
+        *succ &= fwrite(&size, sizeof(size_t), 1, fp);
+        *succ &= fwrite(&n_nodes, sizeof(size_t), 1, fp);
         pre_order_node_save(fp, *fspt.root, succ);
     } else {
         *succ &= fwrite(&have_root, sizeof(int), 1, fp);
@@ -1422,15 +1426,24 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
     /* load root */
     int have_root = 0;
     *succ &= fread(&have_root, sizeof(int), 1, fp);
-    if (have_root && load_root) {
+    if (have_root) {
         int version = 0;
+        size_t size = 0;
+        size_t n_nodes = 0;
         *succ &= fread(&version, sizeof(int), 1, fp);
-        if (version == NODE_VERSION) {
+        *succ &= fread(&size, sizeof(size_t), 1, fp);
+        *succ &= fread(&n_nodes, sizeof(size_t), 1, fp);
+        if (load_root && version == NODE_VERSION
+                && size == sizeof(fspt_node)) {
             fspt->root =
                 pre_order_node_load(fp, fspt->n_samples, fspt->samples, NULL,
                         fspt, succ);
         } else {
-            fprintf(stderr, "Nodes not load : wrong version (%d)", version);
+            fseek(fp, size * n_nodes, SEEK_CUR);
+            if (load_root)
+                fprintf(stderr, "Nodes not load : wrong version (%d) or size\
+(saved size = %ld and sizeof(fspt_node) = %ld).\n",
+                        version, size, sizeof(fspt_node));
         }
     }
 }

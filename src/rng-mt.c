@@ -48,9 +48,7 @@ static unsigned long mt[N]; /* the array for the state vector  */
 static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
 /* initializing the array with a NONZERO seed */
-static void
-sgenrand(seed)
-    unsigned long seed;	
+static void sgenrand(seed) unsigned long seed;	
 {
     /* setting initial seeds to mt[N] using         */
     /* the generator Line 25 of Table 1 in          */
@@ -61,10 +59,9 @@ sgenrand(seed)
         mt[mti] = (69069 * mt[mti-1]) & 0xffffffff;
 }
 
-static double /* generating reals */
+static float /* generating reals */
 /* unsigned long */ /* for integer generation */
-genrand(void)
-{
+genrand(void) {
     unsigned long y;
     static unsigned long mag01[2]={0x0, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
@@ -88,21 +85,20 @@ genrand(void)
 
         mti = 0;
     }
-  
+
     y = mt[mti++];
     y ^= TEMPERING_SHIFT_U(y);
     y ^= TEMPERING_SHIFT_S(y) & TEMPERING_MASK_B;
     y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
     y ^= TEMPERING_SHIFT_L(y);
 
-    return ( (double)y / (unsigned long)0xffffffff ); /* reals */
+    return ( (float)y / (unsigned long)0xffffffff ); /* reals */
     /* return y; */ /* for integer generation */
 }
 
 #include "uniformity.h"
 
-struct unf_rng unf_rng_mt = 
-  {
+struct unf_rng unf_rng_mt = {
     sgenrand,
     genrand,
-  };
+};

@@ -25,12 +25,12 @@ struct unf_a_set {
     struct unf_mem mem; /* Memory allocator. */
 
     int d;              /* Number of dimensions. */
-    double *min;        /* Minimum values for each of |d| dimensions. */
-    double *max;        /* Maximum values for each of |d| dimensions. */
+    float *min;        /* Minimum values for each of |d| dimensions. */
+    float *max;        /* Maximum values for each of |d| dimensions. */
 };
 
-struct unf_a_set *set_create (struct unf_mem *mem, const double *p,
-        int n, int d) {
+struct unf_a_set *set_create (struct unf_mem *mem, const float *p,
+        int n, int d, const float *lim) {
     struct unf_a_set *set;
     int i;
 
@@ -53,22 +53,9 @@ struct unf_a_set *set_create (struct unf_mem *mem, const double *p,
     set->max = set->min + d;
 
     /* Construct hyper-rectangle. */
-    for (i = 0; i < d; i++)
-        set->min[i] = set->max[i] = *p++;
-
-    for (i = 1; i < n; i++) 
-    {
-        int j;
-
-        for (j = 0; j < d; j++) 
-        {
-            if (*p < set->min[j])
-                set->min[j] = *p;
-            else if (*p > set->max[j])
-                set->max[j] = *p;
-
-            p++;
-        }
+    for (i = 0; i < d; i++) {
+        set->min[i] = lim[2*i];
+        set->max[i] = lim[2*i + 1];
     }
 
     return set;
@@ -82,7 +69,7 @@ void set_discard (struct unf_a_set *set) {
     set->mem.unf_free (set);
 }
 
-void set_random (const struct unf_a_set *set, struct unf_rng *rng, double *v) {
+void set_random (const struct unf_a_set *set, struct unf_rng *rng, float *v) {
     int i;
 
     for (i = 0; i < set->d; i++)

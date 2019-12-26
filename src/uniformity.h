@@ -47,7 +47,7 @@ extern struct unf_mst unf_mst_prim_fibonacci;
 typedef int unf_mst_result[2];
 
 struct unf_mst {
-    unf_mst_result *(*unf_run) (struct unf_mem *, const double *, int, int);
+    unf_mst_result *(*unf_run) (struct unf_mem *, const float *, int, int);
 };
 
 /* Memory allocator class. */
@@ -58,26 +58,26 @@ struct unf_mem {
 
 struct unf_rng {
     void (*unf_seed) (unsigned long);
-    double (*unf_get) (void);
+    float (*unf_get) (void);
 };
 
 /* Point set. */
 struct unf_set {
     struct unf_a_set *(*unf_create) (struct unf_mem *, 
-            const double *, int n, int d);
+            const float *, int n, int d, const float *lim);
     void (*unf_discard) (struct unf_a_set *);
     void (*unf_random) (const struct unf_a_set *, 
-            struct unf_rng *, double *);
+            struct unf_rng *, float *);
 };
 
 /* High-level routine. */
-double unf_test (const struct unf_options *, const double *, int, int);
-double unf_test_float (const struct unf_options *, const float *, int, int);
+double unf_test (const struct unf_options *, const float *, int, int,
+        const float *lim);
 
 /* Low-level routines. */
-int unf_inside_hull (const double *, int, int, const double *, double *);
+int unf_inside_hull (const float *, int, int, const float *, float *);
 int unf_run_mst (struct unf_mem *, struct unf_mst *, 
-        int *, int *, const double *, int, int);
+        int *, int *, const float *, int, int);
 double unf_calc_results (int, int, int);
 
 #endif /* uniformity.h */

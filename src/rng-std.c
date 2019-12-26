@@ -20,20 +20,16 @@
 #include <stdlib.h>
 #include "uniformity.h"
 
-static void 
-rng_seed (unsigned long seed) 
-{
-  srand (seed);
+static void rng_seed (unsigned long seed) {
+    srand (seed);
 }
 
-static double 
-rng_get (void) 
-{
-  return (double) rand () / RAND_MAX;
+static float rng_get (void) {
+    return (float) rand () / RAND_MAX;
 }
 
 struct unf_rng unf_rng_system = 
-  {
+{
     rng_seed, 
     rng_get
-  };
+};

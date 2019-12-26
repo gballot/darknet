@@ -136,6 +136,25 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
     a->uniformity_test_level, a->unf_alpha);
 }
 
+int compare_criterion(criterion_args *c1, criterion_args *c2) {
+    int r = (
+        c1->merge_nodes == c2->merge_nodes
+        && c1->max_depth == c2->max_depth
+        && c1->min_samples == c2->min_samples
+        && c1->min_volume_p == c2->min_volume_p
+        && c1->min_length_p == c2->min_length_p
+        && c1->max_tries_p == c2->max_tries_p
+        && c1->max_features_p == c2->max_features_p
+        && c1->gini_gain_thresh == c2->gini_gain_thresh
+        && c1->max_consecutive_gain_violations
+            == c2->max_consecutive_gain_violations
+        && c1->middle_split == c2->middle_split
+        && c1->uniformity_test_level == c2->uniformity_test_level
+        && c1->unf_alpha == c2->unf_alpha
+    );
+    return r;
+}
+
 void save_criterion_args_file(FILE *fp, criterion_args *c, int *succ) {
     int contains_args = 0;
     int version = CRITERION_ARGS_VERSION;

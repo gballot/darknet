@@ -14,7 +14,7 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-output_valid_files='results/refit-and-val-conscutive'
+output_valid_files='results/refit-and-val-conscutive2'
 
 full='-full'
 datacfg='cfg/waymo'${full}'.data'
