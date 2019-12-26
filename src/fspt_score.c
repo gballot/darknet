@@ -12,7 +12,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONGINT_FORMAT "%-16ld"
-#define SCORE_ARGS_VERSION 3
+#define SCORE_ARGS_VERSION 4
 
 static double auto_normalize(density_normalize_args a, double raw_score) {
     if (!a.verification_passed) return 0.;
@@ -190,6 +190,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │     Messages to change fitting behaviour     │\n\
 ├─────────────────────────────┬────────────────┤\n\
 │            score_during_fit │"INTEGER_FORMAT"│\n\
+│              score_function │"INTEGER_FORMAT"│\n\
 ├─────────────────────────────┴────────────────┤\n\
 │     Message for all the score functions      │\n\
 ├─────────────────────────────┬────────────────┤\n\
@@ -227,7 +228,8 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 │               norm_args.tau │"FLOAT_FORMAT__"│\n\
 │norm_args.verification_passed│"INTEGER_FORMAT"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
-    a->score_during_fit, a->fspt, a->node, a->discover, a->need_normalize,
+    a->score_during_fit, a->score_function,
+    a->fspt, a->node, a->discover, a->need_normalize,
     a->normalize_pass, a->n_leaves,
     a->score_vol_n_array,
     a->compute_euristic_hyperparam, a->euristic_hyperparam,
@@ -239,6 +241,34 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
     a->verify_n_nodes_p_thresh, a->verify_n_uniform_p_thresh,
     a->auto_calibration_score,
     a->norm_args.tau, a->norm_args.verification_passed);
+}
+
+int compare_score_args(const score_args *s1, const score_args *s2) {
+    SCORE_FUNCTION f = s1->score_function;
+    if (f != s2->score_function) return 0;
+    int r = 1;
+    if (f == EURISTIC || f == UNKNOWN_SCORE_FUNC) {
+    }
+    if (f == DENSITY || f == UNKNOWN_SCORE_FUNC) {
+        r &= (
+            s1->exponential_normalization == s2->exponential_normalization
+            && s1->calibration_score == s2->calibration_score
+            && s1->calibration_n_samples_p == s2->calibration_n_samples_p
+            && s1->calibration_volume_p == s2->calibration_volume_p
+            && s1->calibration_feat_length_p == s2->calibration_feat_length_p
+            && s1->volume_penalization == s2->volume_penalization
+            );
+    }
+    if (f == AUTO_DENSITY || f == UNKNOWN_SCORE_FUNC) {
+        r &= (
+            s1->samples_p == s2->samples_p
+            && s1->verify_density_thresh == s2->verify_density_thresh
+            && s1->verify_n_nodes_p_thresh == s2->verify_n_nodes_p_thresh
+            && s1->verify_n_uniform_p_thresh == s2->verify_n_uniform_p_thresh
+            && s1->auto_calibration_score == s2->auto_calibration_score
+            );
+    }
+    return r;
 }
 
 void save_score_args_file(FILE *fp, score_args *s, int *succ) {
@@ -280,6 +310,18 @@ score_args *load_score_args_file(FILE *fp, int *succ) {
                 contains_args);
     }
     return s;
+}
+
+SCORE_FUNCTION string_to_score_function_number(char *s) {
+    if (strcmp(s, "euristic") == 0) {
+        return EURISTIC;
+    }  else if (strcmp(s, "density") == 0) {
+        return DENSITY;
+    }  else if (strcmp(s, "auto_density") == 0) {
+        return AUTO_DENSITY;
+    } else {
+        return UNKNOWN_SCORE_FUNC;
+    }
 }
 
 score_func string_to_fspt_score(char *s) {

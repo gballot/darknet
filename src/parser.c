@@ -822,6 +822,8 @@ layer parse_fspt(list *options, size_params params)
     ACTIVATION activation = get_activation(activation_s);
     /* criterion args */
     criterion_args c_args = {0};
+    c_args.criterion_function =
+        string_to_criterion_function_number(criterion_string);
     c_args.merge_nodes = option_find_int_quiet(options, "merge_nodes", 0);
     c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
     assert(1 <= c_args.min_samples);
@@ -849,6 +851,7 @@ layer parse_fspt(list *options, size_params params)
             "uniformity_alpha", .05);
     /* score args */
     score_args s_args = {0};
+    s_args.score_function = string_to_score_function_number(score_string);
     s_args.exponential_normalization =
         option_find_int_quiet(options, "exponential_normalization", 1);
     s_args.calibration_score =

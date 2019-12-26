@@ -11,7 +11,7 @@
 #define POINTER_FORMAT "%-16p"
 #define INTEGER_FORMAT "%-16d"
 #define LONG_INTFORMAT "%-16ld"
-#define CRITERION_ARGS_VERSION 5
+#define CRITERION_ARGS_VERSION 6
 
 
 int respect_min_lenght_p(int n_features, const float* fspt_lim,
@@ -90,6 +90,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │     Messages to change fitting behaviour     │\n\
 ├─────────────────────────────┬────────────────┤\n\
 │                 merge_nodes │"INTEGER_FORMAT"│\n\
+│          criterion_function │"INTEGER_FORMAT"│\n\
 ├─────────────────────────────┴────────────────┤\n\
 │   Messages for all the criterion functions   │\n\
 ├─────────────────────────────┬────────────────┤\n\
@@ -119,10 +120,12 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 │            gini_gain_thresh │"FLOAT_FORMAT__"│\n\
 │max_consecutive_gain_violati │"INTEGER_FORMAT"│\n\
 │                middle_split │"INTEGER_FORMAT"│\n\
+│               multi_threads │"INTEGER_FORMAT"│\n\
 │       uniformity_test_level │"INTEGER_FORMAT"│\n\
 │                   unf_alpha │"FLOAT_FORMAT__"│\n\
 └─────────────────────────────┴────────────────┘\n\n",
-    a->merge_nodes, a->fspt, a->node,
+    a->merge_nodes, a->criterion_function,
+    a->fspt, a->node,
     a->max_depth, a->count_max_depth_hit,
     a->min_samples, a->count_min_samples_hit,
     a->min_volume_p, a->count_min_volume_p_hit,
@@ -133,25 +136,31 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
     a->best_index, a->best_split, a->forbidden_split,
     a->increment_count, a->end_of_fitting, a->max_tries_p, a->max_features_p,
     a->gini_gain_thresh, a->max_consecutive_gain_violations, a->middle_split,
+    a->multi_threads,
     a->uniformity_test_level, a->unf_alpha);
 }
 
-int compare_criterion(criterion_args *c1, criterion_args *c2) {
-    int r = (
-        c1->merge_nodes == c2->merge_nodes
-        && c1->max_depth == c2->max_depth
-        && c1->min_samples == c2->min_samples
-        && c1->min_volume_p == c2->min_volume_p
-        && c1->min_length_p == c2->min_length_p
-        && c1->max_tries_p == c2->max_tries_p
-        && c1->max_features_p == c2->max_features_p
-        && c1->gini_gain_thresh == c2->gini_gain_thresh
-        && c1->max_consecutive_gain_violations
-            == c2->max_consecutive_gain_violations
-        && c1->middle_split == c2->middle_split
-        && c1->uniformity_test_level == c2->uniformity_test_level
-        && c1->unf_alpha == c2->unf_alpha
-    );
+int compare_criterion_args(const criterion_args *c1, const criterion_args *c2){
+    CRITERION_FUNCTION f = c1->criterion_function;
+    if (f != c2->criterion_function) return 0;
+    int r = 1;
+    r &= c1->merge_nodes == c2->merge_nodes;
+    if (f == GINI || f == UNKNOWN_CRITERION_FUNC) {
+        r &= (
+            c1->max_depth == c2->max_depth
+            && c1->min_samples == c2->min_samples
+            && c1->min_volume_p == c2->min_volume_p
+            && c1->min_length_p == c2->min_length_p
+            && c1->max_tries_p == c2->max_tries_p
+            && c1->max_features_p == c2->max_features_p
+            && c1->gini_gain_thresh == c2->gini_gain_thresh
+            && c1->max_consecutive_gain_violations
+                == c2->max_consecutive_gain_violations
+            && c1->middle_split == c2->middle_split
+            && c1->uniformity_test_level == c2->uniformity_test_level
+            && c1->unf_alpha == c2->unf_alpha
+             );
+    }
     return r;
 }
 
@@ -194,6 +203,14 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
                 contains_args);
     }
     return c;
+}
+
+CRITERION_FUNCTION string_to_criterion_function_number(char *s) {
+    if (strcmp(s, "gini") == 0) {
+        return GINI;
+    } else {
+        return UNKNOWN_CRITERION_FUNC;
+    }
 }
 
 criterion_func string_to_fspt_criterion(char *s) {

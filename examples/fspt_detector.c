@@ -634,7 +634,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char *outfile, char *save_weights_file, int *gpus, int ngpus,
         int clear, int refit, int ordered,
-        int start, int end, int one_thread, int merge, int only_fit,
+        int start, int end, int one_thread, int merge, int auto_only,
+        int only_fit,
         int only_score, int print_stats_val) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
@@ -665,6 +666,35 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     int imgs = net->batch * net->subdivisions * n_nets;
     data train, buffer;
+
+    list *fspt_layers = get_network_layers_by_type(net, FSPT);
+    if (fspt_layers->size == 0)
+        error("The net must have fspt layers.");
+    int same_c_args = 1;
+    int same_s_args = 1;
+    while (fspt_layers->size > 0) {
+        layer *l = (layer *) list_pop(fspt_layers);
+        for (int i = 0; i < l->classes; ++i) {
+            same_c_args &= compare_criterion_args(&l->fspt_criterion_args,
+                    l->fspts[i]->c_args);
+            same_s_args &= compare_score_args(&l->fspt_score_args,
+                    l->fspts[i]->s_args);
+        }
+    }
+    free_list(fspt_layers);
+
+    if (auto_only) {
+        only_fit = !same_c_args;
+        only_score = same_c_args && !same_s_args;
+        if (same_c_args && same_s_args) {
+            for (i = 0; i < n_nets; ++i) {
+                free_network(nets[i]);
+            }
+            free(nets);
+            free(names);
+            return;
+        }
+    }
 
     layer l = net->layers[0];
     for (int i = 0; i < net->n; ++i) {
@@ -743,6 +773,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         save_weights(net, buff);
         fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
         fit_fspts(net, classes, refit, one_thread, merge);
+        free_list(plist);
+        free(paths);
     } // end if (!only_fit && !only_score)
     char buff[256];
     if (save_weights_file) {
@@ -772,6 +804,11 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         }
         if (outstream != stderr) fclose(outstream);
     }
+    for (i = 0; i < n_nets; ++i) {
+        free_network(nets[i]);
+    }
+    free(nets);
+    free(names);
 }
 
 typedef struct valid_args {
@@ -1046,10 +1083,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             what_time_is_it_now() - start_time);
 }
 
-
 void run_fspt(int argc, char **argv)
 {
-    if(argc < 4){
+    if(argc < 4) {
         fprintf(stderr,
 "usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
 With :\n\
@@ -1080,6 +1116,8 @@ Options are :\n\
     -end         -> indicate the line of the last (excluded and\n\
                     starting from 0) image link. Default last link.\n\
     -merge       -> if set, newly extracted data are merged to existing.\n\
+    -auto_only   -> sets automatically only_fit and only_score. The extarcted\n\
+                    data are the ones in the weight file.\n\
     -only_fit    -> if set, don't extract new data. implies -merge.\n\
     -only_score  -> if set, only scores the fspts.\n\
     -one_thread  -> if set, the fspts are fitted in only one thread instead of\n\
@@ -1105,6 +1143,7 @@ Options are :\n\
     int start = find_int_arg(argc, argv, "-start", 0);
     int end = find_int_arg(argc, argv, "-end", 0);
     int one_thread = find_arg(argc, argv, "-one_thread");
+    int auto_only = find_arg(argc, argv, "-auto_only");
     int only_fit = find_arg(argc, argv, "-only_fit");
     int only_score = find_arg(argc, argv, "-only_score");
     int merge = find_arg(argc, argv, "-merge") || only_fit;
@@ -1159,7 +1198,8 @@ Options are :\n\
     else if(0==strcmp(argv[2], "train"))
         train_fspt(datacfg, cfg, weights, outfile, save_weights_file, gpus,
                 ngpus, clear,
-                refit_fspts, ordered, start, end, one_thread, merge, only_fit,
+                refit_fspts, ordered, start, end, one_thread, merge, auto_only,
+                only_fit,
                 only_score, print_stats_val);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, n_yolo_thresh, 
@@ -1168,6 +1208,10 @@ Options are :\n\
                 print_stats_val, outfile);
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, outfile, export_score_file);
+
+    if (gpus) free(gpus);
+    free(fspt_threshs);
+    free(yolo_threshs);
 }
 
 #undef FLT_FORMAT

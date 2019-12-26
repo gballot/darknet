@@ -3,6 +3,13 @@
 
 #include "fspt.h"
 
+typedef enum SCORE_FUNCTION {
+    UNKNOWN_SCORE_FUNC = 0,
+    EURISTIC = 1,
+    DENSITY = 2,
+    AUTO_DENSITY = 3
+} SCORE_FUNCTION;
+
 typedef struct density_normalize_args {
     double tau;
     int verification_passed;
@@ -10,6 +17,7 @@ typedef struct density_normalize_args {
 
 typedef struct score_args {
     /* messages to change fitting behaviour */
+    SCORE_FUNCTION score_function;
     int score_during_fit;
     /* messages for all score functions */
     fspt_t *fspt;
@@ -41,9 +49,42 @@ typedef struct score_args {
 } score_args;
 
 
+/**
+ * Compares two score arguments.
+ *
+ * \param c1 The first score argument.
+ * \param c2 The second score argument.
+ * \return 1 if the arguments are equal. 0 otherwise.
+ */
+extern int compare_score_args(const score_args *s1, const score_args *s2);
+
+/**
+ * Load a score argument from a file.
+ *
+ * \param fp A file pointer. Must be open and closed by the caller.
+ * \param succ Output parameter. Will be false if an error occures.
+ * \return a score argument pointer. Must be freed by the caller.
+ */
 extern score_args *load_score_args_file(FILE *fp, int *succ);
 
+/**
+ * Saves the score argument in a file.
+ *
+ * \param fp A file pointer. Must be open and closed by the caller.
+ * \param s A score argument to be saved.
+ * \param succ Output parameter. Will be false if an error occures.
+ */
 extern void save_score_args_file(FILE *fp, score_args *s, int *succ);
+
+/**
+ * maps the string names of the functions to the score functions
+ * number.
+ *
+ * \param s The string name of a score function.
+ * \return the corresponding score function number if it exists or 0.
+ */
+extern SCORE_FUNCTION string_to_score_function_number(char *s);
+
 /**
  * maps the string names of the functions to the score functions.
  *

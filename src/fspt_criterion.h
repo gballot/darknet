@@ -5,6 +5,11 @@
 
 #include "fspt.h"
 
+typedef enum CRITERION_FUNCTION {
+    UNKNOWN_CRITERION_FUNC = 0,
+    GINI = 1
+} CRITERION_FUNCTION;
+
 typedef struct {
     size_t count_max_depth_hit;
     size_t count_min_samples_hit;
@@ -20,6 +25,7 @@ typedef enum unf_test_level {
 
 typedef struct criterion_args {
     /* messages to change fitting behaviour */
+    CRITERION_FUNCTION criterion_function;
     int merge_nodes;
     /* messages between fspt_fit and all the criterion functions */
     fspt_t *fspt;
@@ -61,6 +67,16 @@ extern int respect_min_lenght_p(int n_features, const float* fspt_lim,
 
 extern void determine_cause(int n, forbidden_split_cause *causes,
         criterion_args *args);
+
+/**
+ * maps the string names of the functions to the criterion functions
+ * number.
+ *
+ * \param s The string name of a criterion function.
+ * \return the corresponding criterion function number if it exists or 0.
+ */
+extern CRITERION_FUNCTION string_to_criterion_function_number(char *s);
+
 /**
  * Convert a string representing the name of a criterion function
  * to a pointer to this function.
@@ -78,7 +94,8 @@ extern criterion_func string_to_fspt_criterion(char *s);
  * \param c2 The second criterion argument.
  * \return 1 if the arguments are equal. 0 otherwise.
  */
-extern int compare_criterion(criterion_args *c1, criterion_args *c2);
+extern int compare_criterion_args(const criterion_args *c1,
+        const criterion_args *c2);
 
 /**
  * Prints a criterion_args to a file.
