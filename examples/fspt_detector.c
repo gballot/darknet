@@ -245,7 +245,7 @@ static void update_validation_data( int nboxes_fspt, detection *dets_fspt,
 }
 
 static void print_validation_data(FILE *stream, validation_data *v,
-        char *title) {
+        int only_resume, char *title) {
     /** Title **/
     if (title) {
         int len = strlen(title);
@@ -261,8 +261,10 @@ static void print_validation_data(FILE *stream, validation_data *v,
         fprintf(stream, "No validation data.\n\n");
         return;
     }
+
     int classes = v->classes;
-    fprintf(stream, "\
+    if (!only_resume) {
+        fprintf(stream, "\
 Parameters :\n\
     -IOU threshold = %f\n\
     -FSPT threshold = %f\n\
@@ -270,13 +272,16 @@ Parameters :\n\
     -Number of true boxe = %d\n\
     -Number of yolo detection = %d\n\
     -Number of class = %d\n\n",
-    v->iou_thresh, v->fspt_thresh, v->n_images, v->tot_n_truth,
-    v->n_yolo_detections, classes);
+        v->iou_thresh, v->fspt_thresh, v->n_images, v->tot_n_truth,
+        v->n_yolo_detections, classes);
+    }
 
     /* Resume */
-    fprintf(stream, "    ┏━━━━━━━━┓\n");
-    fprintf(stream, "    ┃ RESUME ┃\n");
-    fprintf(stream, "    ┗━━━━━━━━┛\n\n");
+    if (!only_resume) {
+        fprintf(stream, "    ┏━━━━━━━━┓\n");
+        fprintf(stream, "    ┃ RESUME ┃\n");
+        fprintf(stream, "    ┗━━━━━━━━┛\n\n");
+    }
     fprintf(stream, "\
                       ┌────────────┬────────────┬────────────┬────────────┬────────────┐\n\
                       │True detect.│Wrong class │ Prediction │No detection│    True    │\n\
@@ -336,6 +341,8 @@ Parameters :\n\
                 v->tot_n_false_detection),
         safe_divd(v->tot_n_rejection_of_truth, v->tot_n_truth)
         );
+
+    if (only_resume) return;
 
     /* Per class */
     fprintf(stream, "    ┏━━━━━━━━━━━┓\n");
@@ -1069,7 +1076,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 }
             }
             fprintf(stderr, "Print validation...\n");
-            print_validation_data(outstream, val_data, "VALIDATION RESULT");
+            print_validation_data(outstream, val_data, 0, "VALIDATION RESULT");
             if (!out_val_data && val_data) {
                 free_validation_data(val_data);
             }
@@ -1088,13 +1095,24 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             what_time_is_it_now() - start_time);
 }
 
+static double validation_score(const validation_data *v_positif,
+        const validation_data *v_negatif) {
+    float false_positif_p = safe_divd(v_positif->tot_n_rejection_of_truth,
+            v_positif->tot_n_truth);
+    float true_negatif_p = safe_divd(v_negatif->tot_n_rejection_of_truth,
+            v_negatif->tot_n_truth);
+    return true_negatif_p - false_positif_p;
+}
+
 typedef struct validation_cfg {
     float yolo_thresh;
     float fspt_thresh;
-    validation_data *val_data;
+    validation_data *val_data_positif;
+    validation_data *val_data_negatif;
     char *cfgfile;
     char *outfile_fit;
-    char *outfile_val;
+    char *outfile_val_positif;
+    char *outfile_val_negatif;
     char *weightfile;
     int n_fspt_layers;
     criterion_args *c_args;
@@ -1102,7 +1120,60 @@ typedef struct validation_cfg {
     float score;
 } validation_cfg;
 
-static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
+static void print_validation_cfg(FILE *stream, validation_cfg *v, char *title){
+    /** Title **/
+    if (title) {
+        int len = strlen(title);
+        fprintf(stream, "      ╔═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╗\n");
+        fprintf(stream, "      ║ %s ║\n", title);
+        fprintf(stream, "      ╚═");
+        for (int i = 0; i < len; ++ i) fprintf(stream, "═");
+        fprintf(stream, "═╝\n");
+    }
+    if (!v) {
+        fprintf(stream, "No validation configuration.\n\n");
+        return;
+    }
+
+    fprintf(stream, "\
+┌────────────────────────────────────────────────────────────────────────────────────────────┐\n\
+│                                VALIDATION CONFIGURATION                                    │\n\
+├─────────────────────────────┬──────────────────────────────────────────────────────────────┤\n\
+│                 yolo_thresh │"FLT_FORMAT"                                                  │\n\
+│                 fspt_thresh │"FLT_FORMAT"                                                  │\n\
+│          configuration file │%-62s│\n\
+│                    fit file │%-62s│\n\
+│  validation positif outfile │%-62s│\n\
+│  validation negatif outfile │%-62s│\n\
+│                 weight file │%-62s|\n\
+│            validation score │"FLT_FORMAT"                                                  │\n\
+└─────────────────────────────┴──────────────────────────────────────────────────────────────┘\n\n",
+        v->yolo_thresh, v->fspt_thresh,
+        v->cfgfile, v->outfile_fit, v->outfile_val_positif,
+        v->outfile_val_negatif, v->weightfile, v->score
+        );
+
+    fprintf(stream, "Validation data positif resume :\n");
+    print_validation_data(stream, v->val_data_positif, 1, NULL);
+    fprintf(stream, "Validation data negatif resume :\n");
+    print_validation_data(stream, v->val_data_negatif, 1, NULL);
+    print_fspt_criterion_args(stream, v->c_args, NULL);
+    print_fspt_score_args(stream, v->s_args, NULL);
+}
+
+static int cmp_val_cfg(const void *p1, const void *p2) {
+    validation_cfg v1 = *(validation_cfg *)p1;
+    validation_cfg v2 = *(validation_cfg *)p2;
+    if (v1.score < v2.score)
+        return -1;
+    else
+        return v1.score > v2.score;
+}
+
+static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
+        int n_cfg, char **cfgfiles,
         char *weightfile, char *save_weightfile,
         int n_yolo_threshs, float *yolo_threshs,
         int n_fspt_threshs, float *fspt_threshs, float hier_thresh,
@@ -1119,7 +1190,6 @@ static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
         char *cfgfile = cfgfiles[cfg];
         network *net = load_network(cfgfile, NULL, 0);
-        int similar_index = -1;
         char *similar_weightfile = weightfile;
         int n_fspt_layers = 0;
         /* Try to find a weightfile that was similar to avoid refitting. */
@@ -1143,7 +1213,6 @@ static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
             }
             free_list(fspt_layers);
             if (same_c_args) {
-                similar_index = prev_cfg;
                 similar_weightfile = val_cfgs[prev_cfg].weightfile;
                 if (same_s_args) break;
             }
@@ -1153,31 +1222,41 @@ static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
         sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
         char *save_weightfile2 = calloc(256, sizeof(char));
         sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
-        train_fspt(datacfg, cfgfile, similar_weightfile, outfile_fit,
+        train_fspt(datacfg_positif, cfgfile, similar_weightfile, outfile_fit,
                 save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
                 end, one_thread, 0, 1, 0, 0, print_stats_val);
 
-        char *outfile_val = calloc(256, sizeof(char));
-        sprintf(outfile_val, "%s_cfg%d_val", outfile, cfg);
-        validation_data **val_datas;
-        validate_fspt(datacfg, cfgfile, save_weightfile2, n_yolo_threshs,
+        char *outfile_val_positif = calloc(256, sizeof(char));
+        sprintf(outfile_val_positif, "%s_cfg%d_val_positif", outfile, cfg);
+        char *outfile_val_negatif = calloc(256, sizeof(char));
+        sprintf(outfile_val_negatif, "%s_cfg%d_val_negatif", outfile, cfg);
+        validation_data **val_datas_positif;
+        validation_data **val_datas_negatif;
+        validate_fspt(datacfg_positif, cfgfile, save_weightfile2, n_yolo_threshs,
                 yolo_threshs, n_fspt_threshs, fspt_threshs, hier_thresh,
                 iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
-                outfile_val, &val_datas);
+                outfile_val_positif, &val_datas_positif);
+        validate_fspt(datacfg_negatif, cfgfile, save_weightfile2, n_yolo_threshs,
+                yolo_threshs, n_fspt_threshs, fspt_threshs, hier_thresh,
+                iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
+                outfile_val_negatif, &val_datas_negatif);
 
         for (int i = 0; i < n_yolo_threshs; ++i) {
             for (int j = 0; j < n_fspt_threshs; ++j) {
                 int index = i * n_fspt_threshs + j;
-                validation_data *val_data = val_datas[index];
+                validation_data *val_data_positif = val_datas_positif[index];
+                validation_data *val_data_negatif = val_datas_negatif[index];
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
                 int bigindex = n_cfg * n_fspt_threshs * n_yolo_threshs + index;
                 validation_cfg val_cfg = val_cfgs[bigindex];
                 val_cfg.yolo_thresh = yolo_thresh;
                 val_cfg.fspt_thresh = fspt_thresh;
-                val_cfg.val_data = val_data;
+                val_cfg.val_data_positif = val_data_positif;
+                val_cfg.val_data_negatif = val_data_negatif;
                 val_cfg.outfile_fit = outfile_fit;
-                val_cfg.outfile_val = outfile_val;
+                val_cfg.outfile_val_positif = outfile_val_positif;
+                val_cfg.outfile_val_negatif = outfile_val_negatif;
                 val_cfg.weightfile = save_weightfile2;
                 val_cfg.n_fspt_layers = n_fspt_layers;
                 val_cfg.c_args = calloc(n_fspt_layers, sizeof(criterion_args));
@@ -1191,11 +1270,20 @@ static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
                 }
                 free_list(fspt_layers);
 
-                val_cfg.score = validation_score(val_data);
+                val_cfg.score =
+                    validation_score(val_data_positif, val_data_negatif);
             }
         }
-
     }
+    qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,
+            sizeof(validation_cfg), cmp_val_cfg);
+    FILE *f = fopen(outfile, "w");
+    for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
+        char title[256] = {0};
+        sprintf(title, "Configuration number %d", i);
+        print_validation_cfg(f, val_cfgs + i, title);       
+    }
+    fclose(f);
 }
 
 
