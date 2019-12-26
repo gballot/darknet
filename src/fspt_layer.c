@@ -498,12 +498,16 @@ void fspt_layer_fit(layer l, int refit, int merge) {
     for (int class = 0; class < l.classes; ++class) {
         fspt_layer_fit_class(l, class, refit, merge);
     }
+    l.fspt_criterion_args = *l.fspts[0]->c_args;
+    l.fspt_score_args = *l.fspts[0]->s_args;
 }
 
 void fspt_layer_rescore(layer l) {
     for (int class = 0; class < l.classes; ++class) {
         fspt_layer_rescore_class(l, class);
     }
+    l.fspt_criterion_args = *l.fspts[0]->c_args;
+    l.fspt_score_args = *l.fspts[0]->s_args;
 }
 
 void fspt_layer_set_samples(layer l, int refit, int merge) {

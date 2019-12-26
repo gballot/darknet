@@ -254,7 +254,8 @@ int compare_score_args(const score_args *s1, const score_args *s2) {
             s1->exponential_normalization == s2->exponential_normalization
             && s1->calibration_score == s2->calibration_score
             && s1->calibration_n_samples_p == s2->calibration_n_samples_p
-            && s1->calibration_volume_p == s2->calibration_volume_p
+            && (s1->calibration_volume_p == s2->calibration_volume_p
+                || !s1->calibration_volume_p || !s2->calibration_volume_p)
             && s1->calibration_feat_length_p == s2->calibration_feat_length_p
             && s1->volume_penalization == s2->volume_penalization
             );

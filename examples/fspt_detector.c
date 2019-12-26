@@ -888,7 +888,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         int n_fspt_thresh, float *fspt_threshs, float hier_thresh,
         float iou_thresh, int ngpus, int *gpus, int ordered,
         int start, int end, 
-        int print_stats_val, char *outfile) {
+        int print_stats_val, char *outfile, validation_data ***out_val_data) {
     list *options = read_data_cfg(datacfg);
     char *valid_images = option_find_str(options, "valid", "data/valid.list");
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -1070,7 +1070,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
             }
             fprintf(stderr, "Print validation...\n");
             print_validation_data(outstream, val_data, "VALIDATION RESULT");
-            if (val_data) {
+            if (!out_val_data && val_data) {
                 free_validation_data(val_data);
             }
             if (outstream != stderr) fclose(outstream);
@@ -1079,12 +1079,127 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     free(fspt_layers_array);
     free_list(fspt_layers);
     free(stats);
+    if (!out_val_data)
+        free(val_datas);
+    else
+        *out_val_data = val_datas;
+
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start_time);
 }
 
-void run_fspt(int argc, char **argv)
-{
+typedef struct validation_cfg {
+    float yolo_thresh;
+    float fspt_thresh;
+    validation_data *val_data;
+    char *cfgfile;
+    char *outfile_fit;
+    char *outfile_val;
+    char *weightfile;
+    int n_fspt_layers;
+    criterion_args *c_args;
+    score_args *s_args;
+    float score;
+} validation_cfg;
+
+static void validate_multiple_cfg(char *datacfg, int n_cfg, char **cfgfiles,
+        char *weightfile, char *save_weightfile,
+        int n_yolo_threshs, float *yolo_threshs,
+        int n_fspt_threshs, float *fspt_threshs, float hier_thresh,
+        float iou_thresh, int ngpus, int *gpus, int ordered,
+        int start, int end, int one_thread,
+        int print_stats_val, char *outfile) {
+
+    validation_cfg *val_cfgs =
+        calloc(n_cfg * n_yolo_threshs * n_fspt_threshs, sizeof(validation_cfg));
+
+    assert(outfile);
+    assert(save_weightfile);
+
+    for (int cfg = 0; cfg < n_cfg; ++cfg) {
+        char *cfgfile = cfgfiles[cfg];
+        network *net = load_network(cfgfile, NULL, 0);
+        int similar_index = -1;
+        char *similar_weightfile = weightfile;
+        int n_fspt_layers = 0;
+        /* Try to find a weightfile that was similar to avoid refitting. */
+        for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
+            criterion_args *prev_c_args = val_cfgs[prev_cfg].c_args;
+            score_args *prev_s_args = val_cfgs[prev_cfg].s_args;
+            list *fspt_layers = get_network_layers_by_type(net, FSPT);
+            n_fspt_layers = fspt_layers->size;
+            if (fspt_layers->size != val_cfgs[prev_cfg].n_fspt_layers) {
+                free_list(fspt_layers);
+                continue;
+            }
+            int same_c_args = 1;
+            int same_s_args = 1;
+            for (int k = 0; k < n_fspt_layers; ++k) {
+                layer *l = (layer *) list_pop(fspt_layers);
+                same_c_args &= compare_criterion_args(
+                        &l->fspt_criterion_args, prev_c_args + k);
+                same_s_args &= compare_score_args(&l->fspt_score_args,
+                        prev_s_args + k);
+            }
+            free_list(fspt_layers);
+            if (same_c_args) {
+                similar_index = prev_cfg;
+                similar_weightfile = val_cfgs[prev_cfg].weightfile;
+                if (same_s_args) break;
+            }
+        }
+        /* Refit */
+        char *outfile_fit = calloc(256, sizeof(char));
+        sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
+        char *save_weightfile2 = calloc(256, sizeof(char));
+        sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
+        train_fspt(datacfg, cfgfile, similar_weightfile, outfile_fit,
+                save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
+                end, one_thread, 0, 1, 0, 0, print_stats_val);
+
+        char *outfile_val = calloc(256, sizeof(char));
+        sprintf(outfile_val, "%s_cfg%d_val", outfile, cfg);
+        validation_data **val_datas;
+        validate_fspt(datacfg, cfgfile, save_weightfile2, n_yolo_threshs,
+                yolo_threshs, n_fspt_threshs, fspt_threshs, hier_thresh,
+                iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
+                outfile_val, &val_datas);
+
+        for (int i = 0; i < n_yolo_threshs; ++i) {
+            for (int j = 0; j < n_fspt_threshs; ++j) {
+                int index = i * n_fspt_threshs + j;
+                validation_data *val_data = val_datas[index];
+                float fspt_thresh = fspt_threshs[j];
+                float yolo_thresh = yolo_threshs[i];
+                int bigindex = n_cfg * n_fspt_threshs * n_yolo_threshs + index;
+                validation_cfg val_cfg = val_cfgs[bigindex];
+                val_cfg.yolo_thresh = yolo_thresh;
+                val_cfg.fspt_thresh = fspt_thresh;
+                val_cfg.val_data = val_data;
+                val_cfg.outfile_fit = outfile_fit;
+                val_cfg.outfile_val = outfile_val;
+                val_cfg.weightfile = save_weightfile2;
+                val_cfg.n_fspt_layers = n_fspt_layers;
+                val_cfg.c_args = calloc(n_fspt_layers, sizeof(criterion_args));
+                val_cfg.s_args = calloc(n_fspt_layers, sizeof(score_args));
+
+                list *fspt_layers = get_network_layers_by_type(net, FSPT);
+                for (int k = 0; k < n_fspt_layers; ++k) {
+                    layer *l = (layer *) list_pop(fspt_layers);
+                    val_cfg.c_args[k] = l->fspt_criterion_args;
+                    val_cfg.s_args[k] = l->fspt_score_args;
+                }
+                free_list(fspt_layers);
+
+                val_cfg.score = validation_score(val_data);
+            }
+        }
+
+    }
+}
+
+
+void run_fspt(int argc, char **argv) {
     if(argc < 4) {
         fprintf(stderr,
 "usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
@@ -1205,7 +1320,7 @@ Options are :\n\
         validate_fspt(datacfg, cfg, weights, n_yolo_thresh, 
                 yolo_threshs, n_fspt_thresh, fspt_threshs,
                 hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
-                print_stats_val, outfile);
+                print_stats_val, outfile, NULL);
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, outfile, export_score_file);
 
