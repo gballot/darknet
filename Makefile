@@ -60,6 +60,7 @@ NETCMD=valid
 else ifeq ($(VALID_M), 1)
 NETCMD=valid_multiple
 DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
+NETCONF=local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
 else ifeq ($(STATS), 1)
 NETCMD=stats
 else

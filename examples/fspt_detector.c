@@ -436,7 +436,11 @@ Parameters :\n\
 
 static validation_data *allocate_validation_data(int classes, char **names) {
     validation_data *v = calloc(1, sizeof(validation_data));
-    v->names = names;
+    v->classes = classes;
+    v->names = calloc(classes, sizeof(char *));
+    for (int i = 0; i < classes; ++i) {
+        v->names[i] = copy_string(names[i]);
+    }
     /* True yolo detection */
     v->n_true_detection = calloc(classes, sizeof(int));
     v->sum_true_detection_iou = calloc(classes, sizeof(float));
@@ -487,6 +491,8 @@ static validation_data *allocate_validation_data(int classes, char **names) {
 }
 
 static void free_validation_data(validation_data *v) {
+    /* Names */
+    free_ptrs((void **) v->names, v->classes);
     /* True yolo detection */
     free(v->n_true_detection);
     free(v->sum_true_detection_iou);
@@ -495,20 +501,12 @@ static void free_validation_data(validation_data *v) {
     free(v->sum_true_detection_rejection_fspt_score);
     free(v->sum_true_detection_acceptance_fspt_score);
     /* Wrong class yolo detection */
-    for (int i = 0; i < v->classes; ++i) {
-        free(v->n_wrong_class_detection[i]);
-        free(v->sum_wrong_class_detection_iou[i]);
-        free(v->n_wrong_class_rejection[i]);
-        free(v->n_wrong_class_acceptance[i]);
-        free(v->sum_wrong_class_rejection_fspt_score[i]);
-        free(v->sum_wrong_class_acceptance_fspt_score[i]);
-    }
-    free(v->n_wrong_class_detection);
-    free(v->sum_wrong_class_detection_iou);
-    free(v->n_wrong_class_rejection);
-    free(v->n_wrong_class_acceptance);
-    free(v->sum_wrong_class_rejection_fspt_score);
-    free(v->sum_wrong_class_acceptance_fspt_score);
+    free_ptrs((void **) v->n_wrong_class_detection, v->classes);
+    free_ptrs((void **) v->sum_wrong_class_detection_iou, v->classes);
+    free_ptrs((void **) v->n_wrong_class_rejection, v->classes);
+    free_ptrs((void **) v->n_wrong_class_acceptance, v->classes);
+    free_ptrs((void **) v->sum_wrong_class_rejection_fspt_score, v->classes);
+    free_ptrs((void **) v->sum_wrong_class_acceptance_fspt_score, v->classes);
     /* False yolo detection */
     free(v->n_false_detection);
     free(v->n_false_detection_rejection);
@@ -1095,6 +1093,13 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     else
         *out_val_data = val_datas;
 
+    free_list(options);
+    free_ptrs((void **) names, classes);
+    for (int i = 0; i < n_nets; ++i) free_network(nets[i]);
+    free(nets);
+    free_ptrs((void **) paths, plist->size);
+    free_list(plist);
+
     fprintf(stderr, "Total Detection Time: %f Seconds\n",
             what_time_is_it_now() - start_time);
 }
@@ -1121,6 +1126,8 @@ typedef struct validation_cfg {
     int n_fspt_layers;
     criterion_args *c_args;
     score_args *s_args;
+    int *n_input_layers;
+    int **input_layers;
     float score;
 } validation_cfg;
 
@@ -1210,9 +1217,15 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             int same_s_args = 1;
             for (int k = 0; k < n_fspt_layers; ++k) {
                 layer *l = (layer *) list_pop(fspt_layers);
-                same_c_args &= (l->input_layers, val_cfgs[prev_cfg].input_layers)
+                same_c_args &=
+                    l->inputs == val_cfgs[prev_cfg].n_input_layers[k];
+                if (!same_c_args) continue;
+                same_c_args &= equals_int_array(l->inputs,
+                        l->input_layers, val_cfgs[prev_cfg].input_layers[k]);
+                if (!same_c_args) continue;
                 same_c_args &= compare_criterion_args(
                         &l->fspt_criterion_args, prev_c_args + k);
+                if (!same_c_args) continue;
                 same_s_args &= compare_score_args(&l->fspt_score_args,
                         prev_s_args + k);
             }
@@ -1272,8 +1285,12 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                     layer *l = (layer *) list_pop(fspt_layers);
                     val_cfg.c_args[k] = l->fspt_criterion_args;
                     val_cfg.s_args[k] = l->fspt_score_args;
+                    val_cfg.n_input_layers[k] = l->inputs;
+                    val_cfg.input_layers[k] =
+                        copy_int_array(l->inputs, l->input_layers);
                 }
                 free_list(fspt_layers);
+
 
                 val_cfg.score =
                     validation_score(val_data_positif, val_data_negatif);
