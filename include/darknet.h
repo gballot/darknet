@@ -302,7 +302,6 @@ struct layer{
     float * binary_input;
 
     float *fspt_input;
-    float *fspt_input_gpu;
     fspt_t **fspts;
     float **fspt_training_data;
     size_t *fspt_n_training_data;
@@ -431,6 +430,8 @@ struct layer{
     float * rand_gpu;
     float * squared_gpu;
     float * norms_gpu;
+
+    float *fspt_input_gpu;
 #ifdef CUDNN
     cudnnTensorDescriptor_t srcTensorDesc, dstTensorDesc;
     cudnnTensorDescriptor_t dsrcTensorDesc, ddstTensorDesc;

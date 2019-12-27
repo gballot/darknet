@@ -12,6 +12,8 @@ void free_layer(layer l)
 #endif
         return;
     }
+    if(l.mask)               free(l.mask);
+    if(l.ref)                free(l.ref);
     if(l.cweights)           free(l.cweights);
     if(l.indexes)            free(l.indexes);
     if(l.input_layers)       free(l.input_layers);
@@ -52,7 +54,17 @@ void free_layer(layer l)
     if(l.r_cpu)              free(l.r_cpu);
     if(l.h_cpu)              free(l.h_cpu);
     if(l.binary_input)       free(l.binary_input);
-    if(l.ref)                free(l.ref);
+    if(l.fspt_input)         free(l.fspt_input);
+    if(l.fspts) {
+        for (int i = 0; i < l.classes; ++i) free_fspt(l.fspts[i]);
+        free(l.fspts);
+    }
+    if(l.fspt_training_data) {
+        for (int i = 0; i < l.classes; ++i) free(l.fspt_training_data[i]);
+        free(l.fspt_training_data);
+    }
+    if(l.fspt_n_training_data) free(l.fspt_n_training_data);
+    if(l.fspt_n_max_training_data) free(l.fspt_n_max_training_data);
 
 #ifdef GPU
     if(l.indexes_gpu)           cuda_free((float *)l.indexes_gpu);
@@ -94,5 +106,6 @@ void free_layer(layer l)
     if(l.rand_gpu)                cuda_free(l.rand_gpu);
     if(l.squared_gpu)             cuda_free(l.squared_gpu);
     if(l.norms_gpu)               cuda_free(l.norms_gpu);
+    if(l.fspt_input_gpu)          cuda_free(l.fspt_input_gpu);
 #endif
 }

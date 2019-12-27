@@ -141,6 +141,7 @@ void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
 }
 
 int compare_criterion_args(const criterion_args *c1, const criterion_args *c2){
+    if (!c1 || !c2) return 0;
     CRITERION_FUNCTION f = c1->criterion_function;
     if (f != c2->criterion_function) return 0;
     int r = 1;

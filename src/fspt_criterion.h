@@ -92,7 +92,7 @@ extern criterion_func string_to_fspt_criterion(char *s);
  *
  * \param c1 The first criterion argument.
  * \param c2 The second criterion argument.
- * \return 1 if the arguments are equal. 0 otherwise.
+ * \return 1 if the arguments are equal and non null. 0 otherwise.
  */
 extern int compare_criterion_args(const criterion_args *c1,
         const criterion_args *c2);

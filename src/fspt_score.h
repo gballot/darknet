@@ -54,7 +54,7 @@ typedef struct score_args {
  *
  * \param c1 The first score argument.
  * \param c2 The second score argument.
- * \return 1 if the arguments are equal. 0 otherwise.
+ * \return 1 if the arguments are equal and non null. 0 otherwise.
  */
 extern int compare_score_args(const score_args *s1, const score_args *s2);
 

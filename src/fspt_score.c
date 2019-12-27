@@ -244,6 +244,7 @@ void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
 }
 
 int compare_score_args(const score_args *s1, const score_args *s2) {
+    if (!s1 || !s2) return 0;
     SCORE_FUNCTION f = s1->score_function;
     if (f != s2->score_function) return 0;
     int r = 1;

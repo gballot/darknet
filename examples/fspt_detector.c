@@ -1069,9 +1069,6 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                         print_fspt_score_args(outstream, fspt->s_args, NULL);
                         print_fspt_stats(outstream, stats[k * classes + c],
                                 NULL);
-                        if (stats[k * classes + c]) {
-                            free_fspt_stats(stats[k * classes + c]);
-                        }
                     }
                 }
             }
@@ -1081,6 +1078,13 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
                 free_validation_data(val_data);
             }
             if (outstream != stderr) fclose(outstream);
+        }
+    }
+    for (int k = 0; k < fspt_layers->size; ++k) {
+        for (int c = 0; c < classes; ++c) {
+            if (stats[k * classes + c]) {
+                free_fspt_stats(stats[k * classes + c]);
+            }
         }
     }
     free(fspt_layers_array);
@@ -1206,6 +1210,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             int same_s_args = 1;
             for (int k = 0; k < n_fspt_layers; ++k) {
                 layer *l = (layer *) list_pop(fspt_layers);
+                same_c_args &= (l->input_layers, val_cfgs[prev_cfg].input_layers)
                 same_c_args &= compare_criterion_args(
                         &l->fspt_criterion_args, prev_c_args + k);
                 same_s_args &= compare_score_args(&l->fspt_score_args,
@@ -1275,6 +1280,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             }
         }
     }
+    /* Resume */
     qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,
             sizeof(validation_cfg), cmp_val_cfg);
     FILE *f = fopen(outfile, "w");
@@ -1282,6 +1288,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         char title[256] = {0};
         sprintf(title, "Configuration number %d", i);
         print_validation_cfg(f, val_cfgs + i, title);       
+        print_fspt_criterion_args(f, val_cfgs[i].c_args, NULL);
+        print_fspt_score_args(f, val_cfgs[i].s_args, NULL);
     }
     fclose(f);
 }
@@ -1290,15 +1298,22 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
 void run_fspt(int argc, char **argv) {
     if(argc < 4) {
         fprintf(stderr,
-"usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights] [inputfile] [options]\n\
+"usage: %s %s <train/test/valid> <datacfg> <netcfg> [weights]\n\
+                                                    [inputfile] [options]\n\
+   or: %s %s <valid_multiple> <netcfgs> [weights] -pos <negconf>\n\
+                                                 -neg <posconf> [options]\n\
 With :\n\
     train -> train fspts on an already trained yolo network.\n\
     test  -> test fspt predictions.\n\
     valid -> validate fspt.\n\
+    valid_multiple -> validate multiple fspt configurations.\n\
     stats -> print statistics of the fspts.\n\
 And :\n\
     <datacfg>   -> path to the data configuration file.\n\
+    <negconf>   -> path to the data configuration file for negatif validation.\n\
+    <posconf>   -> path to the data configuration file for positive validation.\n\
     <netcfg>    -> path to the network configuration file.\n\
+    <netcfgs>   -> comma separated paths to the network configuration files.\n\
     [weights]   -> path to a weightfile corresponding to the netcfg file.\n\
                    (optional)\n\
     [inputfile] -> path to a file with list of test images.\n\
@@ -1327,12 +1342,14 @@ Options are :\n\
                     one thread per fspt.\n\
     -fullscreen  -> unused.\n\
     -print_stats -> if set, print the statistics of the fspts after training.\n",
-                argv[0], argv[1]);
+                argv[0], argv[1], argv[0], argv[1]);
         return;
     }
 
     char *yolo_thresh_list = find_char_arg(argc, argv, "-yolo_thresh", ".5");
     char *fspt_thresh_list = find_char_arg(argc, argv, "-fspt_thresh", ".5");
+    char *posconf = find_char_arg(argc, argv, "-pos", 0);
+    char *negconf = find_char_arg(argc, argv, "-neg", 0);
     float hier_thresh = find_float_arg(argc, argv, "-hier", .5);
     float iou_thresh = find_float_arg(argc, argv, "-iou", .5);
     char *gpu_list = find_char_arg(argc, argv, "-gpus", 0);
@@ -1391,10 +1408,34 @@ Options are :\n\
         yolo_thresh_list = strchr(yolo_thresh_list, ',') + 1;
     }
 
-    char *datacfg = argv[3];
-    char *cfg = argv[4];
-    char *weights = (argc > 5) ? argv[5] : 0;
-    char *filename = (argc > 6) ? argv[6]: 0;
+    char *datacfg = NULL;
+    char *cfg = NULL;
+    char *weights = NULL;
+    char *filename = NULL;
+    int n_cfgs = 0;
+    char **cfgs = NULL;
+    if (strcmp(argv[2], "valid_multiple")) {
+        datacfg = argv[3];
+        cfg = argv[4];
+        weights = (argc > 5) ? argv[5] : 0;
+        filename = (argc > 6) ? argv[6]: 0;
+    } else {
+        assert(posconf && negconf);
+        weights = (argc > 4) ? argv[4] : 0;
+        filename = (argc > 5) ? argv[5]: 0;
+        /* configuration files */
+        char *cfg_list = argv[3];
+        len = strlen(cfg_list);
+        n_cfgs = 1;
+        for(int i = 0; i < len; ++i){
+            if (cfg_list[i] == ',') ++n_cfgs;
+        }
+        cfgs = calloc(n_cfgs, sizeof(char *));
+        cfgs[0] = strtok(cfg_list, ",");
+        for(int i = 1; i < n_cfgs; ++i){
+            cfgs[i] = strtok(NULL, ",");
+        }
+    }
     if(0==strcmp(argv[2], "test"))
         test_fspt(datacfg, cfg, weights, filename, *yolo_threshs,
                 *fspt_threshs, hier_thresh, outfile, fullscreen);
@@ -1409,6 +1450,13 @@ Options are :\n\
                 yolo_threshs, n_fspt_thresh, fspt_threshs,
                 hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
                 print_stats_val, outfile, NULL);
+    else if(0==strcmp(argv[2], "valid_multiple"))
+        validate_multiple_cfg(posconf, negconf, n_cfgs, cfgs, weights,
+                save_weights_file, n_yolo_thresh, 
+                yolo_threshs, n_fspt_thresh, fspt_threshs,
+                hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
+                one_thread,
+                print_stats_val, outfile);
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, outfile, export_score_file);
 

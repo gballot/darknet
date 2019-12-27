@@ -4,7 +4,8 @@ OPENCV=0
 OPENMP=0
 DEBUG=0
 TRAIN=0
-VALID=1
+VALID=0
+VALID_M=1
 STATS=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -37,8 +38,8 @@ CFLAGS=-Wall -Wextra -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragm
 CONF=waymo
 VERSION=-full
 MAINCMD=fspt
-BREAKPOINTS= unf_KS_test
-FSPT_OP= -clear -print_stats
+BREAKPOINTS= examples/fspt_detector.c:1026
+FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
@@ -56,6 +57,9 @@ ifeq ($(TRAIN), 1)
 NETCMD=train
 else ifeq ($(VALID), 1)
 NETCMD=valid
+else ifeq ($(VALID_M), 1)
+NETCMD=valid_multiple
+DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
 else ifeq ($(STATS), 1)
 NETCMD=stats
 else

@@ -112,6 +112,7 @@ extern long elapsed_time();
 extern struct timespec get_start_time();
 extern void set_start_time();
 extern int sum_array_int(int *a, int n);
+extern int equals_int_array(int n, int *a, int *b);
 
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of
@@ -168,7 +169,7 @@ extern void solve_polynome(polynome_t *poly);
 
 /**
  * Computes the binomial coefficients
- * k among n.
+ * k among n. Use shared pascal triangle in thread safe way.
  *
  * \param n the total number of elements.
  * \param k The number of elements to choose among n.

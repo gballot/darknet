@@ -1,15 +1,16 @@
 #include "utils.h"
 
+#include <assert.h>
+#include <float.h>
+#include <limits.h>
+#include <math.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <unistd.h>
-#include <float.h>
-#include <limits.h>
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "prng.h"
 
@@ -19,9 +20,10 @@
 typedef struct pascal_t {
     int n_max;
     long **t;
+    pthread_mutex_t m;
 } pascal_t;
 
-static pascal_t pascal = {0};
+static volatile pascal_t pascal = {0, 0, PTHREAD_MUTEX_INITIALIZER};
 
 // Start time as a timespec
 struct timespec start_time;
@@ -1014,32 +1016,47 @@ void solve_polynome(polynome_t *poly) {
 
 long binomial(int n, int k) {
     if (n < 0 || k < 0 || k > n) return 0;
+    if (n == 0 && k == 0) return 1;
     if (pascal.n_max == 0) {
-        pascal.t = calloc(n + 1, sizeof(long *));
+        pthread_mutex_lock((pthread_mutex_t *) &pascal.m);
+        if (pascal.n_max == 0) {
+            pascal.t = calloc(n + 1, sizeof(long *));
 
-        for (int i = 0; i < n + 1; ++i) {
-            pascal.t[i] = calloc(i + 1, sizeof(long));
-            pascal.t[i][0] = 1;
-            for(int j = 1; j < i; ++j)
-                pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
-            pascal.t[i][i] = 1;
+            for (int i = 0; i < n + 1; ++i) {
+                pascal.t[i] = calloc(i + 1, sizeof(long));
+                pascal.t[i][0] = 1;
+                for(int j = 1; j < i; ++j)
+                    pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
+                pascal.t[i][i] = 1;
+            }
+            pascal.n_max = n;
         }
-        pascal.n_max = n;
+        pthread_mutex_unlock((pthread_mutex_t *) &pascal.m);
     }
 
     if (pascal.n_max < n) {
-        pascal.t = realloc(pascal.t, (n + 1)* sizeof(long *));
-        for (int i = pascal.n_max; i < n + 1; ++i) {
-            pascal.t[i] = calloc(i + 1, sizeof(long));
-            pascal.t[i][0] = 1;
-            for(int j = 1; j < i; ++j)
-                pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
-            pascal.t[i][i] = 1;
+        pthread_mutex_lock((pthread_mutex_t *) &pascal.m);
+        if (pascal.n_max < n) {
+            pascal.t = realloc(pascal.t, (n + 1)* sizeof(long *));
+            for (int i = pascal.n_max; i < n + 1; ++i) {
+                pascal.t[i] = calloc(i + 1, sizeof(long));
+                pascal.t[i][0] = 1;
+                for(int j = 1; j < i; ++j)
+                    pascal.t[i][j] = pascal.t[i-1][j] + pascal.t[i-1][j-1];
+                pascal.t[i][i] = 1;
+            }
+            pascal.n_max = n;
         }
-        pascal.n_max = n;
+        pthread_mutex_unlock((pthread_mutex_t *) &pascal.m);
     }
 
     return pascal.t[n][k] ;
+}
+
+int equals_int_array(int n, int *a, int *b) {
+    int *end = a + n;
+    while (a < end) if (*a++ != *b++) return 0;
+    return 1;
 }
 
 #undef RAND
