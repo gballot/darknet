@@ -1176,7 +1176,9 @@ network *parse_network_cfg(char *filename)
 list *read_cfg(char *filename)
 {
     FILE *file = fopen(filename, "r");
+    fprintf(stderr, "before error in read_cfg.\n");
     if(file == 0) file_error(filename);
+    fprintf(stderr, "after error in read_cfg.\n");
     char *line;
     int nu = 0;
     list *options = make_list();
@@ -1298,7 +1300,9 @@ void save_weights_upto(network *net, char *filename, int cutoff)
 #endif
     fprintf(stderr, "Saving weights to %s\n", filename);
     FILE *fp = fopen(filename, "wb");
+    fprintf(stderr, "before error in save_weights_upto.\n");
     if(!fp) file_error(filename);
+    fprintf(stderr, "before error in save_weights_upto.\n");
 
     int major = 0;
     int minor = 2;
@@ -1512,7 +1516,9 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     fprintf(stderr, "Loading weights from %s...", filename);
     fflush(stdout);
     FILE *fp = fopen(filename, "rb");
+    fprintf(stderr, "before error in load_weights_upto.\n");
     if(!fp) file_error(filename);
+    fprintf(stderr, "before error in load_weights_upto.\n");
 
     int major;
     int minor;

@@ -1278,6 +1278,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfg.fspt_thresh = fspt_thresh;
                 val_cfg.val_data_positif = val_data_positif;
                 val_cfg.val_data_negatif = val_data_negatif;
+                val_cfg.cfgfile = copy_string(cfgfile);
                 val_cfg.outfile_fit = outfile_fit;
                 val_cfg.outfile_val_positif = outfile_val_positif;
                 val_cfg.outfile_val_negatif = outfile_val_negatif;
@@ -1298,7 +1299,6 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         copy_int_array(l->inputs, l->input_layers);
                 }
                 free_list(fspt_layers);
-
 
                 val_cfg.score =
                     validation_score(val_data_positif, val_data_negatif);

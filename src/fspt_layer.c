@@ -141,8 +141,6 @@ static void realloc_fspt_data(layer l, int classe, size_t num, int relative) {
  *         in l.fspt_input.
  */
 static float fspt_get_score(layer l, int classe) {
-    debug_print("layer %s : fspt_validate(classe %d) with l.total=%d, l.fspt_input=%p",
-            l.ref, classe, l.total, l.fspt_input);
     float score = 0;
     fspt_predict(1, l.fspts[classe], l.fspt_input, &score);
     return score;
@@ -167,14 +165,11 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
         layer input_layer = net->layers[l.input_layers[input_layer_idx]];
         int input_w = floor(x * input_layer.out_w);
         int input_h = floor(y * input_layer.out_h);
-        debug_print("input_w, input_h : (%d,%d)",
-                input_w, input_h);
 #ifdef GPU
         float *entry = input_layer.output_gpu
             + b * input_layer.outputs
             + input_layer.out_w*input_h
             + input_w;
-        debug_print("entry = %p", entry);
         copy_gpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
                 l.fspt_input_gpu + fspt_input_offset, 1);
 #else
@@ -182,7 +177,6 @@ static void update_fspt_input(layer l, network *net, float x, float y, int b) {
             + b * input_layer.outputs
             + input_layer.out_w*input_h
             + input_w;
-        debug_print("entry = %p", entry);
         copy_cpu(input_layer.out_c, entry, input_layer.out_h*input_layer.out_w,
                 l.fspt_input + fspt_input_offset, 1);
 #endif
@@ -219,9 +213,6 @@ static void copy_fspt_input_to_data(layer l, int classe) {
 #else
     copy_cpu(l.total, l.fspt_input, 1, entry, 1);
 #endif
-    if (l.total > 3)
-        debug_print("add new fspt data for class %d : %f,%f,%f,%f...",
-                classe, entry[0], entry[1], entry[2], entry[3]);
     l.fspt_n_training_data[classe] += 1;
 }
 
@@ -457,7 +448,7 @@ void fspt_layer_rescore_class(layer l, int class) {
             l.ref, class, t / (60 * 60 * 1000), t / (60 * 1000) % 60,
             t / 1000 % 60, t % 1000);
 #ifdef DEBUG
-    if (fspt->root->type == INNER)
+    if (fspt->root->type == INNER && fspt->depth < 10)
         print_fspt(fspt);
 #endif
 }
