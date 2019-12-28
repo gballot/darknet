@@ -212,10 +212,7 @@ fspt_t *make_fspt(int n_features, const float *feature_limit,
     if (!feature_importance) {
         feature_importance = malloc(n_features * sizeof(float));
         float *ptr = (float *) feature_importance;
-        while (ptr < feature_importance + n_features) {
-            *ptr = 1.;
-            ptr++;
-        }
+        while (ptr < feature_importance + n_features) *ptr++ = 1.;
     }
     fspt_t *fspt = calloc(1, sizeof(fspt_t));
     fspt->n_features = n_features;
@@ -1017,6 +1014,7 @@ void free_fspt_nodes(fspt_node *node) {
 }
 
 void free_fspt(fspt_t *fspt) {
+    if (!fspt) return;
     if (fspt->feature_limit) free((float *) fspt->feature_limit);
     if (fspt->feature_importance) free((float *) fspt->feature_importance);
     free_fspt_nodes(fspt->root);

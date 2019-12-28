@@ -60,8 +60,13 @@ layer make_fspt_layer(int inputs, int *input_layers,
     l.fspt_criterion_args = c_args_template;
     l.fspt_score_args = s_args_template;
 
-    for (int i = 0; i < l.classes; ++i) {
-        l.fspts[i] = make_fspt(l.total, feature_limit, feature_importance,
+    if (l.classes > 0)
+        l.fspts[0] = make_fspt(l.total, feature_limit, feature_importance,
+                criterion, score);
+    for (int i = 1; i < l.classes; ++i) {
+        float *local_feat_imp = copy_float_array(l.total, feature_importance);
+        float *local_feat_lim = copy_float_array(2 * l.total, feature_limit);
+        l.fspts[i] = make_fspt(l.total, local_feat_lim, local_feat_imp,
                 criterion, score);
     }
 

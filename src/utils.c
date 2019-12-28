@@ -1053,14 +1053,20 @@ long binomial(int n, int k) {
     return pascal.t[n][k] ;
 }
 
-int *copy_int_array(size_t n, int *a) {
+int *copy_int_array(size_t n, const int *a) {
     int *b = malloc(n * sizeof(int));
     memcpy(b, a, n * sizeof(int));
     return b;
 }
 
-int equals_int_array(size_t n, int *a, int *b) {
-    int *end = a + n;
+float *copy_float_array(size_t n, const float *a) {
+    float *b = malloc(n * sizeof(float));
+    memcpy(b, a, n * sizeof(float));
+    return b;
+}
+
+int equals_int_array(size_t n, const int *a, const int *b) {
+    const int *end = a + n;
     while (a < end) if (*a++ != *b++) return 0;
     return 1;
 }

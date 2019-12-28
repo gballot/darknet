@@ -1268,7 +1268,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 validation_data *val_data_negatif = val_datas_negatif[index];
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
-                int bigindex = n_cfg * n_fspt_threshs * n_yolo_threshs + index;
+                int bigindex = cfg * n_fspt_threshs * n_yolo_threshs + index;
                 validation_cfg val_cfg = val_cfgs[bigindex];
                 val_cfg.yolo_thresh = yolo_thresh;
                 val_cfg.fspt_thresh = fspt_thresh;
@@ -1300,7 +1300,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                     validation_score(val_data_positif, val_data_negatif);
             }
         }
-        fprintf(stderr, "Free network configuration %d.\n", n_cfg);
+        fprintf(stderr, "Free network configuration %d.\n", cfg);
         //TODO : fix free
         //free_network(net);
     }

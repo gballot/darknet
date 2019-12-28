@@ -113,7 +113,8 @@ extern struct timespec get_start_time();
 extern void set_start_time();
 extern int sum_array_int(int *a, int n);
 
-extern int *copy_int_array(size_t n, int *a);
+extern int *copy_int_array(size_t n, const int *a);
+extern float *copy_float_array(size_t n, const float *a);
 
 /**
  * Test equality of two int arrays of the same size.
@@ -123,7 +124,7 @@ extern int *copy_int_array(size_t n, int *a);
  * \param b The second int array.
  * \return 1 if the arrays are equal, 0 otherwise.
  */
-extern int equals_int_array(size_t n, int *a, int *b);
+extern int equals_int_array(size_t n, const int *a, const int *b);
 
 /**
  * Implementation of the Quick Sort algorithm on bidimensional arrays of
