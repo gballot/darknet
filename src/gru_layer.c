@@ -92,23 +92,27 @@ layer make_gru_layer(int batch, int inputs, int outputs, int steps, int batch_no
     l.backward_gpu = backward_gru_layer_gpu;
     l.update_gpu = update_gru_layer_gpu;
 
-    l.forgot_state_gpu = cuda_make_array(0, batch*outputs);
-    l.forgot_delta_gpu = cuda_make_array(0, batch*outputs);
-    l.prev_state_gpu = cuda_make_array(0, batch*outputs);
-    l.state_gpu = cuda_make_array(0, batch*outputs);
-    l.output_gpu = cuda_make_array(0, batch*outputs*steps);
-    l.delta_gpu = cuda_make_array(0, batch*outputs*steps);
-    l.r_gpu = cuda_make_array(0, batch*outputs);
-    l.z_gpu = cuda_make_array(0, batch*outputs);
-    l.h_gpu = cuda_make_array(0, batch*outputs);
+    if (gpu_index >= 0) {
+        l.forgot_state_gpu = cuda_make_array(0, batch*outputs);
+        l.forgot_delta_gpu = cuda_make_array(0, batch*outputs);
+        l.prev_state_gpu = cuda_make_array(0, batch*outputs);
+        l.state_gpu = cuda_make_array(0, batch*outputs);
+        l.output_gpu = cuda_make_array(0, batch*outputs*steps);
+        l.delta_gpu = cuda_make_array(0, batch*outputs*steps);
+        l.r_gpu = cuda_make_array(0, batch*outputs);
+        l.z_gpu = cuda_make_array(0, batch*outputs);
+        l.h_gpu = cuda_make_array(0, batch*outputs);
+    }
 
 #ifdef CUDNN
-    cudnnSetTensor4dDescriptor(l.uz->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uz->out_c, l.uz->out_h, l.uz->out_w); 
-    cudnnSetTensor4dDescriptor(l.uh->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uh->out_c, l.uh->out_h, l.uh->out_w); 
-    cudnnSetTensor4dDescriptor(l.ur->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ur->out_c, l.ur->out_h, l.ur->out_w); 
-    cudnnSetTensor4dDescriptor(l.wz->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wz->out_c, l.wz->out_h, l.wz->out_w); 
-    cudnnSetTensor4dDescriptor(l.wh->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wh->out_c, l.wh->out_h, l.wh->out_w); 
-    cudnnSetTensor4dDescriptor(l.wr->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wr->out_c, l.wr->out_h, l.wr->out_w); 
+    if (gpu_index >= 0) {
+        cudnnSetTensor4dDescriptor(l.uz->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uz->out_c, l.uz->out_h, l.uz->out_w); 
+        cudnnSetTensor4dDescriptor(l.uh->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.uh->out_c, l.uh->out_h, l.uh->out_w); 
+        cudnnSetTensor4dDescriptor(l.ur->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.ur->out_c, l.ur->out_h, l.ur->out_w); 
+        cudnnSetTensor4dDescriptor(l.wz->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wz->out_c, l.wz->out_h, l.wz->out_w); 
+        cudnnSetTensor4dDescriptor(l.wh->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wh->out_c, l.wh->out_h, l.wh->out_w); 
+        cudnnSetTensor4dDescriptor(l.wr->dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, batch, l.wr->out_c, l.wr->out_h, l.wr->out_w); 
+    }
 #endif
 #endif
 

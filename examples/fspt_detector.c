@@ -1197,10 +1197,14 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
 
     assert(outfile);
     assert(save_weightfile);
+    // local copy of the global variable gpu_index.
+    int old_gpu_index = gpu_index;
 
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
         char *cfgfile = cfgfiles[cfg];
+        gpu_index = -1; // no gpu allocation needed for this net.
         network *net = load_network(cfgfile, NULL, 0);
+        gpu_index = old_gpu_index;
         char *similar_weightfile = weightfile;
         int n_fspt_layers = 0;
         /* Try to find a weightfile that was similar to avoid refitting. */
@@ -1301,8 +1305,10 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             }
         }
         fprintf(stderr, "Free network configuration %d.\n", cfg);
-        //TODO : fix free
-        //free_network(net);
+
+        gpu_index = -1; // no gpu space to free in this net.
+        free_network(net);
+        gpu_index = old_gpu_index;
     }
     /* Resume */
     qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,

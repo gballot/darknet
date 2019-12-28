@@ -1004,8 +1004,10 @@ void free_network(network *net)
     if(net->input) free(net->input);
     if(net->truth) free(net->truth);
 #ifdef GPU
-    if(net->input_gpu) cuda_free(net->input_gpu);
-    if(net->truth_gpu) cuda_free(net->truth_gpu);
+    if (gpu_index >= 0) {
+        if(net->input_gpu) cuda_free(net->input_gpu);
+        if(net->truth_gpu) cuda_free(net->truth_gpu);
+    }
 #endif
     free(net);
 }
