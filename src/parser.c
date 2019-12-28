@@ -752,7 +752,7 @@ layer parse_fspt(list *options, size_params params)
         n_features += net->layers[input_layers[i]].out_c;
     /* feature_limit */
     char *limit_string = option_find(options, "feature_limit");
-    float *feature_limit = calloc(2*n_features, sizeof(int));
+    float *feature_limit = calloc(2*n_features, sizeof(float));
     if (limit_string) {
         len = strlen(limit_string);
         int m = 1;

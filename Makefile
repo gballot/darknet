@@ -38,7 +38,7 @@ CFLAGS=-Wall -Wextra -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragm
 CONF=waymo
 VERSION=-full
 MAINCMD=fspt
-BREAKPOINTS= examples/fspt_detector.c:1026
+BREAKPOINTS= test_fspt
 FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
@@ -60,7 +60,8 @@ NETCMD=valid
 else ifeq ($(VALID_M), 1)
 NETCMD=valid_multiple
 DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
-NETCONF=local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
+NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
+FSPT_OP+= -out tmp/tmp_makefile_out -save_weights_file tmp/tmp_makefile_weights
 else ifeq ($(STATS), 1)
 NETCMD=stats
 else

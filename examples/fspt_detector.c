@@ -1259,6 +1259,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
                 outfile_val_negatif, &val_datas_negatif);
 
+        fprintf(stderr, "Updata validation configuration %d.\n", cfg);
+
         for (int i = 0; i < n_yolo_threshs; ++i) {
             for (int j = 0; j < n_fspt_threshs; ++j) {
                 int index = i * n_fspt_threshs + j;
@@ -1280,6 +1282,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfg.c_args = calloc(n_fspt_layers, sizeof(criterion_args));
                 val_cfg.s_args = calloc(n_fspt_layers, sizeof(score_args));
 
+                val_cfg.n_input_layers = calloc(n_fspt_layers, sizeof(int));
+                val_cfg.input_layers = calloc(n_fspt_layers, sizeof(int *));
                 list *fspt_layers = get_network_layers_by_type(net, FSPT);
                 for (int k = 0; k < n_fspt_layers; ++k) {
                     layer *l = (layer *) list_pop(fspt_layers);
@@ -1296,6 +1300,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                     validation_score(val_data_positif, val_data_negatif);
             }
         }
+        fprintf(stderr, "Free network configuration %d.\n", n_cfg);
+        //TODO : fix free
+        //free_network(net);
     }
     /* Resume */
     qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,
