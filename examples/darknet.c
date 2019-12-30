@@ -522,7 +522,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Not an option: %s\n", argv[1]);
     }
     long t = elapsed_time();
-    fprintf(stderr, "Total time : %ldh %ldm %lds %ldms.\n",
+    fprintf(stderr, "Total Time : %ldh %ldm %lds %ldms.\n",
             t / 1000 / 60 / 60,
             t / 1000 / 60 % 60,
             t / 1000 % 60,

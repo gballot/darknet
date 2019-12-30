@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-refit-and-val-fspt-waymo-consecutive.output
+#SBATCH -o gpu-job-refit-and-val-fspt-waymo-consecutive2.output
 #SBATCH -p NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1

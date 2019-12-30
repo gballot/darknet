@@ -690,8 +690,19 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
     if (auto_only) {
         only_fit = !same_c_args;
+        merge |= only_fit;
         only_score = same_c_args && !same_s_args;
         if (same_c_args && same_s_args) {
+            char buff[256];
+            if (save_weights_file) {
+                fprintf(stderr, "Save weights in %s.\n", save_weights_file);
+                save_weights(net, save_weights_file);
+            } else {
+                sprintf(buff, "%s/%s_final.weights", backup_directory, base);
+                fprintf(stderr, "Save weights in %s.\n", buff);
+                save_weights(net, buff);
+            }
+            fprintf(stderr, "End of FSPT training without refit.\n");
             for (i = 0; i < n_nets; ++i) {
                 free_network(nets[i]);
             }
@@ -783,9 +794,11 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     } // end if (!only_fit && !only_score)
     char buff[256];
     if (save_weights_file) {
+        fprintf(stderr, "Save weights in %s.\n", save_weights_file);
         save_weights(net, save_weights_file);
     } else {
         sprintf(buff, "%s/%s_final.weights", backup_directory, base);
+        fprintf(stderr, "Save weights in %s.\n", buff);
         save_weights(net, buff);
     }
     fprintf(stderr, "End of FSPT training\n");
@@ -1100,8 +1113,12 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     free_ptrs((void **) paths, plist->size);
     free_list(plist);
 
-    fprintf(stderr, "Total Detection Time: %f Seconds\n",
-            what_time_is_it_now() - start_time);
+    long t = 1000l * (what_time_is_it_now() - start_time);
+    fprintf(stderr, "Total Validation Time : %ldh %ldm %lds %ldms.\n",
+            t / 1000 / 60 / 60,
+            t / 1000 / 60 % 60,
+            t / 1000 % 60,
+            t % 1000);
 }
 
 static double validation_score(const validation_data *v_positif,
@@ -1272,8 +1289,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 validation_data *val_data_negatif = val_datas_negatif[index];
                 float fspt_thresh = fspt_threshs[j];
                 float yolo_thresh = yolo_threshs[i];
-                int bigindex = cfg * n_fspt_threshs * n_yolo_threshs + index;
-                validation_cfg val_cfg = val_cfgs[bigindex];
+                validation_cfg val_cfg = {0};
                 val_cfg.yolo_thresh = yolo_thresh;
                 val_cfg.fspt_thresh = fspt_thresh;
                 val_cfg.val_data_positif = val_data_positif;
@@ -1302,6 +1318,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
 
                 val_cfg.score =
                     validation_score(val_data_positif, val_data_negatif);
+
+                int bigindex = cfg * n_fspt_threshs * n_yolo_threshs + index;
+                val_cfgs[bigindex] = val_cfg;
             }
         }
         fprintf(stderr, "Free network configuration %d.\n", cfg);

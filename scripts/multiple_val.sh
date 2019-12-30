@@ -14,7 +14,7 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-val_dir='results/multiple_val-1/'
+val_dir='results/multiple_val-2/'
 mkdir -p "${val_dir}"
 
 output_valid_files=${val_dir}'valid_'
