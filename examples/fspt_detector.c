@@ -675,6 +675,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     list *fspt_layers = get_network_layers_by_type(net, FSPT);
     if (fspt_layers->size == 0)
         error("The net must have fspt layers.");
+    layer fspt = *(layer *) fspt_layers->front->val;
+    int classes = fspt.classes;
     int same_c_args = 1;
     int same_s_args = 1;
     while (fspt_layers->size > 0) {
@@ -712,18 +714,6 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         }
     }
 
-    layer l = net->layers[0];
-    for (int i = 0; i < net->n; ++i) {
-        l = net->layers[i];
-        if (l.type == FSPT || l.type == YOLO)
-            break;
-    }
-    if (l.type != FSPT && l.type != YOLO)
-        error("The net must have fspt or yolo layers");
-
-    int classes = l.classes;
-    if (only_score) only_fit = 0;
-
     if (only_fit) { 
         fprintf(stderr, "Only fit FSPTs...\n");
         fit_fspts(net, classes, refit, one_thread, merge);
@@ -735,12 +725,12 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         char **paths = (char **)list_to_array(plist);
 
         load_args args = get_base_args(net);
-        args.coords = l.coords;
+        args.coords = fspt.coords;
         args.paths = paths;
         args.n = imgs;
         args.classes = classes;
-        args.jitter = l.jitter;
-        args.num_boxes = l.max_boxes;
+        args.jitter = fspt.jitter;
+        args.num_boxes = fspt.max_boxes;
         args.d = &buffer;
         args.type = DETECTION_DATA;
         args.threads = 64;
@@ -1194,10 +1184,10 @@ static void print_validation_cfg(FILE *stream, validation_cfg *v, char *title){
 static int cmp_val_cfg(const void *p1, const void *p2) {
     validation_cfg v1 = *(validation_cfg *)p1;
     validation_cfg v2 = *(validation_cfg *)p2;
-    if (v1.score < v2.score)
+    if (v1.score > v2.score)
         return -1;
     else
-        return v1.score > v2.score;
+        return v1.score < v2.score;
 }
 
 static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
@@ -1206,7 +1196,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         int n_yolo_threshs, float *yolo_threshs,
         int n_fspt_threshs, float *fspt_threshs, float hier_thresh,
         float iou_thresh, int ngpus, int *gpus, int ordered,
-        int start, int end, int one_thread,
+        int start, int end, int one_thread, int auto_only,
         int print_stats_val, char *outfile) {
 
     validation_cfg *val_cfgs =
@@ -1263,7 +1253,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
         train_fspt(datacfg_positif, cfgfile, similar_weightfile, outfile_fit,
                 save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
-                end, one_thread, 0, 1, 0, 0, print_stats_val);
+                end, one_thread, 0, auto_only, 0, 0, print_stats_val);
 
         char *outfile_val_positif = calloc(256, sizeof(char));
         sprintf(outfile_val_positif, "%s_cfg%d_val_positif", outfile, cfg);
@@ -1504,7 +1494,7 @@ Options are :\n\
                 save_weights_file, n_yolo_thresh, 
                 yolo_threshs, n_fspt_thresh, fspt_threshs,
                 hier_thresh, iou_thresh, ngpus, gpus, ordered, start, end,
-                one_thread,
+                one_thread, auto_only,
                 print_stats_val, outfile);
     else if (0 == strcmp(argv[2], "stats"))
         print_stats(datacfg, cfg, weights, outfile, export_score_file);

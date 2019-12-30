@@ -25,7 +25,7 @@ posconf='cfg/waymo-full-only-day.data'
 negconf='cfg/waymo-full-night.data'
 yolo_thresh='0.7'
 fspt_thresh='0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.99,0.999'
-options='-pos '${posconf}' -neg '${negconf}' -ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
 
 "${tmpprog}" -i 0 fspt valid_multiple ${netcfgs} ${weightfile} ${options} -gpus 0
 

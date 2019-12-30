@@ -430,6 +430,9 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
         float *X = l.fspt_training_data[class];
         fspt->n_samples = n;
         fspt->samples = X;
+        l.fspt_training_data[class] = NULL;
+        l.fspt_n_training_data[class] = 0;
+        l.fspt_n_max_training_data[class] = 0;
     }
 }
 
@@ -470,6 +473,9 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
             n += size_base;
         }
         float *X = l.fspt_training_data[class];
+        l.fspt_training_data[class] = NULL;
+        l.fspt_n_training_data[class] = 0;
+        l.fspt_n_max_training_data[class] = 0;
         criterion_args *c_args = calloc(1, sizeof(criterion_args)); 
         score_args *s_args = calloc(1, sizeof(score_args)); 
         *c_args = l.fspt_criterion_args;
