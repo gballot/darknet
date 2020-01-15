@@ -43,6 +43,7 @@ FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
+NETCONF=tmp/tmp_cfg_test
 #NETCONF=local_cfg/fspt-waymo-test.cfg
 NETCONF=local_cfg/fspt-waymo-full-test.cfg
 DATACONF=cfg/$(CONF).data
@@ -60,7 +61,8 @@ NETCMD=valid
 else ifeq ($(VALID_M), 1)
 NETCMD=valid_multiple
 DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
-NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
+NETCONF=local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg
+#NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
 FSPT_OP+= -out tmp/tmp_makefile_out -save_weights_file tmp/tmp_makefile_weights
 else ifeq ($(STATS), 1)
 NETCMD=stats
@@ -103,7 +105,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV1003q,PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb

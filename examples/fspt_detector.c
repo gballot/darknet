@@ -1207,43 +1207,82 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     // local copy of the global variable gpu_index.
     int old_gpu_index = gpu_index;
 
+    fprintf(stderr, "holiday_version.\n");
+
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
         char *cfgfile = cfgfiles[cfg];
+        fprintf(stderr, "\nConfiguration file number %d : %s.\n", cfg,
+                cfgfile);
         gpu_index = -1; // no gpu allocation needed for this net.
         network *net = load_network(cfgfile, NULL, 0);
         gpu_index = old_gpu_index;
         char *similar_weightfile = weightfile;
         int n_fspt_layers = 0;
-        /* Try to find a weightfile that was similar to avoid refitting. */
-        for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
-            criterion_args *prev_c_args = val_cfgs[prev_cfg].c_args;
-            score_args *prev_s_args = val_cfgs[prev_cfg].s_args;
-            list *fspt_layers = get_network_layers_by_type(net, FSPT);
-            n_fspt_layers = fspt_layers->size;
-            if (fspt_layers->size != val_cfgs[prev_cfg].n_fspt_layers) {
+        if (auto_only) {
+            /* Try to find a weightfile that was similar to avoid refitting. */
+            for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
+                validation_cfg val_cfg =
+                    val_cfgs[prev_cfg * n_fspt_threshs * n_yolo_threshs];
+                criterion_args *prev_c_args = val_cfg.c_args;
+                score_args *prev_s_args = val_cfg.s_args;
+                list *fspt_layers = get_network_layers_by_type(net, FSPT);
+                n_fspt_layers = fspt_layers->size;
+                if (n_fspt_layers != val_cfg.n_fspt_layers) {
+                    free_list(fspt_layers);
+                    fprintf(stderr,
+                            "Different number of fspt layer (%d:%d) than cfg %d.\n",
+                            n_fspt_layers, val_cfg.n_fspt_layers,
+                            prev_cfg);
+                    continue;
+                }
+                int same_c_args = 1;
+                int same_s_args = 1;
+                for (int k = 0; k < n_fspt_layers; ++k) {
+                    layer *l = (layer *) list_pop(fspt_layers);
+                    same_c_args &=
+                        l->inputs == val_cfg.n_input_layers[k];
+                    if (!same_c_args) {
+                        fprintf(stderr,
+                                "Different number of input layers (%d:%d - %d) \
+                                than cfg %d.\n",
+                                l->inputs, val_cfg.n_input_layers[k], k,
+                                prev_cfg);
+                        continue;
+                    }
+                    same_c_args &= equals_int_array(l->inputs,
+                            l->input_layers, val_cfg.input_layers[k]);
+                    if (!same_c_args) {
+                        fprintf(stderr,
+                                "Different input layers than cfg %d.\n", prev_cfg);
+                        continue;
+                    }
+                    same_c_args &= compare_criterion_args(
+                            &l->fspt_criterion_args, prev_c_args + k);
+                    if (!same_c_args) {
+                        fprintf(stderr,
+                                "Different criterion args than cfg %d.\n",
+                                prev_cfg);
+                        continue;
+                    }
+                    same_s_args &= compare_score_args(&l->fspt_score_args,
+                            prev_s_args + k);
+                    if (!same_s_args) {
+                        fprintf(stderr,
+                                "Different score args than cfg %d.\n", prev_cfg);
+                        continue;
+                    }
+                }
                 free_list(fspt_layers);
-                continue;
-            }
-            int same_c_args = 1;
-            int same_s_args = 1;
-            for (int k = 0; k < n_fspt_layers; ++k) {
-                layer *l = (layer *) list_pop(fspt_layers);
-                same_c_args &=
-                    l->inputs == val_cfgs[prev_cfg].n_input_layers[k];
-                if (!same_c_args) continue;
-                same_c_args &= equals_int_array(l->inputs,
-                        l->input_layers, val_cfgs[prev_cfg].input_layers[k]);
-                if (!same_c_args) continue;
-                same_c_args &= compare_criterion_args(
-                        &l->fspt_criterion_args, prev_c_args + k);
-                if (!same_c_args) continue;
-                same_s_args &= compare_score_args(&l->fspt_score_args,
-                        prev_s_args + k);
-            }
-            free_list(fspt_layers);
-            if (same_c_args) {
-                similar_weightfile = val_cfgs[prev_cfg].weightfile;
-                if (same_s_args) break;
+                if (same_c_args) {
+                    fprintf(stderr,
+                            "Same criterion args than cfg %d.\n", prev_cfg);
+                    similar_weightfile = val_cfg.weightfile;
+                    if (same_s_args) {
+                        fprintf(stderr,
+                                "Same score args than cfg %d.\n", prev_cfg);
+                        break;
+                    }
+                }
             }
         }
         /* Refit */

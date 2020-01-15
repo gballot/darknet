@@ -825,7 +825,16 @@ layer parse_fspt(list *options, size_params params)
     c_args.criterion_function =
         string_to_criterion_function_number(criterion_string);
     c_args.merge_nodes = option_find_int_quiet(options, "merge_nodes", 0);
-    c_args.min_samples = option_find_int_quiet(options, "min_samples", 1);
+
+    int min_samples = option_find_int_quiet(options, "min_samples", -1);
+    float min_samples_p = option_find_float_quiet(options, "min_samples_p", -1.f);
+    if (min_samples_p >= 0) {
+        c_args.min_samples = ceil(n_features * min_samples_p);
+    } else if (min_samples >= 0) {
+        c_args.min_samples = min_samples;
+    } else {
+        c_args.min_samples = n_features;
+    }
     assert(1 <= c_args.min_samples);
     c_args.min_volume_p = option_find_float_quiet(options,
             "min_volume_p", 0.);
@@ -833,9 +842,29 @@ layer parse_fspt(list *options, size_params params)
     c_args.min_length_p = option_find_float_quiet(options,
             "min_length_p", 0.0001);
     assert(0. <= c_args.min_length_p && c_args.min_length_p <= 1.);
-    c_args.max_depth = option_find_int_quiet(options, "max_depth", 10);
-    c_args.max_consecutive_gain_violations =
-        option_find_int_quiet(options, "max_consecutive_gain_violations", 10);
+    int max_depth = option_find_int_quiet(options, "max_depth", -1);
+    float max_depth_p = option_find_float_quiet(options, "max_depth_p", -1.f);
+    if (max_depth_p >= 0) {
+        c_args.max_depth = ceil(n_features * max_depth_p);
+    } else if (max_depth >= 0) {
+        c_args.max_depth = max_depth;
+    } else {
+        c_args.max_depth = n_features;
+    }
+    int max_consecutive_gain_violations =
+        option_find_int_quiet(options, "max_consecutive_gain_violations", -1);
+    float max_consecutive_gain_violations_p =
+        option_find_float_quiet(options, "max_consecutive_gain_violations_p",
+                -1.f);
+    if (max_consecutive_gain_violations_p >= 0) {
+        c_args.max_consecutive_gain_violations =
+            ceil(n_features * max_consecutive_gain_violations_p);
+    } else if (max_consecutive_gain_violations >= 0) {
+        c_args.max_consecutive_gain_violations =
+            max_consecutive_gain_violations;
+    } else {
+        c_args.max_consecutive_gain_violations = n_features;
+    }
     c_args.max_tries_p = option_find_float_quiet(options, "max_tries_p", 1.);
     assert(0. <= c_args.max_tries_p && c_args.max_tries_p <= 1.);
     c_args.max_features_p = option_find_float_quiet(options,
