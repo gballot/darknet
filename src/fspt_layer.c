@@ -430,9 +430,10 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
         float *X = l.fspt_training_data[class];
         fspt->n_samples = n;
         fspt->samples = X;
-        l.fspt_training_data[class] = NULL;
-        l.fspt_n_training_data[class] = 0;
-        l.fspt_n_max_training_data[class] = 0;
+        // Commented because fit_fspt uses those values.
+        //l.fspt_training_data[class] = NULL;
+        //l.fspt_n_training_data[class] = 0;
+        //l.fspt_n_max_training_data[class] = 0;
     }
 }
 
@@ -473,9 +474,6 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
             n += size_base;
         }
         float *X = l.fspt_training_data[class];
-        l.fspt_training_data[class] = NULL;
-        l.fspt_n_training_data[class] = 0;
-        l.fspt_n_max_training_data[class] = 0;
         criterion_args *c_args = calloc(1, sizeof(criterion_args)); 
         score_args *s_args = calloc(1, sizeof(score_args)); 
         *c_args = l.fspt_criterion_args;
@@ -484,6 +482,9 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
         fprintf(stderr, "[Fspt %s:%d]: Start fitting with n_samples = %ld...\n",
                 l.ref, class, n);
         fspt_fit(n, X, c_args, s_args, fspt);
+        l.fspt_training_data[class] = NULL;
+        l.fspt_n_training_data[class] = 0;
+        l.fspt_n_max_training_data[class] = 0;
         long t = (what_time_is_it_now() - start) * 1000;
         fprintf(stderr,
                 "[Fspt %s:%d]: fit successful in %ldh %ldm %lds %ldms. n_nodes = %ld, depth = %d.\n",

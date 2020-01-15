@@ -641,7 +641,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         int clear, int refit, int ordered,
         int start, int end, int one_thread, int merge, int auto_only,
         int only_fit,
-        int only_score, int print_stats_val) {
+        int only_score, int print_stats_val, criterion_args **extern_c_args,
+        score_args **extern_s_args) {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.txt");
     char *backup_directory = option_find_str(options, "backup", "backup/");
@@ -672,15 +673,15 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     int imgs = net->batch * net->subdivisions * n_nets;
     data train, buffer;
 
-    list *fspt_layers = get_network_layers_by_type(net, FSPT);
-    if (fspt_layers->size == 0)
+    list *tmp_fspt_layers = get_network_layers_by_type(net, FSPT);
+    if (tmp_fspt_layers->size == 0)
         error("The net must have fspt layers.");
-    layer fspt = *(layer *) fspt_layers->front->val;
+    layer fspt = *(layer *) tmp_fspt_layers->front->val;
     int classes = fspt.classes;
     int same_c_args = 1;
     int same_s_args = 1;
-    while (fspt_layers->size > 0) {
-        layer *l = (layer *) list_pop(fspt_layers);
+    while (tmp_fspt_layers->size > 0) {
+        layer *l = (layer *) list_pop(tmp_fspt_layers);
         for (int i = 0; i < l->classes; ++i) {
             same_c_args &= compare_criterion_args(&l->fspt_criterion_args,
                     l->fspts[i]->c_args);
@@ -688,7 +689,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
                     l->fspts[i]->s_args);
         }
     }
-    free_list(fspt_layers);
+    free_list(tmp_fspt_layers);
 
     if (auto_only) {
         only_fit = !same_c_args;
@@ -792,12 +793,28 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         save_weights(net, buff);
     }
     fprintf(stderr, "End of FSPT training\n");
+    list *fspt_layers = get_network_layers_by_type(net, FSPT);
+    layer **fspt_layers_array = (layer **) list_to_array(fspt_layers);
+    if (extern_c_args) {
+        *extern_c_args = calloc(fspt_layers->size, sizeof(criterion_args));
+        for (int k = 0; k < fspt_layers->size; ++k) {
+            layer *l = fspt_layers_array[k];
+            (*extern_c_args)[k] = *l->fspts[0]->c_args;
+        }
+    }
+    if (extern_s_args) {
+        *extern_s_args = calloc(fspt_layers->size, sizeof(score_args));
+        for (int k = 0; k < fspt_layers->size; ++k) {
+            layer *l = fspt_layers_array[k];
+            (*extern_s_args)[k] = *l->fspts[0]->s_args;
+            (*extern_s_args)[k].score_vol_n_array = NULL;
+        }
+    }
     if (print_stats_val) {
         FILE *outstream = outfile ? fopen(outfile, "w") : stderr;
         assert(outstream);
-        list *fspt_layers = get_network_layers_by_type(net, FSPT);
-        while (fspt_layers->size > 0) {
-            layer *l = (layer *) list_pop(fspt_layers);
+        for (int k = 0; k < fspt_layers->size; ++k) {
+            layer *l = fspt_layers_array[k];
             for (int i = 0; i < l->classes; ++i) {
                 fspt_t *fspt = l->fspts[i];
                 fspt_stats *stats = get_fspt_stats(fspt, 0, NULL, 1);
@@ -815,6 +832,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     for (i = 0; i < n_nets; ++i) {
         free_network(nets[i]);
     }
+    free(fspt_layers_array);
+    free_list(fspt_layers);
     free(nets);
     free(names);
 }
@@ -1290,9 +1309,12 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
         char *save_weightfile2 = calloc(256, sizeof(char));
         sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
+        criterion_args *c_args;
+        score_args *s_args;
         train_fspt(datacfg_positif, cfgfile, similar_weightfile, outfile_fit,
                 save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
-                end, one_thread, 0, auto_only, 0, 0, print_stats_val);
+                end, one_thread, 0, auto_only, 0, 0, print_stats_val, &c_args,
+                &s_args);
 
         char *outfile_val_positif = calloc(256, sizeof(char));
         sprintf(outfile_val_positif, "%s_cfg%d_val_positif", outfile, cfg);
@@ -1337,8 +1359,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 list *fspt_layers = get_network_layers_by_type(net, FSPT);
                 for (int k = 0; k < n_fspt_layers; ++k) {
                     layer *l = (layer *) list_pop(fspt_layers);
-                    val_cfg.c_args[k] = l->fspt_criterion_args;
-                    val_cfg.s_args[k] = l->fspt_score_args;
+                    val_cfg.c_args[k] = c_args[k];
+                    val_cfg.s_args[k] = s_args[k];
                     val_cfg.n_input_layers[k] = l->inputs;
                     val_cfg.input_layers[k] =
                         copy_int_array(l->inputs, l->input_layers);
@@ -1352,6 +1374,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfgs[bigindex] = val_cfg;
             }
         }
+        free(c_args);
+        free(s_args);
         fprintf(stderr, "Free network configuration %d.\n", cfg);
 
         gpu_index = -1; // no gpu space to free in this net.
@@ -1366,8 +1390,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         char title[256] = {0};
         sprintf(title, "Configuration number %d", i);
         print_validation_cfg(f, val_cfgs + i, title);       
-        print_fspt_criterion_args(f, val_cfgs[i].c_args, NULL);
-        print_fspt_score_args(f, val_cfgs[i].s_args, NULL);
+        //print_fspt_criterion_args(f, val_cfgs[i].c_args, NULL);
+        //print_fspt_score_args(f, val_cfgs[i].s_args, NULL);
     }
     fclose(f);
 }
@@ -1522,7 +1546,7 @@ Options are :\n\
                 ngpus, clear,
                 refit_fspts, ordered, start, end, one_thread, merge, auto_only,
                 only_fit,
-                only_score, print_stats_val);
+                only_score, print_stats_val, NULL, NULL);
     else if(0==strcmp(argv[2], "valid"))
         validate_fspt(datacfg, cfg, weights, n_yolo_thresh, 
                 yolo_threshs, n_fspt_thresh, fspt_threshs,
