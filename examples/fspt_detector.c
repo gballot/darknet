@@ -1226,8 +1226,6 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     // local copy of the global variable gpu_index.
     int old_gpu_index = gpu_index;
 
-    fprintf(stderr, "holiday_version.\n");
-
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
         char *cfgfile = cfgfiles[cfg];
         fprintf(stderr, "\nConfiguration file number %d : %s.\n", cfg,
@@ -1351,16 +1349,14 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfg.outfile_val_negatif = outfile_val_negatif;
                 val_cfg.weightfile = save_weightfile2;
                 val_cfg.n_fspt_layers = n_fspt_layers;
-                val_cfg.c_args = calloc(n_fspt_layers, sizeof(criterion_args));
-                val_cfg.s_args = calloc(n_fspt_layers, sizeof(score_args));
+                val_cfg.c_args = c_args;
+                val_cfg.s_args = s_args;
 
                 val_cfg.n_input_layers = calloc(n_fspt_layers, sizeof(int));
                 val_cfg.input_layers = calloc(n_fspt_layers, sizeof(int *));
                 list *fspt_layers = get_network_layers_by_type(net, FSPT);
                 for (int k = 0; k < n_fspt_layers; ++k) {
                     layer *l = (layer *) list_pop(fspt_layers);
-                    val_cfg.c_args[k] = c_args[k];
-                    val_cfg.s_args[k] = s_args[k];
                     val_cfg.n_input_layers[k] = l->inputs;
                     val_cfg.input_layers[k] =
                         copy_int_array(l->inputs, l->input_layers);
@@ -1374,8 +1370,6 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfgs[bigindex] = val_cfg;
             }
         }
-        free(c_args);
-        free(s_args);
         fprintf(stderr, "Free network configuration %d.\n", cfg);
 
         gpu_index = -1; // no gpu space to free in this net.
