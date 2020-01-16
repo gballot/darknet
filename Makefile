@@ -3,9 +3,9 @@ CUDNN=1
 OPENCV=0
 OPENMP=0
 DEBUG=0
-TRAIN=1
+TRAIN=0
 VALID=0
-VALID_M=0
+VALID_M=1
 STATS=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -61,8 +61,8 @@ NETCMD=valid
 else ifeq ($(VALID_M), 1)
 NETCMD=valid_multiple
 DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
-NETCONF=local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg
-#NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
+#NETCONF=local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg
+NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
 FSPT_OP+= -out tmp/tmp_makefile_out -save_weights_file tmp/tmp_makefile_weights
 else ifeq ($(STATS), 1)
 NETCMD=stats

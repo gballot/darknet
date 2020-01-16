@@ -1252,7 +1252,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         gpu_index = old_gpu_index;
         char *similar_weightfile = weightfile;
         int n_fspt_layers = 0;
-        if (auto_only && cfg > 0) {
+        if (auto_only) {
             /* Try to find a weightfile that was similar to avoid refitting. */
             for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
                 validation_cfg val_cfg =
@@ -1277,8 +1277,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         l->inputs == val_cfg.n_input_layers[k];
                     if (!same_c_args) {
                         fprintf(stderr,
-                                "Different number of input layers (%d:%d - %d) \
-                                than cfg %d.\n",
+                                "Different number of input layers (%d:%d - %d) than cfg %d.\n",
                                 l->inputs, val_cfg.n_input_layers[k], k,
                                 prev_cfg);
                         continue;
@@ -1287,7 +1286,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                             l->input_layers, val_cfg.input_layers[k]);
                     if (!same_c_args) {
                         fprintf(stderr,
-                                "Different input layers than cfg %d.\n", prev_cfg);
+                                "Different input layers than cfg %d.\n",
+                                prev_cfg);
                         continue;
                     }
                     same_c_args &= compare_criterion_args(
@@ -1302,7 +1302,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                             prev_s_args + k);
                     if (!same_s_args) {
                         fprintf(stderr,
-                                "Different score args than cfg %d.\n", prev_cfg);
+                                "Different score args than cfg %d.\n",
+                                prev_cfg);
                         continue;
                     }
                 }
@@ -1328,7 +1329,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         score_args *s_args;
         train_fspt(datacfg_positif, cfgfile, similar_weightfile, outfile_fit,
                 save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
-                end, one_thread, 0, auto_only, 0, 0, print_stats_val, &c_args,
+                end, one_thread, 0, (auto_only && cfg > 0), 0, 0,
+                print_stats_val, &c_args,
                 &s_args);
 
         char *outfile_val_positif = calloc(256, sizeof(char));
@@ -1337,11 +1339,13 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         sprintf(outfile_val_negatif, "%s_cfg%d_val_negatif", outfile, cfg);
         validation_data **val_datas_positif;
         validation_data **val_datas_negatif;
-        validate_fspt(datacfg_positif, cfgfile, save_weightfile2, n_yolo_threshs,
+        validate_fspt(datacfg_positif, cfgfile, save_weightfile2,
+                n_yolo_threshs,
                 yolo_threshs, n_fspt_threshs, fspt_threshs, hier_thresh,
                 iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
                 outfile_val_positif, &val_datas_positif);
-        validate_fspt(datacfg_negatif, cfgfile, save_weightfile2, n_yolo_threshs,
+        validate_fspt(datacfg_negatif, cfgfile, save_weightfile2,
+                n_yolo_threshs,
                 yolo_threshs, n_fspt_threshs, fspt_threshs, hier_thresh,
                 iou_thresh, ngpus, gpus, ordered, start, end, print_stats_val,
                 outfile_val_negatif, &val_datas_negatif);
@@ -1387,6 +1391,22 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfgs[bigindex] = val_cfg;
             }
         }
+        /* Print resume for this configuration */
+        qsort(val_cfgs + cfg * n_fspt_threshs * n_yolo_threshs,
+                n_yolo_threshs * n_fspt_threshs,
+                sizeof(validation_cfg), cmp_val_cfg);
+        char *outfile_resume = calloc(256, sizeof(char));
+        sprintf(outfile_resume, "%s_cfg%d_resume", outfile, cfg);
+        FILE *f = fopen(outfile_resume, "w");
+        for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
+            char title[512] = {0};
+            sprintf(title,
+                    "Configuration number %d - fspt thresh %f, yolo thresh %f",
+                    i, val_cfgs[i].fspt_thresh, val_cfgs[i].yolo_thresh);
+            print_validation_cfg(f, val_cfgs + i, title);       
+        }
+        fclose(f);
+        /* Free configuration */
         fprintf(stderr, "Free network configuration %d.\n", cfg);
 
         gpu_index = -1; // no gpu space to free in this net.
