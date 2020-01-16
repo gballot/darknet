@@ -1378,6 +1378,7 @@ static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
 void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         int load_s_args, int load_root, int *succ) {
     /* load n_features */
+    fspt_t old_fspt = *fspt;
     int old_n_features = fspt->n_features;
     *succ &= fread(&fspt->n_features, sizeof(int), 1, fp);
     *succ &= (!old_n_features || (old_n_features == fspt->n_features));
@@ -1417,7 +1418,12 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         size = fspt->n_samples * fspt->n_features;
         if (load_samples && size) {
             float *samples = malloc(size * sizeof(float));
-            if (!samples) error("Out of memory. Cannot load samples.");
+            if (!samples) {
+                fprintf(stderr,
+                        "Out of memory. Cannot load samples of size %ld. Continuing...\n",
+                        size);
+                fseek(fp, size *sizeof(float), SEEK_CUR);
+            }
             *succ &= (fread(samples, sizeof(float), size, fp) == size);
             fspt->samples = samples;
         } else {
@@ -1446,6 +1452,10 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
 (saved size = %ld and sizeof(fspt_node) = %ld).\n",
                         version, size, sizeof(fspt_node));
         }
+    }
+    if (!succ) {
+        free_fspt(fspt);
+        *fspt = old_fspt;
     }
 }
 

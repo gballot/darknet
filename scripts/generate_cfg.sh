@@ -22,7 +22,7 @@ policy=constant
 learning_rate=0.01
 
 [convolutional]
-ref=conv_0
+ref=conv_1
 batch_normalize=1
 filters=32
 size=3
@@ -33,26 +33,26 @@ activation=leaky
 # Downsample
 
 [convolutional]
-ref=conv_1
+ref=conv_2
 batch_normalize=1
 filters=64
 size=3
 stride=2
-pad=1
-activation=leaky
-
-[convolutional]
-ref=conv_2
-batch_normalize=1
-filters=32
-size=1
-stride=1
 pad=1
 activation=leaky
 
 [convolutional]
 ref=conv_3
 batch_normalize=1
+filters=32
+size=1
+stride=1
+pad=1
+activation=leaky
+
+[convolutional]
+ref=conv_4
+batch_normalize=1
 filters=64
 size=3
 stride=1
@@ -66,26 +66,26 @@ activation=linear
 # Downsample
 
 [convolutional]
-ref=conv_4
+ref=conv_5
 batch_normalize=1
 filters=128
 size=3
 stride=2
-pad=1
-activation=leaky
-
-[convolutional]
-ref=conv_5
-batch_normalize=1
-filters=64
-size=1
-stride=1
 pad=1
 activation=leaky
 
 [convolutional]
 ref=conv_6
 batch_normalize=1
+filters=64
+size=1
+stride=1
+pad=1
+activation=leaky
+
+[convolutional]
+ref=conv_7
+batch_normalize=1
 filters=128
 size=3
 stride=1
@@ -97,7 +97,7 @@ from=-3
 activation=linear
 
 [convolutional]
-ref=conv_7
+ref=conv_8
 batch_normalize=1
 filters=64
 size=1
@@ -106,7 +106,7 @@ pad=1
 activation=leaky
 
 [convolutional]
-ref=conv_8
+ref=conv_9
 batch_normalize=1
 filters=128
 size=3
@@ -121,7 +121,7 @@ activation=linear
 # Downsample
 
 [convolutional]
-ref=conv_9
+ref=conv_10
 batch_normalize=1
 filters=256
 size=3
@@ -130,30 +130,30 @@ pad=1
 activation=leaky
 
 [convolutional]
-ref=conv_10
+ref=conv_11
 batch_normalize=1
 filters=128
 size=1
 stride=1
 pad=1
 activation=leaky
-
-[convolutional]
-ref=conv_11
-batch_normalize=1
-filters=256
-size=3
-stride=1
-pad=1
-activation=leaky
-
-[shortcut]
-from=-3
-activation=linear
 
 [convolutional]
 ref=conv_12
 batch_normalize=1
+filters=256
+size=3
+stride=1
+pad=1
+activation=leaky
+
+[shortcut]
+from=-3
+activation=linear
+
+[convolutional]
+ref=conv_13
+batch_normalize=1
 filters=128
 size=1
 stride=1
@@ -161,7 +161,7 @@ pad=1
 activation=leaky
 
 [convolutional]
-ref=conv_13
+ref=conv_14
 batch_normalize=1
 filters=256
 size=3
@@ -174,7 +174,7 @@ from=-3
 activation=linear
 
 [convolutional]
-ref=conv_14
+ref=conv_15
 batch_normalize=1
 filters=128
 size=1
