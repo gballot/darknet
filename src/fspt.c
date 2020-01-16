@@ -1417,7 +1417,7 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         size = fspt->n_samples * fspt->n_features;
         if (load_samples && size) {
             float *samples = malloc(size * sizeof(float));
-            assert(samples);
+            if (!samples) error("Out of memory. Cannot load samples.");
             *succ &= (fread(samples, sizeof(float), size, fp) == size);
             fspt->samples = samples;
         } else {

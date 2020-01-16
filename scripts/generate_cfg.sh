@@ -1093,33 +1093,33 @@ do
                                                     auto_calibration_score=(${auto_cal} ${auto_cal} ${auto_cal})
 
                                                     # Same layer as fspt
-                                                    feature_layers_range=("conv_59" "conv_67" "conv_75")
+                                                    feature_layers=("conv_59" "conv_67" "conv_75")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
-                                                    feature_layers_range=("conv_59" "conv_61" "conv_69")
+                                                    feature_layers=("conv_59" "conv_61" "conv_69")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
-                                                    feature_layers_range=("conv_57" "conv_57" "conv_65")
+                                                    feature_layers=("conv_57" "conv_57" "conv_65")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     # Natural choice based on projection.
-                                                    feature_layers_range=("conv_40" "conv_21" "conv_10")
+                                                    feature_layers=("conv_40" "conv_21" "conv_10")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
-                                                    feature_layers_range=("conv_30" "conv_15" "conv_7")
+                                                    feature_layers=("conv_30" "conv_15" "conv_7")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
-                                                    feature_layers_range=("conv_20" "conv_10" "conv_5")
+                                                    feature_layers=("conv_20" "conv_10" "conv_5")
                                                     outfile="${local_cfg_dir}conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
