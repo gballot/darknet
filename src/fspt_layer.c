@@ -416,6 +416,10 @@ void load_fspt_trees(layer l, FILE *fp) {
 void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
+        if (fspt->root) {
+            free_fspt_nodes(fspt->root);
+            fspt->root = NULL;
+        }
         size_t n = l.fspt_n_training_data[class];
         if (merge) {
             size_t size_base = fspt->n_samples;
@@ -430,10 +434,6 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
         float *X = l.fspt_training_data[class];
         fspt->n_samples = n;
         fspt->samples = X;
-        // Commented because fit_fspt uses those values.
-        //l.fspt_training_data[class] = NULL;
-        //l.fspt_n_training_data[class] = 0;
-        //l.fspt_n_max_training_data[class] = 0;
     }
 }
 
@@ -460,8 +460,10 @@ void fspt_layer_rescore_class(layer l, int class) {
 void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
     fspt_t *fspt = l.fspts[class];
     if (refit || !fspt->root) {
-        // TODO: fix this function :
-        //if (fspt->root) free_fspt_nodes(fspt->root);
+        if (fspt->root) {
+            free_fspt_nodes(fspt->root);
+            fspt->root = NULL;
+        }
         size_t n = l.fspt_n_training_data[class];
         if (merge) {
             size_t size_base = fspt->n_samples;
