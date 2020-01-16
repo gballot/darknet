@@ -1133,8 +1133,9 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
 
 static double validation_score(const validation_data *v_positif,
         const validation_data *v_negatif) {
-    float false_positif_p = safe_divd(v_positif->tot_n_rejection_of_truth,
-            v_positif->tot_n_truth);
+    float false_positif_p =
+        safe_divd(v_positif->tot_n_true_detection_rejection,
+                v_positif->tot_n_true_detection);
     float true_negatif_p = safe_divd(v_negatif->tot_n_rejection_of_truth,
             v_negatif->tot_n_truth);
     return true_negatif_p - false_positif_p;
@@ -1251,7 +1252,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         network *net = load_network(cfgfile, NULL, 0);
         gpu_index = old_gpu_index;
         char *similar_weightfile = weightfile;
-        int n_fspt_layers = 0;
+        list *fspt_layers = get_network_layers_by_type(net, FSPT);
+        layer **fspt_layers_array = (layer **) list_to_array(fspt_layers);
+        int n_fspt_layers = fspt_layers->size;
         if (auto_only) {
             /* Try to find a weightfile that was similar to avoid refitting. */
             for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
@@ -1259,8 +1262,6 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                     val_cfgs[prev_cfg * n_fspt_threshs * n_yolo_threshs];
                 criterion_args *prev_c_args = val_cfg.c_args;
                 score_args *prev_s_args = val_cfg.s_args;
-                list *fspt_layers = get_network_layers_by_type(net, FSPT);
-                n_fspt_layers = fspt_layers->size;
                 if (n_fspt_layers != val_cfg.n_fspt_layers) {
                     free_list(fspt_layers);
                     fprintf(stderr,
@@ -1272,7 +1273,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 int same_c_args = 1;
                 int same_s_args = 1;
                 for (int k = 0; k < n_fspt_layers; ++k) {
-                    layer *l = (layer *) list_pop(fspt_layers);
+                    layer *l = fspt_layers_array[k];
                     same_c_args &=
                         l->inputs == val_cfg.n_input_layers[k];
                     if (!same_c_args) {
@@ -1280,7 +1281,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                                 "Different number of input layers (%d:%d - %d) than cfg %d.\n",
                                 l->inputs, val_cfg.n_input_layers[k], k,
                                 prev_cfg);
-                        continue;
+                        break;
                     }
                     same_c_args &= equals_int_array(l->inputs,
                             l->input_layers, val_cfg.input_layers[k]);
@@ -1288,7 +1289,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         fprintf(stderr,
                                 "Different input layers than cfg %d.\n",
                                 prev_cfg);
-                        continue;
+                        break;
                     }
                     same_c_args &= compare_criterion_args(
                             &l->fspt_criterion_args, prev_c_args + k);
@@ -1296,7 +1297,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         fprintf(stderr,
                                 "Different criterion args than cfg %d.\n",
                                 prev_cfg);
-                        continue;
+                        print_fspt_criterion_args(stderr, &l->fspt_criterion_args, NULL);
+                        print_fspt_criterion_args(stderr, prev_c_args + k, NULL);
+                        break;
                     }
                     same_s_args &= compare_score_args(&l->fspt_score_args,
                             prev_s_args + k);
@@ -1304,10 +1307,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         fprintf(stderr,
                                 "Different score args than cfg %d.\n",
                                 prev_cfg);
-                        continue;
+                        break;
                     }
                 }
-                free_list(fspt_layers);
                 if (same_c_args) {
                     fprintf(stderr,
                             "Same criterion args than cfg %d.\n", prev_cfg);
@@ -1329,7 +1331,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         score_args *s_args;
         train_fspt(datacfg_positif, cfgfile, similar_weightfile, outfile_fit,
                 save_weightfile2, gpus, ngpus, 1, 1, ordered, start,
-                end, one_thread, 0, (auto_only && cfg > 0), 0, 0,
+                end, one_thread, 0,
+                (auto_only && (similar_weightfile != weightfile)), 0, 0,
                 print_stats_val, &c_args,
                 &s_args);
 
@@ -1375,14 +1378,12 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
 
                 val_cfg.n_input_layers = calloc(n_fspt_layers, sizeof(int));
                 val_cfg.input_layers = calloc(n_fspt_layers, sizeof(int *));
-                list *fspt_layers = get_network_layers_by_type(net, FSPT);
                 for (int k = 0; k < n_fspt_layers; ++k) {
-                    layer *l = (layer *) list_pop(fspt_layers);
+                    layer *l = fspt_layers_array[k];
                     val_cfg.n_input_layers[k] = l->inputs;
                     val_cfg.input_layers[k] =
                         copy_int_array(l->inputs, l->input_layers);
                 }
-                free_list(fspt_layers);
 
                 val_cfg.score =
                     validation_score(val_data_positif, val_data_negatif);
@@ -1391,18 +1392,20 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfgs[bigindex] = val_cfg;
             }
         }
+        free(fspt_layers_array);
+        free_list(fspt_layers);
         /* Print resume for this configuration */
-        qsort(val_cfgs + cfg * n_fspt_threshs * n_yolo_threshs,
-                n_yolo_threshs * n_fspt_threshs,
+        int beg = cfg * n_fspt_threshs * n_yolo_threshs;
+        qsort(val_cfgs + beg, n_yolo_threshs * n_fspt_threshs,
                 sizeof(validation_cfg), cmp_val_cfg);
         char *outfile_resume = calloc(256, sizeof(char));
         sprintf(outfile_resume, "%s_cfg%d_resume", outfile, cfg);
         FILE *f = fopen(outfile_resume, "w");
-        for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
+        for (int i = beg; i < beg + n_yolo_threshs * n_fspt_threshs; ++i) { 
             char title[512] = {0};
             sprintf(title,
                     "Configuration number %d - fspt thresh %f, yolo thresh %f",
-                    i, val_cfgs[i].fspt_thresh, val_cfgs[i].yolo_thresh);
+                    i - beg, val_cfgs[i].fspt_thresh, val_cfgs[i].yolo_thresh);
             print_validation_cfg(f, val_cfgs + i, title);       
         }
         fclose(f);
@@ -1421,8 +1424,6 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         char title[256] = {0};
         sprintf(title, "Configuration number %d", i);
         print_validation_cfg(f, val_cfgs + i, title);       
-        //print_fspt_criterion_args(f, val_cfgs[i].c_args, NULL);
-        //print_fspt_score_args(f, val_cfgs[i].s_args, NULL);
     }
     fclose(f);
     fprintf(stderr, "Free validation data.\n");

@@ -21,6 +21,7 @@ static double auto_normalize(density_normalize_args a, double raw_score) {
 }
 
 static void compute_norm_args(score_args *s_args) {
+    if (!s_args->fspt->n_samples || !s_args->n_leaves) return;
     double samples_p = s_args->samples_p;
     size_t samples_break = s_args->fspt->n_samples * samples_p;
     size_t samples_count = 0;
