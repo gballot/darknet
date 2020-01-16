@@ -98,14 +98,22 @@ extern int compare_criterion_args(const criterion_args *c1,
         const criterion_args *c2);
 
 /**
+ * Prints a criterion_args to a file as json format.
+ *
+ * \param stream The output stream.
+ * \param a The criterion_args.
+ */
+extern void print_fspt_criterion_args_json(FILE *stream, criterion_args a);
+
+/**
  * Prints a criterion_args to a file.
  *
  * \param stream The output stream.
  * \param a The criterion_args.
  * \param title An optional title.
  */
-extern void print_fspt_criterion_args(FILE *stream, criterion_args *a,
-        char *title);
+extern void print_fspt_criterion_args(FILE *stream, const criterion_args *a,
+        const char *title);
 
 #ifdef DEBUG
 extern void hist(size_t n, size_t step, const float *X, float lower_bond,

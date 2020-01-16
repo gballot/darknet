@@ -94,13 +94,23 @@ extern SCORE_FUNCTION string_to_score_function_number(char *s);
 extern score_func string_to_fspt_score(char *s);
 
 /**
+ * Prints a score_args to a file in json format.
+ *
+ * \param stream The output stream.
+ * \param a The score_args.
+ * \param title An optional title.
+ */
+extern void print_fspt_score_args_json(FILE *stream, score_args a);
+
+/**
  * Prints a score_args to a file.
  *
  * \param stream The output stream.
  * \param a The score_args.
  * \param title An optional title.
  */
-extern void print_fspt_score_args(FILE *stream, score_args *a, char *title);
+extern void print_fspt_score_args(FILE *stream, const score_args *a,
+        const char *title);
 
 /**
  * A score function called "density".

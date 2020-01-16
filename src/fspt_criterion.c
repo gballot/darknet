@@ -67,7 +67,41 @@ void determine_cause(int n, forbidden_split_cause *causes,
     }
 }
 
-void print_fspt_criterion_args(FILE *stream, criterion_args *a, char *title) {
+void print_fspt_criterion_args_json(FILE *stream, criterion_args a) {
+    fprintf(stream, "{\"merge_nodes\" : %d, \"criterion_function\" : %d, \
+\"fspt\" : %p, \"node\" : %p, \
+\"max_depth\" : %d, \"count_max_depth_hit\" : %ld, \
+\"min_samples\" : %d, \"count_min_samples_hit\" : %ld, \
+\"min_volume_p\" : %g, \"count_min_volume_p_hit\" : %ld, \
+\"min_length_p\" : %g, \"count_min_length_p_hit\" : %ld, \
+\"count_max_count_hit\" : %ld, \
+\"count_no_sample_hit\" : %ld, \
+\"count_uniformity_hit\" : %ld, \
+\"best_index\" : %d, \"best_split\" : %g, \"forbidden_split\" : %d, \
+\"increment_count\" : %d, \"end_of_fitting\" : %d, \"max_tries_p\" : %g, \
+\"max_features_p\" : %g, \
+\"gini_gain_thresh\" : %g, \"max_consecutive_gain_violations\" : %d, \
+\"middle_split\" : %d, \
+\"multi_threads\" : %d, \
+\"uniformity_test_level\" : %d, \"unf_alpha\" : %g}",
+    a.merge_nodes, a.criterion_function,
+    a.fspt, a.node,
+    a.max_depth, a.count_max_depth_hit,
+    a.min_samples, a.count_min_samples_hit,
+    a.min_volume_p, a.count_min_volume_p_hit,
+    a.min_length_p, a.count_min_length_p_hit,
+    a.count_max_count_hit,
+    a.count_no_sample_hit,
+    a.count_uniformity_hit,
+    a.best_index, a.best_split, a.forbidden_split,
+    a.increment_count, a.end_of_fitting, a.max_tries_p, a.max_features_p,
+    a.gini_gain_thresh, a.max_consecutive_gain_violations, a.middle_split,
+    a.multi_threads,
+    a.uniformity_test_level, a.unf_alpha);
+}
+
+void print_fspt_criterion_args(FILE *stream, const criterion_args *a,
+       const char *title) {
     /** Title **/
     if (title) {
         int len = strlen(title);

@@ -168,7 +168,40 @@ double euristic_score(score_args *args) {
     return score;
 }
 
-void print_fspt_score_args(FILE *stream, score_args *a, char *title) {
+void print_fspt_score_args_json(FILE *stream, score_args a) {
+    fprintf(stream, "{\
+\"score_during_fit\" : %d, \"score_function\" : %d, \
+\"fspt\" : %p, \"node\" : %p, \"discover\" : %d, \"need_normalize\" : %d, \
+\"normalize_pass\" : %d, \"n_leaves\" : %ld, \
+\"score_vol_n_array\" : %p, \
+\"compute_euristic_hyperparam\" : %d, \"euristic_hyperparam\" : %g, \
+\"exponential_normalization\" : %d, \
+\"calibration_score\" : %g, \"calibration_n_samples_p\" : %g, \
+\"calibration_volume_p\" : %g, \
+\"calibration_feat_length_p\" : %g, \
+\"volume_penalization\" : %g, \"calibration_tau\" : %g, \
+\"compute_norm_args\" : %d, \"samples_p\" : %g, \
+\"verify_density_thresh\" : %g, \
+\"verify_n_nodes_p_thresh\" : %g, \"verify_n_uniform_p_thresh\" : %g, \
+\"auto_calibration_score\" : %g, \
+\"norm_args.tau\" : %g, \"norm_args.verification_passed\" : %d}",
+    a.score_during_fit, a.score_function,
+    a.fspt, a.node, a.discover, a.need_normalize,
+    a.normalize_pass, a.n_leaves,
+    a.score_vol_n_array,
+    a.compute_euristic_hyperparam, a.euristic_hyperparam,
+    a.exponential_normalization,
+    a.calibration_score, a.calibration_n_samples_p, a.calibration_volume_p,
+    a.calibration_feat_length_p,
+    a.volume_penalization, a.calibration_tau,
+    a.compute_norm_args, a.samples_p, a.verify_density_thresh,
+    a.verify_n_nodes_p_thresh, a.verify_n_uniform_p_thresh,
+    a.auto_calibration_score,
+    a.norm_args.tau, a.norm_args.verification_passed);
+}
+
+void print_fspt_score_args(FILE *stream, const score_args *a,
+        const char *title) {
     /** Title **/
     if (title) {
         int len = strlen(title);

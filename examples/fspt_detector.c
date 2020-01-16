@@ -1175,7 +1175,41 @@ static void free_validation_cfg(validation_cfg v) {
     free(v.n_input_layers);
 }
 
-static void print_validation_cfg(FILE *stream, validation_cfg *v, char *title){
+static void print_raw_validation_cfg(FILE *stream, const validation_cfg *v,
+        size_t n){
+    for (size_t i = 0; i < n; ++i) {
+        if (i > 0) fprintf(stream, "\n");
+        fprintf(stream,
+                "{\"score\" : %g, \"yolo_thresh\" : %g, \"fspt_thresh\" : %g, \
+\"cfgfile\" : \"%s\", \"outfile_fit\" : \"%s\", \"outfile_val_positif\" : \"%s\", \
+\"outfile_val_negatif\" : \"%s\", \"weightfile\" : \"%s\", \"n_fspt_layers\" : %d, \
+\"fspt_layers\" : [",
+                v->score, v->yolo_thresh, v->fspt_thresh,
+                v->cfgfile, v->outfile_fit, v->outfile_val_positif,
+                v->outfile_val_negatif, v->weightfile, v->n_fspt_layers);
+        for (int l = 0; l < v->n_fspt_layers; ++l) {
+            if (l > 0)
+                fprintf(stream, ", ");
+            fprintf(stream,
+                    "\"n_input_layers\" : %d, \"input_layers\" : [", v->n_input_layers[l]);
+            for (int k = 0; k < v->n_input_layers[l]; ++k) {
+                if (k > 0)
+                    fprintf(stream, ", ");
+                fprintf(stream,
+                        "%d", v->input_layers[l][k]);
+
+            }
+            fprintf(stream, "], \"criterion_args\" : ");
+            print_fspt_criterion_args_json(stream, v->c_args[l]);
+            fprintf(stream, ", \"score_args\" : ");
+            print_fspt_score_args_json(stream, v->s_args[l]);
+        }
+        fprintf(stream, "]}");
+    }
+}
+
+static void print_validation_cfg(FILE *stream, const validation_cfg *v,
+        const char *title){
     /** Title **/
     if (title) {
         int len = strlen(title);
@@ -1426,6 +1460,13 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         print_validation_cfg(f, val_cfgs + i, title);       
     }
     fclose(f);
+    /* Raw data */
+    char *outfile_data = calloc(256, sizeof(char));
+    sprintf(outfile_data, "%s.data", outfile);
+    FILE *fdata = fopen(outfile_data, "w");
+    print_raw_validation_cfg(f, val_cfgs,
+            n_cfg * n_yolo_threshs * n_fspt_threshs);       
+    fclose(fdata);
     fprintf(stderr, "Free validation data.\n");
     for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
         free_validation_cfg(val_cfgs[i]);

@@ -492,8 +492,10 @@ fspt_stats *get_fspt_stats(fspt_t *fspt, int n_thresh, double *fspt_thresh,
                 unf_score = 1.;
             }
             */
+            float *feat_lim = get_feature_limit(node);
             unf_score = dist_to_bound_test(n_features, node->n_samples,
-                    node->samples, get_feature_limit(node));
+                    node->samples, feat_lim);
+            free(feat_lim);
         }
         stats->score_vol_n_array[i] =
             (score_vol_n) {
