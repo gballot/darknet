@@ -1007,6 +1007,9 @@ void free_network(network *net)
     if (gpu_index >= 0) {
         if(net->input_gpu) cuda_free(net->input_gpu);
         if(net->truth_gpu) cuda_free(net->truth_gpu);
+        if(net->workspace) cuda_free(net->workspace);
+    } else {
+        if(net->workspace) free(net->workspace);
     }
 #endif
     free(net);

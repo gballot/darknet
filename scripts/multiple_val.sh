@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-no-auto.output
+#SBATCH -o gpu-job-multiple-validations-quick.output
 #SBATCH -p NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -14,7 +14,7 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-val_dir='results/multiple_val-no-auto/'
+val_dir='results/multiple_val-quick/'
 mkdir -p "${val_dir}"
 
 
@@ -37,11 +37,12 @@ run_confs() {
     done
     output_valid_files=${val_dir}'valid_'${beg}'to'${end}'_'
     save_weights_file=${val_dir}'weigths_'${beg}'to'${end}'_'
-    options='-pos '${posconf}' -neg '${negconf}' -ordered -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 10000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
     "${tmpprog}" -i 0 fspt valid_multiple ${netcfgs} ${weightfile} ${options} -gpus 0
 }
 
 # run several time the process (up to 575)
+if false; then
 beg=0; end=29
 run_confs
 beg=30; end=59
@@ -82,5 +83,20 @@ beg=540; end=569
 run_confs
 beg=570; end=575
 run_confs
+else
+beg=0; end=99
+run_confs
+beg=100; end=199
+run_confs
+beg=200; end=299
+run_confs
+beg=300; end=399
+run_confs
+beg=400; end=499
+run_confs
+beg=500; end=575
+run_confs
+fi
+
 
 rm -rf "${tmpdir}" || true

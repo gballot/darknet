@@ -13,6 +13,7 @@
 
 #define FLT_FORMAT "%12g"
 #define INT_FORMAT "%12d"
+#define N_CORES 24
 
 typedef struct validation_data {
     float iou_thresh;       // Intersection Over Union threshold.
@@ -734,7 +735,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         args.num_boxes = fspt.max_boxes;
         args.d = &buffer;
         args.type = DETECTION_DATA;
-        args.threads = 64;
+        args.threads = N_CORES;
         args.ordered = ordered;
         args.beg = (0 <= start && start < plist->size) ? start : 0;
         args.m = (end && args.beg < end && end < plist->size) ?
@@ -743,7 +744,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         pthread_t load_thread = load_data(args);
         double time;
         if (ordered) {
-            net->max_batches = plist->size / imgs;
+            net->max_batches = args.m / imgs;
         }
         while (get_current_batch(net) < net->max_batches) {
             time=what_time_is_it_now();
@@ -780,8 +781,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         save_weights(net, buff);
         fprintf(stderr, "Data extraction done. Fitting FSPTs...\n");
         fit_fspts(net, classes, refit, one_thread, merge);
+        free_ptrs((void **)paths, plist->size);
         free_list(plist);
-        free(paths);
     } // end if (!only_fit && !only_score)
     char buff[256];
     if (save_weights_file) {
@@ -972,14 +973,14 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     args.num_boxes = l.max_boxes;
     args.d = &buffer;
     args.type = DETECTION_DATA;
-    args.threads = 64;
+    args.threads = N_CORES;
     args.ordered = ordered;
     args.beg = (0 <= start && start < plist->size) ? start : 0;
     args.m = (end && args.beg < end && end < plist->size) ?
         end : plist->size;
 
     if (ordered) {
-        net->max_batches = plist->size / imgs;
+        net->max_batches = args.m / imgs;
     }
 
     validation_data **val_datas =
@@ -1157,6 +1158,22 @@ typedef struct validation_cfg {
     float score;
 } validation_cfg;
 
+static void free_validation_cfg(validation_cfg v) {
+    //TODO delete next line.
+    return;
+    free_validation_data(v.val_data_positif);
+    free_validation_data(v.val_data_negatif);
+    free(v.cfgfile);
+    free(v.outfile_fit);
+    free(v.outfile_val_positif);
+    free(v.outfile_val_negatif);
+    free(v.weightfile);
+    free(v.c_args);
+    free(v.s_args);
+    free_ptrs((void **)v.input_layers, v.n_fspt_layers);
+    free(v.n_input_layers);
+}
+
 static void print_validation_cfg(FILE *stream, validation_cfg *v, char *title){
     /** Title **/
     if (title) {
@@ -1235,7 +1252,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         gpu_index = old_gpu_index;
         char *similar_weightfile = weightfile;
         int n_fspt_layers = 0;
-        if (auto_only) {
+        if (auto_only && cfg > 0) {
             /* Try to find a weightfile that was similar to avoid refitting. */
             for (int prev_cfg = 0; prev_cfg < cfg; ++prev_cfg) {
                 validation_cfg val_cfg =
@@ -1388,6 +1405,11 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         //print_fspt_score_args(f, val_cfgs[i].s_args, NULL);
     }
     fclose(f);
+    fprintf(stderr, "Free validation data.\n");
+    for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
+        free_validation_cfg(val_cfgs[i]);
+    }
+    free(val_cfgs);
 }
 
 

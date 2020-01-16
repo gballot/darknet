@@ -696,6 +696,7 @@ free_no_leaves:
     for (int feat = 0; feat < n_features; ++feat) {
         free_list(inner_nodes_by_split_feat[feat]);
     }
+    free(inner_nodes_by_split_feat);
 
     return stats;
 }

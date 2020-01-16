@@ -4,8 +4,8 @@ OPENCV=0
 OPENMP=0
 DEBUG=0
 TRAIN=0
-VALID=0
-VALID_M=1
+VALID=1
+VALID_M=0
 STATS=0
 
 ARCH= -gencode arch=compute_30,code=sm_30 \
@@ -39,7 +39,7 @@ CONF=waymo
 VERSION=-full
 MAINCMD=fspt
 BREAKPOINTS= test_fspt
-FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9
+FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9 -beg 0 -end 2
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
@@ -105,7 +105,7 @@ LDFLAGS+= -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/stubs -lcuda -lcudart -lcubl
 DARKNET_GPU_OP= -i 0
 FSPT_OP+= -gpus 0
 GDB=cuda-gdb
-SRUN= srun -X -p PV1003q,PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
+SRUN= srun -X -p PV100q,NV100q,GV1002q -n 1 -c 4 --gres=gpu:1
 else
 DARKNET_GPU_OP= -nogpu
 GDB=gdb
