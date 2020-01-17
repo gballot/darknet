@@ -1644,6 +1644,7 @@ Options are :\n\
     if (gpus) free(gpus);
     free(fspt_threshs);
     free(yolo_threshs);
+    if (cfgs) free_ptrs((void **) cfgs, n_cfgs);
 }
 
 #undef FLT_FORMAT
