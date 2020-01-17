@@ -1174,6 +1174,7 @@ network *parse_network_cfg(char *filename)
         }
     }
     free_list(sections);
+    free_list_contents(labels);
     free_list(labels);
     layer out = get_network_output_layer(net);
     net->outputs = out.outputs;

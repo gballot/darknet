@@ -257,6 +257,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.bias_v = calloc(n, sizeof(float));
         l.scale_v = calloc(n, sizeof(float));
     }
+    
 
 #ifdef GPU
     l.forward_gpu = forward_convolutional_layer_gpu;

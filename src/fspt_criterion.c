@@ -224,14 +224,17 @@ criterion_args *load_criterion_args_file(FILE *fp, int *succ) {
         *succ &= fread(&version, sizeof(int), 1, fp);
         *succ &= fread(&size, sizeof(size_t), 1, fp);
         if (version == CRITERION_ARGS_VERSION
-                && size == sizeof(criterion_args)) {
+                && size == sizeof(criterion_args)
+                && *succ) {
             c = malloc(sizeof(criterion_args));
             *succ &= fread(c, sizeof(criterion_args), 1, fp);
-        } else {
+        } else if (*succ) {
             fseek(fp, size, SEEK_CUR);
             fprintf(stderr, "Wrong criterion args version (%d) or size \
 (saved size = %ld and sizeof(criterion_args) = %ld).\n",
                     version, size, sizeof(criterion_args));
+        } else {
+            fseek(fp, size, SEEK_CUR);
         }
     } else if (contains_args != 0) {
         fprintf(stderr, "ERROR : in load_criterion_args_file - contains_args = %d.\n",

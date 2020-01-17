@@ -577,6 +577,7 @@ int *num_detections_batch(network *net, float thresh)
             for (int b = 0; b < net->batch; ++b) {
                 s[b] += num[b];
             }
+            free(num);
         }
     }
     return s;
@@ -614,7 +615,7 @@ detection **make_network_truth_boxes_batch(network *net, int **num)
     detection **dets = calloc(net->batch, sizeof(detection *));
     for (int b = 0; b < net->batch; ++b) {
         /* while there are truth boxes*/
-        while(1) {
+        while(count[b] < net->truths / (4+1)) {
             box truth =
                 float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
             if(!truth.x) break;
@@ -717,7 +718,7 @@ int *fill_network_fspt_truth_boxes_batch(network *net, detection **dets)
     for(int j = 0; j < net->n; ++j){
         layer l = net->layers[j];
         if(l.type == FSPT){
-            int *count = calloc(net->batch, sizeof(int));
+            int *count;
             fspt_predict_truth(l, *net, local_dets, &count);
             for (int b = 0; b < net->batch; ++b) {
                 local_dets[b] += count[b];
@@ -786,15 +787,17 @@ detection **get_network_truth_boxes_batch(network *net, int w, int h, int **num)
     detection **dets = calloc(net->batch, sizeof(detection *));
     for (int b = 0; b < net->batch; ++b) {
         /* while there are truth boxes*/
-        while(1) {
-            box truth = float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
+        while(count[b] < net->truths / (4+1)) {
+            box truth =
+                float_to_box(net->truth + count[b]*(4+1) + b*net->truths, 1);
             if(!truth.x) break;
             ++count[b];
         }
         if (count[b]) {
             dets[b] = calloc(count[b], sizeof(detection));
             for(int i = 0; i < count[b]; ++i){
-                box truth = float_to_box(net->truth + i*(4+1) + b*net->truths, 1);
+                box truth =
+                    float_to_box(net->truth + i*(4+1) + b*net->truths, 1);
                 dets[b][i].bbox.x = truth.x;
                 dets[b][i].bbox.y = truth.y;
                 dets[b][i].bbox.w = truth.w;
@@ -1003,6 +1006,9 @@ void free_network(network *net)
     free(net->layers);
     if(net->input) free(net->input);
     if(net->truth) free(net->truth);
+    if(net->seen) free(net->seen);
+    if(net->t) free(net->t);
+    if(net->cost) free(net->cost);
 #ifdef GPU
     if (gpu_index >= 0) {
         if(net->input_gpu) cuda_free(net->input_gpu);

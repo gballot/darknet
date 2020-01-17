@@ -298,7 +298,7 @@ void pm(int M, int N, float *A)
 
 void find_replace(char *str, char *orig, char *rep, char *output)
 {
-    char buffer[4096] = {0};
+    char buffer[8192] = {0};
     char *p;
 
     sprintf(buffer, "%s", str);

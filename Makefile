@@ -39,7 +39,7 @@ CONF=waymo
 VERSION=-full
 MAINCMD=fspt
 BREAKPOINTS= test_fspt
-FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9 -beg 0 -end 2
+FSPT_OP= -clear -print_stats -fspt_thresh 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.9
 
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION).cfg
 NETCONF=cfg/$(MAINCMD)-$(CONF)$(VERSION)-val.cfg
@@ -61,9 +61,11 @@ NETCMD=valid
 else ifeq ($(VALID_M), 1)
 NETCMD=valid_multiple
 DATACONF=-pos cfg/waymo-full-only-day.data -neg cfg/waymo-full-night.data
-NETCONF=local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg
+#WEIGHTS=weights/yolov3-waymo-full-80-percent-day.weights
+#NETCONF=local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg
 #NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg,local_cfg/fspt-waymo-full-multi-test-3.cfg,local_cfg/fspt-waymo-full-multi-test-4.cfg,local_cfg/fspt-waymo-full-multi-test-5.cfg
-FSPT_OP+= -auto_only -out tmp/tmp_makefile2_out -save_weights_file tmp/tmp_makefile2_weights
+NETCONF=local_cfg/fspt-waymo-full-multi-test-0.cfg,local_cfg/fspt-waymo-full-multi-test-1.cfg,local_cfg/fspt-waymo-full-multi-test-2.cfg
+FSPT_OP+= -auto_only -out tmp/tmp_makefile_out -save_weights_file tmp/tmp_makefile_weights
 else ifeq ($(STATS), 1)
 NETCMD=stats
 else

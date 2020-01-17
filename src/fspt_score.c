@@ -21,7 +21,10 @@ static double auto_normalize(density_normalize_args a, double raw_score) {
 }
 
 static void compute_norm_args(score_args *s_args) {
-    if (!s_args->fspt->n_samples || !s_args->n_leaves) return;
+    if (!s_args->fspt->n_samples || !s_args->n_leaves) {
+        s_args->norm_args.verification_passed = 0;
+        return;
+    }
     double samples_p = s_args->samples_p;
     size_t samples_break = s_args->fspt->n_samples * samples_p;
     size_t samples_count = 0;
@@ -38,6 +41,7 @@ static void compute_norm_args(score_args *s_args) {
             ++uniform_leaves;
         if (samples_count >= samples_break) break;
     }
+    debug_assert(s_args->score_vol_n_array[i_break].score >= 0);
     s_args->norm_args.verification_passed = 1;
     if (s_args->verify_density_thresh) {
         double density_count = (double) samples_count / volume_p_count
@@ -332,14 +336,17 @@ score_args *load_score_args_file(FILE *fp, int *succ) {
         *succ &= fread(&version, sizeof(int), 1, fp);
         *succ &= fread(&size, sizeof(size_t), 1, fp);
         if (version == SCORE_ARGS_VERSION
-                && size == sizeof(score_args)) {
+                && size == sizeof(score_args)
+                && *succ) {
             s = malloc(sizeof(score_args));
             *succ &= fread(s, sizeof(score_args), 1, fp);
-        } else {
+        } else if (*succ) {
             fseek(fp, size, SEEK_CUR);
             fprintf(stderr, "Wrong score args version (%d) or size\
 (saved size = %ld and sizeof(score_args) = %ld).\n",
                     version, size, sizeof(score_args));
+        } else {
+            fseek(fp, size, SEEK_CUR);
         }
     } else if (contains_args != 0) {
         fprintf(stderr, "ERROR : in load_score_args_file - contains_args = %d.\n",

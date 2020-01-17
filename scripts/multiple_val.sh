@@ -20,7 +20,7 @@ mkdir -p "${val_dir}"
 
 #netcfgs='local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg'
 
-weightfile='weights/yolov3-waymo-full-80-percent-day.weights'
+weightfile='weights/fspt-waymo-full-80-percent-day.weights'
 posconf='cfg/waymo-full-only-day.data'
 negconf='cfg/waymo-full-night.data'
 yolo_thresh='0.7'

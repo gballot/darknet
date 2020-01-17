@@ -1378,22 +1378,32 @@ static fspt_node * pre_order_node_load(FILE *fp, size_t n_samples,
 void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         int load_s_args, int load_root, int *succ) {
     /* load n_features */
-    fspt_t old_fspt = *fspt;
-    int old_n_features = fspt->n_features;
-    *succ &= fread(&fspt->n_features, sizeof(int), 1, fp);
-    *succ &= (!old_n_features || (old_n_features == fspt->n_features));
+    int new_n_features;
+    *succ &= fread(&new_n_features, sizeof(int), 1, fp);
+    *succ &= (!fspt->n_features || (new_n_features == fspt->n_features));
+    if (*succ) fspt->n_features = new_n_features;
     /* load feature_limit */
-    size_t size = 2 * fspt->n_features;
-    float *feature_limit = malloc(size * sizeof(float));
-    *succ &=
-        (fread(feature_limit, sizeof(float), size, fp) == size);
-    fspt->feature_limit = feature_limit;
-    fspt->volume = volume(fspt->n_features, feature_limit);
+    size_t size = 2 * new_n_features;
+    if (*succ) {
+        float *feature_limit = malloc(size * sizeof(float));
+        *succ &=
+            (fread(feature_limit, sizeof(float), size, fp) == size);
+        if (fspt->feature_limit) free((float *) fspt->feature_limit);
+        fspt->feature_limit = feature_limit;
+        fspt->volume = volume(new_n_features, feature_limit);
+    } else {
+        fseek(fp, size *sizeof(float), SEEK_CUR);
+    }
     /* load feature_importance */
-    size = fspt->n_features;
-    float *feature_importance = malloc(size * sizeof(float));
-    *succ &= (fread(feature_importance, sizeof(float), size, fp) == size);
-    fspt->feature_importance = feature_importance;
+    size = new_n_features;
+    if (*succ) {
+        float *feature_importance = malloc(size * sizeof(float));
+        *succ &= (fread(feature_importance, sizeof(float), size, fp) == size);
+        if (fspt->feature_importance) free((float *) fspt->feature_importance);
+        fspt->feature_importance = feature_importance;
+    } else {
+        fseek(fp, size *sizeof(float), SEEK_CUR);
+    }
     /* load criterion_args */
     criterion_args *c_args = load_criterion_args_file(fp, succ);
     if (load_c_args)
@@ -1403,11 +1413,20 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
     if (load_s_args)
         fspt->s_args = s_args;
     /* load others */
-    *succ &= fread(&fspt->n_nodes, sizeof(size_t), 1, fp);
-    *succ &= fread(&fspt->n_samples, sizeof(size_t), 1, fp);
-    *succ &= fread(&fspt->depth, sizeof(int), 1, fp);
-    *succ &= fread(&fspt->count, sizeof(int), 1, fp);
-    *succ &= fread(&fspt->volume, sizeof(double), 1, fp);
+    if (*succ)
+        *succ &= fread(&fspt->n_nodes, sizeof(size_t), 1, fp);
+    else
+        fseek(fp, sizeof(size_t), SEEK_CUR);
+    size_t new_n_samples;
+    *succ &= fread(&new_n_samples, sizeof(size_t), 1, fp);
+    if (*succ) fspt->n_samples = new_n_samples;
+    if (*succ) {
+        *succ &= fread(&fspt->depth, sizeof(int), 1, fp);
+        *succ &= fread(&fspt->count, sizeof(int), 1, fp);
+        *succ &= fread(&fspt->volume, sizeof(double), 1, fp);
+    } else {
+        fseek(fp, 2 * sizeof(int) + sizeof(double), SEEK_CUR);
+    }
     /* to know if file contains samples */
     fspt->samples = NULL;
     int contains_samples = 0;
@@ -1415,8 +1434,8 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
     if (load_samples && !contains_samples)
         fprintf(stderr, "This file does not contain samples... continuing\n");
     if (contains_samples) {
-        size = fspt->n_samples * fspt->n_features;
-        if (load_samples && size) {
+        size = new_n_samples * new_n_features;
+        if (load_samples && size && *succ) {
             float *samples = malloc(size * sizeof(float));
             if (!samples) {
                 fprintf(stderr,
@@ -1441,21 +1460,20 @@ void fspt_load_file(FILE *fp, fspt_t *fspt, int load_samples, int load_c_args,
         *succ &= fread(&size, sizeof(size_t), 1, fp);
         *succ &= fread(&n_nodes, sizeof(size_t), 1, fp);
         if (load_root && version == NODE_VERSION
-                && size == sizeof(fspt_node)) {
+                && size == sizeof(fspt_node)
+                && *succ) {
             fspt->root =
-                pre_order_node_load(fp, fspt->n_samples, fspt->samples, NULL,
+                pre_order_node_load(fp, new_n_samples, fspt->samples, NULL,
                         fspt, succ);
-        } else {
+        } else if (*succ) {
             fseek(fp, size * n_nodes, SEEK_CUR);
             if (load_root)
                 fprintf(stderr, "Nodes not load : wrong version (%d) or size\
 (saved size = %ld and sizeof(fspt_node) = %ld).\n",
                         version, size, sizeof(fspt_node));
+        } else {
+            fseek(fp, size * n_nodes, SEEK_CUR);
         }
-    }
-    if (!succ) {
-        free_fspt(fspt);
-        *fspt = old_fspt;
     }
 }
 

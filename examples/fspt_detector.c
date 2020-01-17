@@ -1184,25 +1184,26 @@ static void print_raw_validation_cfg(FILE *stream, const validation_cfg *v,
 \"cfgfile\" : \"%s\", \"outfile_fit\" : \"%s\", \"outfile_val_positif\" : \"%s\", \
 \"outfile_val_negatif\" : \"%s\", \"weightfile\" : \"%s\", \"n_fspt_layers\" : %d, \
 \"fspt_layers\" : [",
-                v->score, v->yolo_thresh, v->fspt_thresh,
-                v->cfgfile, v->outfile_fit, v->outfile_val_positif,
-                v->outfile_val_negatif, v->weightfile, v->n_fspt_layers);
-        for (int l = 0; l < v->n_fspt_layers; ++l) {
+                v[i].score, v[i].yolo_thresh, v[i].fspt_thresh,
+                v[i].cfgfile, v[i].outfile_fit, v[i].outfile_val_positif,
+                v[i].outfile_val_negatif, v[i].weightfile, v[i].n_fspt_layers);
+        for (int l = 0; l < v[i].n_fspt_layers; ++l) {
             if (l > 0)
                 fprintf(stream, ", ");
             fprintf(stream,
-                    "\"n_input_layers\" : %d, \"input_layers\" : [", v->n_input_layers[l]);
-            for (int k = 0; k < v->n_input_layers[l]; ++k) {
+                    "\"n_input_layers\" : %d, \"input_layers\" : [",
+                    v[i].n_input_layers[l]);
+            for (int k = 0; k < v[i].n_input_layers[l]; ++k) {
                 if (k > 0)
                     fprintf(stream, ", ");
                 fprintf(stream,
-                        "%d", v->input_layers[l][k]);
+                        "%d", v[i].input_layers[l][k]);
 
             }
             fprintf(stream, "], \"criterion_args\" : ");
-            print_fspt_criterion_args_json(stream, v->c_args[l]);
+            print_fspt_criterion_args_json(stream, v[i].c_args[l]);
             fprintf(stream, ", \"score_args\" : ");
-            print_fspt_score_args_json(stream, v->s_args[l]);
+            print_fspt_score_args_json(stream, v[i].s_args[l]);
         }
         fprintf(stream, "]}");
     }
@@ -1331,8 +1332,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         fprintf(stderr,
                                 "Different criterion args than cfg %d.\n",
                                 prev_cfg);
-                        print_fspt_criterion_args(stderr, &l->fspt_criterion_args, NULL);
-                        print_fspt_criterion_args(stderr, prev_c_args + k, NULL);
+                        //print_fspt_criterion_args(stderr, &l->fspt_criterion_args, NULL);
+                        //print_fspt_criterion_args(stderr, prev_c_args + k, NULL);
                         break;
                     }
                     same_s_args &= compare_score_args(&l->fspt_score_args,
@@ -1462,9 +1463,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     fclose(f);
     /* Raw data */
     char *outfile_data = calloc(256, sizeof(char));
-    sprintf(outfile_data, "%s.data", outfile);
+    sprintf(outfile_data, "%s.json", outfile);
     FILE *fdata = fopen(outfile_data, "w");
-    print_raw_validation_cfg(f, val_cfgs,
+    print_raw_validation_cfg(fdata, val_cfgs,
             n_cfg * n_yolo_threshs * n_fspt_threshs);       
     fclose(fdata);
     fprintf(stderr, "Free validation data.\n");
