@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-quick.output
+#SBATCH -o gpu-job-multiple-validations-gini-low-full.output
 #SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -14,7 +14,7 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-val_dir='results/multiple_val-quick/'
+val_dir='results/multiple_val-gini-low-full/'
 mkdir -p "${val_dir}"
 
 
@@ -30,14 +30,15 @@ run_confs() {
     netcfgs=""
     for (( i=${beg}; i<=${end}; ++i )); do
         if [ -z "${netcfgs}" ]; then
-            netcfgs="local_cfg/auto/conf${i},"
+            netcfgs="local_cfg/auto/new-conf${i},"
         else
-            netcfgs="${netcfgs},local_cfg/auto/conf${i},"
+            netcfgs="${netcfgs},local_cfg/auto/new-conf${i},"
         fi
     done
     output_valid_files=${val_dir}'valid_'${beg}'to'${end}'_'
     save_weights_file=${val_dir}'weigths_'${beg}'to'${end}'_'
-    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 10000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 50000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
     "${tmpprog}" -i 0 fspt valid_multiple ${netcfgs} ${weightfile} ${options} -gpus 0
 }
 
@@ -83,7 +84,7 @@ beg=540; end=569
 run_confs
 beg=570; end=575
 run_confs
-else
+elif false; then
 beg=0; end=99
 run_confs
 beg=100; end=199
@@ -95,6 +96,10 @@ run_confs
 beg=400; end=499
 run_confs
 beg=500; end=575
+run_confs
+else
+beg=1; end=11
+# I forgot the conf nulber 1 !!!
 run_confs
 fi
 

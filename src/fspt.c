@@ -1088,6 +1088,7 @@ static void merge_nodes(fspt_t *fspt) {
         if (current_node->depth > depth) depth = current_node->depth;
     }
     fspt->depth = depth;
+    free_list(nodes);
 }
 
 void fspt_predict(size_t n, const fspt_t *fspt, const float *X, float *Y) {

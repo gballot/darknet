@@ -786,11 +786,9 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     } // end if (!only_fit && !only_score)
     char buff[256];
     if (save_weights_file) {
-        fprintf(stderr, "Save weights in %s.\n", save_weights_file);
         save_weights(net, save_weights_file);
     } else {
         sprintf(buff, "%s/%s_final.weights", backup_directory, base);
-        fprintf(stderr, "Save weights in %s.\n", buff);
         save_weights(net, buff);
     }
     fprintf(stderr, "End of FSPT training\n");
@@ -837,6 +835,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     free_list(fspt_layers);
     free(nets);
     free(names);
+    free(base);
 }
 
 typedef struct valid_args {
@@ -1358,6 +1357,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             }
         }
         /* Refit */
+        fprintf(stderr, "Using weightfile : %s.\n", similar_weightfile);
         char *outfile_fit = calloc(256, sizeof(char));
         sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
         char *save_weightfile2 = calloc(256, sizeof(char));

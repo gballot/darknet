@@ -716,7 +716,7 @@ layer parse_fspt(list *options, size_params params)
     }
 
     int *input_layers = calloc(n, sizeof(int));
-    int *sizes = calloc(n, sizeof(int));
+    //int *sizes = calloc(n, sizeof(int));
 
     char *tmp_ref = strtok(l, ",");
     int i = 0;
@@ -742,7 +742,7 @@ layer parse_fspt(list *options, size_params params)
         }  
         if(index < 0) index = params.index + index;
         input_layers[i] = index;
-        sizes[i] = net->layers[index].outputs;
+        //sizes[i] = net->layers[index].outputs;
         tmp_ref = strtok(NULL, ",");
         i++;
     }
@@ -1328,9 +1328,7 @@ void save_weights_upto(network *net, char *filename, int cutoff)
 #endif
     fprintf(stderr, "Saving weights to %s\n", filename);
     FILE *fp = fopen(filename, "wb");
-    fprintf(stderr, "before error in save_weights_upto.\n");
     if(!fp) file_error(filename);
-    fprintf(stderr, "before error in save_weights_upto.\n");
 
     int major = 0;
     int minor = 2;

@@ -39,12 +39,17 @@ char **get_random_paths_indexes(char **paths, int n, int m, int *indexes)
 }
 */
 
+/**
+ * Gets `n` paths from `paths` of size `m` starting from `beg`.
+ */
 char **get_ordered_paths(char **paths, int beg, int n, int m) {
-    int k = beg + n < m ? n : m - beg - 1;
-    char **ordered_paths = calloc(k, sizeof(char*));
+    assert(beg + n < m);
+    //int k = beg + n < m ? n : m - beg - 1;
+    //char **ordered_paths = calloc(k, sizeof(char*));
+    char **ordered_paths = calloc(n, sizeof(char*));
     int i;
     pthread_mutex_lock(&mutex);
-    for(i = 0; i < k; ++i){
+    for(i = 0; i < n; ++i){
         int index = beg + i;
         ordered_paths[i] = paths[index];
         //if(i == 0) printf("%s\n", paths[index]);
@@ -461,6 +466,7 @@ void fill_truth_mask(char *path, int num_boxes, float *truth, int classes, int w
 void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy)
 {
     char labelpath[8192];
+    fprintf(stderr, "DEBUG : path = %s\n", path);
     find_replace(path, "images", "labels", labelpath);
     find_replace(labelpath, "JPEGImages", "labels", labelpath);
 

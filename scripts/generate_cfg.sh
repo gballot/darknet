@@ -1021,17 +1021,17 @@ feature_layers=("conv_40" "conv_21" "conv_10")
 merge_nodes_range=(1)
 min_samples_p_range=(0.001 1)
 min_volume_p_range=(0.)
-min_length_p_range=(0.001 0.01)
-max_depth_p_range=(2 5)
-max_consecutive_gain_violations_p_range=(0.1 0.5 1)
-gini_gain_thresh_range=(0.03 0.07 0.1 0.15)
+min_length_p_range=(0.01)
+max_depth_p_range=(5)
+max_consecutive_gain_violations_p_range=(0.5)
+gini_gain_thresh_range=(0.03)
 middle_split_range=(1)
 auto_samples_p_range=(0.75)
 verify_density_thresh_range=(0.)
 verify_n_nodes_p_thresh_range=(0.)
 verify_n_uniform_p_thresh_range=(0.)
 auto_calibration_score_range=(0.90)
-feature_layers_range=("conv_40" "conv_21" "conv_10")
+# feature_layers_range=("conv_40" "conv_21" "conv_10")
 # fspt_1 (big obj) feature layer <= conv_59
 # fspt_2 (med obj) feature layer <= conv_67 (route from conv_57 to conv_60, concat conv_61)
 # fspt_3 (small_obj) feature layer <= conv_75 (route from conv_65 to conv_68, concate conv_69)
@@ -1094,33 +1094,33 @@ do
 
                                                     # Same layer as fspt
                                                     feature_layers=("conv_59" "conv_67" "conv_75")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     feature_layers=("conv_59" "conv_61" "conv_69")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     feature_layers=("conv_57" "conv_57" "conv_65")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     # Natural choice based on projection.
                                                     feature_layers=("conv_40" "conv_21" "conv_10")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     feature_layers=("conv_30" "conv_15" "conv_7")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
                                                     feature_layers=("conv_20" "conv_10" "conv_5")
-                                                    outfile="${local_cfg_dir}conf${i}"
+                                                    outfile="${local_cfg_dir}new-conf${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
@@ -1138,3 +1138,4 @@ do
     done
 done
 
+echo "${i} configuration files created."

@@ -83,6 +83,7 @@ static float KS_stat_cpu(int d, int n, const float *X, const float *lim) {
     diff = ABS(diff);
     //debug_print("i = %d, diff = %g, empirical = %g, theoretical = %g, depth = %g",
     //        n, diff, empirical, theoretical, depths[n-1]);
+    free(depths);
     if (diff > sup) sup = diff;
     debug_assert(0.f <= sup && sup <= 1.f);
     debug_print("sup = %g", sup);
