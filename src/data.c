@@ -463,10 +463,9 @@ void fill_truth_mask(char *path, int num_boxes, float *truth, int classes, int w
 }
 
 
-void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy)
-{
+void fill_truth_detection(char *path, int num_boxes, float *truth, int classes,
+        int flip, float dx, float dy, float sx, float sy) {
     char labelpath[8192];
-    fprintf(stderr, "DEBUG : path = %s\n", path);
     find_replace(path, "images", "labels", labelpath);
     find_replace(labelpath, "JPEGImages", "labels", labelpath);
 

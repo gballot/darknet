@@ -1226,6 +1226,17 @@ static void print_validation_cfg(FILE *stream, const validation_cfg *v,
         return;
     }
 
+    char input_layers[62] = {0};
+    char *cursor = input_layers;
+    for (int l = 0; l < v->n_fspt_layers; ++l) {
+        if (l > 0) sprintf(cursor++, "-");
+        for (int i = 0; i < v->n_input_layers[l]; ++i) {
+            if (i > 0) sprintf(cursor++, ",");
+            sprintf(cursor, "%d", v->input_layers[l][i]);
+            cursor = input_layers + strlen(input_layers);
+        }
+    }
+
     fprintf(stream, "\
 ┌────────────────────────────────────────────────────────────────────────────────────────────┐\n\
 │                                VALIDATION CONFIGURATION                                    │\n\
@@ -1236,12 +1247,13 @@ static void print_validation_cfg(FILE *stream, const validation_cfg *v,
 │                    fit file │%-62s│\n\
 │  validation positif outfile │%-62s│\n\
 │  validation negatif outfile │%-62s│\n\
-│                 weight file │%-62s|\n\
+│                 weight file │%-62s│\n\
+│           input layers      │    %-58s│\n\
 │            validation score │"FLT_FORMAT"                                                  │\n\
 └─────────────────────────────┴──────────────────────────────────────────────────────────────┘\n\n",
         v->yolo_thresh, v->fspt_thresh,
         v->cfgfile, v->outfile_fit, v->outfile_val_positif,
-        v->outfile_val_negatif, v->weightfile, v->score
+        v->outfile_val_negatif, v->weightfile, input_layers, v->score
         );
 
     fprintf(stream, "Validation data positif resume :\n");

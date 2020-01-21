@@ -24,12 +24,15 @@ from waymo_open_dataset.utils import transform_utils
 #                                Parameters                                   #
 ###############################################################################
 
-folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
+folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/clip/"
+train_dir = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
 train_folders = ['training_{:04d}'.format(i) for i in range(32)]
 links_train_images = folder_path + "links_train_images"
 links_train_labels = folder_path + "links_train_labels"
 links_test_images = folder_path + "links_test_images"
 links_test_labels = folder_path + "links_test_labels"
+links_test_on_train_images = folder_path + "links_test_on_train_images"
+links_test_on_train_labels = folder_path + "links_test_on_train_labels"
 
 # The values are only used to be printed in the label files.
 save_label_dict = {
@@ -69,6 +72,8 @@ count_signs_ranges_test = ['']
 
 ###############################################################################
 
+# Counting frame per driving run dict
+n_frame_per_clip = {}
 
 # Concatenation of train and test ranges
 daylight_ranges = [daylight_ranges_train, daylight_ranges_test]
@@ -174,14 +179,17 @@ class LabeledImage:
         self.location = ""
         self.path_train = []
         self.path_test = []
+        self.path_test_on_train = []
         self.image_data = 0
         self.labels = []
         self.labels_text = ""
 
 
-    def build_paths(self):
+    def build_paths(self, add_to_test_on_train):
         self.path_train = []
         self.path_test = []
+        self.path_test_on_train = []
+        global folder_path
         for i in [0,1]:
             for s0 in daylight_ranges[i]:
                 if(s0 == 'Dawn/Dusk'):
@@ -256,9 +264,16 @@ class LabeledImage:
                                     label_path = labels_path + train_folder \
                                             + str(self.image_id) + ".txt"
                                     if i == 0:
-                                        self.path_train.append([image_path, \
-                                                label_path])
+                                        if add_to_test_on_train:
+                                            print("Add in test_on_train.")
+                                            self.path_test_on_train.append([image_path, \
+                                                    label_path])
+                                        else:
+                                            print("Add in train.")
+                                            self.path_train.append([image_path, \
+                                                    label_path])
                                     if i == 1:
+                                        print("Add in test.")
                                         self.path_test.append([image_path, \
                                                 label_path])
 
@@ -287,6 +302,11 @@ class LabeledImage:
             self.image_data.save(path[0])
             with open(path[1], 'w') as f:
                 f.write(self.labels_text)
+        for path in self.path_test_on_train:
+            print("save image {}".format(path[0]))
+            self.image_data.save(path[0])
+            with open(path[1], 'w') as f:
+                f.write(self.labels_text)
 
     def add_to_links_files(self):
         with open(links_train_images, 'a') as f:
@@ -301,12 +321,19 @@ class LabeledImage:
         with open(links_test_labels, 'a') as f:
             for path in self.path_test:
                 f.write(path[1] + "\n")
+        with open(links_test_on_train_images, 'a') as f:
+            for path in self.path_test_on_train:
+                f.write(path[0] + "\n")
+        with open(links_test_on_train_labels, 'a') as f:
+            for path in self.path_test_on_train:
+                f.write(path[1] + "\n")
 
 
 
 
 def examine_frame(frame):
     global image_id
+    global n_frame_per_clip
     for angle in [open_dataset.CameraName.Name.FRONT, \
                   open_dataset.CameraName.Name.FRONT_LEFT, \
                   open_dataset.CameraName.Name.FRONT_RIGHT, \
@@ -316,6 +343,10 @@ def examine_frame(frame):
         labeled_image = LabeledImage(image_id)
         labeled_image.daylight = frame.context.stats.time_of_day
         labeled_image.location = frame.context.stats.location
+        if frame.context.name in n_frame_per_clip:
+            n_frame_per_clip[frame.context.name + str(angle)] += 1
+        else:
+            n_frame_per_clip[frame.context.name + str(angle)] = 1
         count_vehicles = 0
         count_pedestrians = 0
         count_signs = 0
@@ -366,7 +397,13 @@ def examine_frame(frame):
             if image.name != angle:
                 continue
             labeled_image.image_data = img.open(io.BytesIO(image.image))
-        labeled_image.build_paths()
+        # one image out of X are on test_on_train
+        if frame.context.name + str(angle) in n_frame_per_clip:
+            add_to_test_on_train = (n_frame_per_clip[frame.context.name + str(angle)] % 5 == 3)
+        else:
+            add_to_test_on_train = false
+        print("context = " + frame.context.name + " count = " + str(n_frame_per_clip[frame.context.name + str(angle)]) + " add_to_test_on_train = " + str(add_to_test_on_train))
+        labeled_image.build_paths(add_to_test_on_train)
         if len(labeled_image.path_train) > 0 \
                 or len(labeled_image.path_test) > 0:
             if len(labeled_image.labels) > 0:
@@ -380,10 +417,10 @@ def main(argv):
     global train_folder
     for folder in train_folders:
         train_folder = folder
-        train_folder_path = folder_path + train_folder
+        path_to_data = train_dir + folder
         global image_id
         image_id = 0
-        for root, dirs, files in os.walk(train_folder_path):
+        for root, dirs, files in os.walk(path_to_data):
             for file in files:
                 if file.startswith("segment"):  # avoid license file inside the folder
                     filepath = os.path.join(root, file)

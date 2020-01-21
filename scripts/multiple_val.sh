@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-gini-low-full.output
+#SBATCH -o gpu-job-multiple-validations-gini-0.15-5percent.output
 #SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -14,7 +14,7 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-val_dir='results/multiple_val-gini-low-full/'
+val_dir='results/multiple_val-gini-0.15-5percent/'
 mkdir -p "${val_dir}"
 
 
@@ -26,19 +26,22 @@ negconf='cfg/waymo-full-night.data'
 yolo_thresh='0.7'
 fspt_thresh='0.1,0.3,0.5,0.7,0.8,0.9'
 
+version="conf-gini0.15-"
+
 run_confs() {
     netcfgs=""
     for (( i=${beg}; i<=${end}; ++i )); do
         if [ -z "${netcfgs}" ]; then
-            netcfgs="local_cfg/auto/new-conf${i},"
+            netcfgs="local_cfg/auto/${version}${i}"
         else
-            netcfgs="${netcfgs},local_cfg/auto/new-conf${i},"
+            netcfgs="${netcfgs},local_cfg/auto/${version}${i}"
         fi
     done
     output_valid_files=${val_dir}'valid_'${beg}'to'${end}'_'
     save_weights_file=${val_dir}'weigths_'${beg}'to'${end}'_'
-    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 50000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
-    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 22000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 44000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
     "${tmpprog}" -i 0 fspt valid_multiple ${netcfgs} ${weightfile} ${options} -gpus 0
 }
 
@@ -97,9 +100,11 @@ beg=400; end=499
 run_confs
 beg=500; end=575
 run_confs
+elif true; then
+beg=0; end=11
+run_confs
 else
-beg=1; end=11
-# I forgot the conf nulber 1 !!!
+beg=6; end=6
 run_confs
 fi
 
