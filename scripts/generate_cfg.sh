@@ -1019,12 +1019,12 @@ auto_calibration_score=(0.95 0.95 0.95)
 feature_layers=("conv_40" "conv_21" "conv_10")
 
 merge_nodes_range=(1)
-min_samples_p_range=(0.001 1)
+min_samples_p_range=(1)
 min_volume_p_range=(0.)
 min_length_p_range=(0.01)
 max_depth_p_range=(5)
 max_consecutive_gain_violations_p_range=(0.5)
-gini_gain_thresh_range=(0.15)
+gini_gain_thresh_range=(0.001, 0.01, 0.03, 0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.18, 0.21, 0.24, 0.27, 0.3, 0.35, 0.4)
 middle_split_range=(1)
 auto_samples_p_range=(0.75)
 verify_density_thresh_range=(0.)
@@ -1037,7 +1037,7 @@ auto_calibration_score_range=(0.90)
 # fspt_3 (small_obj) feature layer <= conv_75 (route from conv_65 to conv_68, concate conv_69)
 
 local_cfg_dir="/home/gballot/NTU/FSPT Yolo/darknet/local_cfg/auto/"
-version="conf-gini0.15-"
+version="conf-variation-gini-gain-"
 
 i=0
 
@@ -1093,6 +1093,7 @@ do
                                                 do
                                                     auto_calibration_score=(${auto_cal} ${auto_cal} ${auto_cal})
 
+                                                    if false; then
                                                     # Same layer as fspt
                                                     feature_layers=("conv_59" "conv_67" "conv_75")
                                                     outfile="${local_cfg_dir}${version}${i}"
@@ -1114,16 +1115,20 @@ do
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))
+                                                    fi
 
                                                     feature_layers=("conv_30" "conv_15" "conv_7")
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
+
+                                                    if false; then
                                                     feature_layers=("conv_20" "conv_10" "conv_5")
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))
+                                                    fi
 
                                                 done
                                             done

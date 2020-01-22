@@ -1022,6 +1022,7 @@ void free_fspt(fspt_t *fspt) {
     if (fspt->feature_importance) free((float *) fspt->feature_importance);
     free_fspt_nodes(fspt->root);
     if (fspt->samples) free(fspt->samples);
+    //TODO : free c_args/s_args
     free(fspt);
 }
 

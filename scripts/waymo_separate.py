@@ -24,7 +24,7 @@ from waymo_open_dataset.utils import transform_utils
 #                                Parameters                                   #
 ###############################################################################
 
-folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/clip/"
+folder_path = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/no-clip/"
 train_dir = "/home/gballot/NTU/FSPT Yolo/darknet/waymo/"
 train_folders = ['training_{:04d}'.format(i) for i in range(32)]
 links_train_images = folder_path + "links_train_images"
@@ -33,6 +33,9 @@ links_test_images = folder_path + "links_test_images"
 links_test_labels = folder_path + "links_test_labels"
 links_test_on_train_images = folder_path + "links_test_on_train_images"
 links_test_on_train_labels = folder_path + "links_test_on_train_labels"
+# One image per clip out of `one_out_of` will be in test_on_train.
+# Put 1 for no test_on_train.
+one_out_of = 1
 
 # The values are only used to be printed in the label files.
 save_label_dict = {
@@ -339,14 +342,9 @@ def examine_frame(frame):
                   open_dataset.CameraName.Name.FRONT_RIGHT, \
                   open_dataset.CameraName.Name.SIDE_LEFT, \
                   open_dataset.CameraName.Name.SIDE_RIGHT]:
-        image_id += 1
         labeled_image = LabeledImage(image_id)
         labeled_image.daylight = frame.context.stats.time_of_day
         labeled_image.location = frame.context.stats.location
-        if frame.context.name in n_frame_per_clip:
-            n_frame_per_clip[frame.context.name + str(angle)] += 1
-        else:
-            n_frame_per_clip[frame.context.name + str(angle)] = 1
         count_vehicles = 0
         count_pedestrians = 0
         count_signs = 0
@@ -398,23 +396,31 @@ def examine_frame(frame):
                 continue
             labeled_image.image_data = img.open(io.BytesIO(image.image))
         # one image out of X are on test_on_train
-        if frame.context.name + str(angle) in n_frame_per_clip:
-            add_to_test_on_train = (n_frame_per_clip[frame.context.name + str(angle)] % 5 == 3)
+        if frame.context.name + str(angle) in n_frame_per_clip.keys():
+            add_to_test_on_train = (n_frame_per_clip[frame.context.name + str(angle)] % one_out_of == 1)
         else:
-            add_to_test_on_train = false
-        print("context = " + frame.context.name + " count = " + str(n_frame_per_clip[frame.context.name + str(angle)]) + " add_to_test_on_train = " + str(add_to_test_on_train))
+            add_to_test_on_train = False
         labeled_image.build_paths(add_to_test_on_train)
         if len(labeled_image.path_train) > 0 \
-                or len(labeled_image.path_test) > 0:
+                or len(labeled_image.path_test) > 0 \
+                or len(labeled_image.path_test_on_train) > 0:
             if len(labeled_image.labels) > 0:
                 labeled_image.save()
                 labeled_image.add_to_links_files()
+                if frame.context.name + str(angle) in n_frame_per_clip.keys():
+                    n_frame_per_clip[frame.context.name + str(angle)] += 1
+                else:
+                    n_frame_per_clip[frame.context.name + str(angle)] = 1
+                image_id += 1
 
 
 def main(argv):
     # Code to partition images based on Generative Factors
     tf.compat.v1.enable_eager_execution()
     global train_folder
+    global folder_path
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
     for folder in train_folders:
         train_folder = folder
         path_to_data = train_dir + folder

@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-gini-0.15-5percent.output
+#SBATCH -o gpu-job-multiple-validations-varaition-gini-gain-5percent.output
 #SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -14,19 +14,22 @@ prog="/home/gballot/NTU/FSPT Yolo/darknet/darknet"
 tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
-val_dir='results/multiple_val-gini-0.15-5percent/'
+# `clip` or `no-clip`
+clip="clip"
+
+val_dir='results/multiple_val-'${clip}'-variation-gini-gain-5percent/'
 mkdir -p "${val_dir}"
 
 
 #netcfgs='local_cfg/fspt-waymo-full-multi-0.cfg,local_cfg/fspt-waymo-full-multi-1.cfg,local_cfg/fspt-waymo-full-multi-2.cfg,local_cfg/fspt-waymo-full-multi-3.cfg,local_cfg/fspt-waymo-full-multi-4.cfg,local_cfg/fspt-waymo-full-multi-5.cfg'
 
 weightfile='weights/fspt-waymo-full-80-percent-day.weights'
-posconf='cfg/waymo-full-only-day.data'
-negconf='cfg/waymo-full-night.data'
+posconf='cfg/waymo-full-only-day-'${clip}'.data'
+negconf='cfg/waymo-full-night-'${clip}'.data'
 yolo_thresh='0.7'
 fspt_thresh='0.1,0.3,0.5,0.7,0.8,0.9'
 
-version="conf-gini0.15-"
+version="conf-variation-gini-gain-"
 
 run_confs() {
     netcfgs=""
@@ -101,7 +104,7 @@ run_confs
 beg=500; end=575
 run_confs
 elif true; then
-beg=0; end=11
+beg=0; end=15
 run_confs
 else
 beg=6; end=6

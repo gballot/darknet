@@ -739,7 +739,7 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
         args.ordered = ordered;
         args.beg = (0 <= start && start < plist->size) ? start : 0;
         args.m = (end && args.beg < end && end < plist->size) ?
-            end : plist->size;
+            end : plist->size - 1;
 
         pthread_t load_thread = load_data(args);
         double time;
@@ -1159,8 +1159,6 @@ typedef struct validation_cfg {
 } validation_cfg;
 
 static void free_validation_cfg(validation_cfg v) {
-    //TODO delete next line.
-    return;
     free_validation_data(v.val_data_positif);
     free_validation_data(v.val_data_negatif);
     free(v.cfgfile);
@@ -1174,7 +1172,7 @@ static void free_validation_cfg(validation_cfg v) {
     free(v.n_input_layers);
 }
 
-static void print_raw_validation_cfg(FILE *stream, const validation_cfg *v,
+static void print_json_validation_cfg(FILE *stream, const validation_cfg *v,
         size_t n){
     for (size_t i = 0; i < n; ++i) {
         if (i > 0) fprintf(stream, "\n");
@@ -1289,6 +1287,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     assert(save_weightfile);
     // local copy of the global variable gpu_index.
     int old_gpu_index = gpu_index;
+    /* Partial json file */
+    char outfile_json[256] = {0};
+    sprintf(outfile_json, "%s_part.json", outfile);
 
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
         char *cfgfile = cfgfiles[cfg];
@@ -1370,9 +1371,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         }
         /* Refit */
         fprintf(stderr, "Using weightfile : %s.\n", similar_weightfile);
-        char *outfile_fit = calloc(256, sizeof(char));
+        char outfile_fit[256] = {0};
         sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
-        char *save_weightfile2 = calloc(256, sizeof(char));
+        char save_weightfile2[256] = {0};
         sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
         criterion_args *c_args;
         score_args *s_args;
@@ -1383,9 +1384,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 print_stats_val, &c_args,
                 &s_args);
 
-        char *outfile_val_positif = calloc(256, sizeof(char));
+        char outfile_val_positif[256] = {0};
         sprintf(outfile_val_positif, "%s_cfg%d_val_positif", outfile, cfg);
-        char *outfile_val_negatif = calloc(256, sizeof(char));
+        char outfile_val_negatif[256] = {0};
         sprintf(outfile_val_negatif, "%s_cfg%d_val_negatif", outfile, cfg);
         validation_data **val_datas_positif;
         validation_data **val_datas_negatif;
@@ -1415,13 +1416,19 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfg.val_data_positif = val_data_positif;
                 val_cfg.val_data_negatif = val_data_negatif;
                 val_cfg.cfgfile = copy_string(cfgfile);
-                val_cfg.outfile_fit = outfile_fit;
-                val_cfg.outfile_val_positif = outfile_val_positif;
-                val_cfg.outfile_val_negatif = outfile_val_negatif;
-                val_cfg.weightfile = save_weightfile2;
+                val_cfg.outfile_fit = copy_string(outfile_fit);
+                val_cfg.outfile_val_positif = copy_string(outfile_val_positif);
+                val_cfg.outfile_val_negatif = copy_string(outfile_val_negatif);
+                val_cfg.weightfile = copy_string(save_weightfile2);
                 val_cfg.n_fspt_layers = n_fspt_layers;
-                val_cfg.c_args = c_args;
-                val_cfg.s_args = s_args;
+                val_cfg.c_args =
+                    malloc(n_fspt_layers * sizeof(criterion_args));
+                memcpy(val_cfg.c_args, c_args,
+                        n_fspt_layers * sizeof(criterion_args));
+                val_cfg.s_args =
+                    malloc(n_fspt_layers * sizeof(criterion_args));
+                memcpy(val_cfg.s_args, s_args,
+                        n_fspt_layers * sizeof(score_args));
 
                 val_cfg.n_input_layers = calloc(n_fspt_layers, sizeof(int));
                 val_cfg.input_layers = calloc(n_fspt_layers, sizeof(int *));
@@ -1445,7 +1452,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         int beg = cfg * n_fspt_threshs * n_yolo_threshs;
         qsort(val_cfgs + beg, n_yolo_threshs * n_fspt_threshs,
                 sizeof(validation_cfg), cmp_val_cfg);
-        char *outfile_resume = calloc(256, sizeof(char));
+        char outfile_resume[256] = {0};
         sprintf(outfile_resume, "%s_cfg%d_resume", outfile, cfg);
         FILE *f = fopen(outfile_resume, "w");
         for (int i = beg; i < beg + n_yolo_threshs * n_fspt_threshs; ++i) { 
@@ -1456,6 +1463,12 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
             print_validation_cfg(f, val_cfgs + i, title);       
         }
         fclose(f);
+        /* Print json for this configuration */
+        FILE *fjson = fopen(outfile_json, "a");
+        for (int i = beg; i < beg + n_yolo_threshs * n_fspt_threshs; ++i) { 
+            print_json_validation_cfg(fjson, val_cfgs + i, 1);       
+        }
+        fclose(fjson);
         /* Free configuration */
         fprintf(stderr, "Free network configuration %d.\n", cfg);
 
@@ -1466,18 +1479,20 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     /* Resume */
     qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,
             sizeof(validation_cfg), cmp_val_cfg);
-    FILE *f = fopen(outfile, "w");
+    char outfile_last_resume[256] = {0};
+    sprintf(outfile_last_resume, "%s_final_resume", outfile);
+    FILE *fresume = fopen(outfile_last_resume, "w");
     for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
         char title[256] = {0};
         sprintf(title, "Configuration number %d", i);
-        print_validation_cfg(f, val_cfgs + i, title);       
+        print_validation_cfg(fresume, val_cfgs + i, title);       
     }
-    fclose(f);
+    fclose(fresume);
     /* Raw data */
-    char *outfile_data = calloc(256, sizeof(char));
-    sprintf(outfile_data, "%s.json", outfile);
+    char outfile_data[256] = {0};
+    sprintf(outfile_data, "%s_final.json", outfile);
     FILE *fdata = fopen(outfile_data, "w");
-    print_raw_validation_cfg(fdata, val_cfgs,
+    print_json_validation_cfg(fdata, val_cfgs,
             n_cfg * n_yolo_threshs * n_fspt_threshs);       
     fclose(fdata);
     fprintf(stderr, "Free validation data.\n");
