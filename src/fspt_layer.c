@@ -255,7 +255,7 @@ void fspt_predict_truth(layer l, network net, detection **dets, int **n_boxes)
     for (int b = 0; b < l.batch; ++b) {
         /* while there are truth boxes*/
         int t = 0;
-        while(1) {
+        while(t * (4 + 1) < l.truths) {
             box truth = float_to_box(net.truth + t*(4+1) + b*l.truths, 1);
             if(!truth.x) break;
             /* Get mask index */

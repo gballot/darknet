@@ -437,8 +437,10 @@ Parameters :\n\
 
 static validation_data *allocate_validation_data(int classes, char **names) {
     validation_data *v = calloc(1, sizeof(validation_data));
+    assert(v);
     v->classes = classes;
     v->names = calloc(classes, sizeof(char *));
+    assert(v->names);
     for (int i = 0; i < classes; ++i) {
         v->names[i] = copy_string(names[i]);
     }
@@ -1282,13 +1284,14 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
 
     validation_cfg *val_cfgs =
         calloc(n_cfg * n_yolo_threshs * n_fspt_threshs, sizeof(validation_cfg));
+    assert(val_cfgs);
 
     assert(outfile);
     assert(save_weightfile);
     // local copy of the global variable gpu_index.
     int old_gpu_index = gpu_index;
     /* Partial json file */
-    char outfile_json[256] = {0};
+    char outfile_json[512] = {0};
     sprintf(outfile_json, "%s_part.json", outfile);
 
     for (int cfg = 0; cfg < n_cfg; ++cfg) {
@@ -1371,9 +1374,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         }
         /* Refit */
         fprintf(stderr, "Using weightfile : %s.\n", similar_weightfile);
-        char outfile_fit[256] = {0};
+        char outfile_fit[512] = {0};
         sprintf(outfile_fit, "%s_cfg%d_fit", outfile, cfg);
-        char save_weightfile2[256] = {0};
+        char save_weightfile2[512] = {0};
         sprintf(save_weightfile2, "%s_cfg%d", save_weightfile, cfg);
         criterion_args *c_args;
         score_args *s_args;
@@ -1384,9 +1387,9 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 print_stats_val, &c_args,
                 &s_args);
 
-        char outfile_val_positif[256] = {0};
+        char outfile_val_positif[512] = {0};
         sprintf(outfile_val_positif, "%s_cfg%d_val_positif", outfile, cfg);
-        char outfile_val_negatif[256] = {0};
+        char outfile_val_negatif[512] = {0};
         sprintf(outfile_val_negatif, "%s_cfg%d_val_negatif", outfile, cfg);
         validation_data **val_datas_positif;
         validation_data **val_datas_negatif;
@@ -1423,15 +1426,19 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 val_cfg.n_fspt_layers = n_fspt_layers;
                 val_cfg.c_args =
                     malloc(n_fspt_layers * sizeof(criterion_args));
+                assert(val_cfg.c_args);
                 memcpy(val_cfg.c_args, c_args,
                         n_fspt_layers * sizeof(criterion_args));
                 val_cfg.s_args =
-                    malloc(n_fspt_layers * sizeof(criterion_args));
+                    malloc(n_fspt_layers * sizeof(score_args));
+                assert(val_cfg.s_args);
                 memcpy(val_cfg.s_args, s_args,
                         n_fspt_layers * sizeof(score_args));
 
                 val_cfg.n_input_layers = calloc(n_fspt_layers, sizeof(int));
+                assert(val_cfg.n_input_layers);
                 val_cfg.input_layers = calloc(n_fspt_layers, sizeof(int *));
+                assert(val_cfg.input_layers);
                 for (int k = 0; k < n_fspt_layers; ++k) {
                     layer *l = fspt_layers_array[k];
                     val_cfg.n_input_layers[k] = l->inputs;
@@ -1452,7 +1459,7 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         int beg = cfg * n_fspt_threshs * n_yolo_threshs;
         qsort(val_cfgs + beg, n_yolo_threshs * n_fspt_threshs,
                 sizeof(validation_cfg), cmp_val_cfg);
-        char outfile_resume[256] = {0};
+        char outfile_resume[512] = {0};
         sprintf(outfile_resume, "%s_cfg%d_resume", outfile, cfg);
         FILE *f = fopen(outfile_resume, "w");
         for (int i = beg; i < beg + n_yolo_threshs * n_fspt_threshs; ++i) { 
@@ -1479,17 +1486,17 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
     /* Resume */
     qsort(val_cfgs, n_cfg * n_yolo_threshs * n_fspt_threshs,
             sizeof(validation_cfg), cmp_val_cfg);
-    char outfile_last_resume[256] = {0};
+    char outfile_last_resume[512] = {0};
     sprintf(outfile_last_resume, "%s_final_resume", outfile);
     FILE *fresume = fopen(outfile_last_resume, "w");
     for (int i = 0; i < n_cfg * n_yolo_threshs * n_fspt_threshs; ++i) { 
-        char title[256] = {0};
+        char title[128] = {0};
         sprintf(title, "Configuration number %d", i);
         print_validation_cfg(fresume, val_cfgs + i, title);       
     }
     fclose(fresume);
     /* Raw data */
-    char outfile_data[256] = {0};
+    char outfile_data[512] = {0};
     sprintf(outfile_data, "%s_final.json", outfile);
     FILE *fdata = fopen(outfile_data, "w");
     print_json_validation_cfg(fdata, val_cfgs,
@@ -1588,6 +1595,7 @@ Options are :\n\
             if (gpu_list[i] == ',') ++ngpus;
         }
         gpus = calloc(ngpus, sizeof(int));
+        assert(gpus);
         for(int i = 0; i < ngpus; ++i){
             gpus[i] = atoi(gpu_list);
             gpu_list = strchr(gpu_list, ',') + 1;
@@ -1600,6 +1608,7 @@ Options are :\n\
         if (fspt_thresh_list[i] == ',') ++n_fspt_thresh;
     }
     float *fspt_threshs = calloc(n_fspt_thresh, sizeof(float));
+    assert(fspt_threshs);
     for(int i = 0; i < n_fspt_thresh; ++i){
         fspt_threshs[i] = atof(fspt_thresh_list);
         fspt_thresh_list = strchr(fspt_thresh_list, ',') + 1;
@@ -1611,6 +1620,7 @@ Options are :\n\
         if (yolo_thresh_list[i] == ',') ++n_yolo_thresh;
     }
     float *yolo_threshs = calloc(n_yolo_thresh, sizeof(float));
+    assert(yolo_threshs);
     for(int i = 0; i < n_yolo_thresh; ++i){
         yolo_threshs[i] = atof(yolo_thresh_list);
         yolo_thresh_list = strchr(yolo_thresh_list, ',') + 1;
@@ -1639,6 +1649,7 @@ Options are :\n\
             if (cfg_list[i] == ',') ++n_cfgs;
         }
         cfgs = calloc(n_cfgs, sizeof(char *));
+        assert(cfgs);
         cfgs[0] = strtok(cfg_list, ",");
         for(int i = 1; i < n_cfgs; ++i){
             cfgs[i] = strtok(NULL, ",");

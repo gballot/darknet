@@ -1054,12 +1054,14 @@ long binomial(int n, int k) {
 
 int *copy_int_array(size_t n, const int *a) {
     int *b = malloc(n * sizeof(int));
+    assert(b);
     memcpy(b, a, n * sizeof(int));
     return b;
 }
 
 float *copy_float_array(size_t n, const float *a) {
     float *b = malloc(n * sizeof(float));
+    assert(b);
     memcpy(b, a, n * sizeof(float));
     return b;
 }
