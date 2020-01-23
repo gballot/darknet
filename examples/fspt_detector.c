@@ -753,7 +753,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             pthread_join(load_thread, 0);
             train = buffer;
             args.beg = *net->seen;
-            load_thread = load_data(args);
+            if (get_current_batch(net) < net->max_batches - 1)
+                load_thread = load_data(args);
             fprintf(stderr, "Loaded: %lf seconds\n",
                     what_time_is_it_now()-time);
             time=what_time_is_it_now();
@@ -1005,7 +1006,8 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
         pthread_join(load_thread, 0);
         val = buffer;
         args.beg = *net->seen;
-        load_thread = load_data(args);
+        if (get_current_batch(net) < net->max_batches - 1)
+            load_thread = load_data(args);
         fprintf(stderr, "Loaded: %lf seconds\n", what_time_is_it_now()-time);
         time=what_time_is_it_now();
 #ifdef GPU

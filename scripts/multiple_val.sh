@@ -1,6 +1,6 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-varaition-gini-gain-5percent.output
-#SBATCH -p PV1003q,NV100q,PV100q,GV1002q
+#SBATCH -o gpu-job-multiple-validations-variation-gini-gain-no-clip.output
+#SBATCH -p NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
 #SBATCH -c 24
@@ -15,7 +15,7 @@ tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
 # `clip` or `no-clip`
-clip="clip"
+clip="no-clip"
 
 val_dir='results/multiple_val-'${clip}'-variation-gini-gain-5percent/'
 mkdir -p "${val_dir}"

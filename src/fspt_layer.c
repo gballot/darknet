@@ -430,6 +430,9 @@ void fspt_layer_set_samples_class(layer l, int class, int refit, int merge) {
             copy_cpu(size_base * l.total, fspt->samples, 1,
                     l.fspt_training_data[class] + n * l.total, 1);
             n += size_base;
+        } else {
+            if (fspt->samples && fspt->samples != l.fspt_training_data[class])
+                free(fspt->samples);
         }
         float *X = l.fspt_training_data[class];
         fspt->n_samples = n;
@@ -474,6 +477,9 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
             copy_cpu(size_base * l.total, fspt->samples, 1,
                     l.fspt_training_data[class] + n * l.total, 1);
             n += size_base;
+        } else {
+            if (fspt->samples && fspt->samples != l.fspt_training_data[class])
+                free(fspt->samples);
         }
         float *X = l.fspt_training_data[class];
         criterion_args *c_args = calloc(1, sizeof(criterion_args)); 
@@ -494,7 +500,7 @@ void fspt_layer_fit_class(layer l, int class, int refit, int merge) {
                 t / 1000 % 60, t % 1000, fspt->n_nodes, fspt->depth);
     }
 #ifdef DEBUG
-    if (fspt->root->type == INNER)
+    if (fspt->root->type == INNER && fspt->depth < 10)
         print_fspt(fspt);
 #endif
 }
