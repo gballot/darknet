@@ -175,9 +175,9 @@ double euristic_score(score_args *args) {
 void print_fspt_score_args_json(FILE *stream, score_args a) {
     fprintf(stream, "{\
 \"score_during_fit\" : %d, \"score_function\" : %d, \
-\"fspt\" : %p, \"node\" : %p, \"discover\" : %d, \"need_normalize\" : %d, \
+\"fspt\" : \"%p\", \"node\" : \"%p\", \"discover\" : %d, \"need_normalize\" : %d, \
 \"normalize_pass\" : %d, \"n_leaves\" : %ld, \
-\"score_vol_n_array\" : %p, \
+\"score_vol_n_array\" : \"%p\", \
 \"compute_euristic_hyperparam\" : %d, \"euristic_hyperparam\" : %g, \
 \"exponential_normalization\" : %d, \
 \"calibration_score\" : %g, \"calibration_n_samples_p\" : %g, \

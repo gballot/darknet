@@ -1024,20 +1024,19 @@ min_volume_p_range=(0.)
 min_length_p_range=(0.01)
 max_depth_p_range=(5)
 max_consecutive_gain_violations_p_range=(0.5)
-gini_gain_thresh_range=(0.03)
+gini_gain_thresh_range=(0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.21, 0.22)
 middle_split_range=(1)
 auto_samples_p_range=(0.75)
 verify_density_thresh_range=(0.)
 verify_n_nodes_p_thresh_range=(0.)
 verify_n_uniform_p_thresh_range=(0.)
 auto_calibration_score_range=(0.90)
-# feature_layers_range=("conv_40" "conv_21" "conv_10")
-# fspt_1 (big obj) feature layer <= conv_59
-# fspt_2 (med obj) feature layer <= conv_67 (route from conv_57 to conv_60, concat conv_61)
+# fspt_1 (big obj) feature layer <= conv_59. Best is conv_29 (or conv_1 followed by conv_29 for no-clip).
+# fspt_2 (med obj) feature layer <= conv_67 (route from conv_57 to conv_60, concat conv_61). Best conv_11, then conv_29, then conv_67.
 # fspt_3 (small_obj) feature layer <= conv_75 (route from conv_65 to conv_68, concate conv_69)
 
 local_cfg_dir="/home/gballot/NTU/FSPT Yolo/darknet/local_cfg/auto/"
-version="conf-gini0.03-"
+version="conf-best-layers-1-and-2-high-gini-"
 
 i=0
 
@@ -1093,7 +1092,14 @@ do
                                                 do
                                                     auto_calibration_score=(${auto_cal} ${auto_cal} ${auto_cal})
 
-                                                    if true; then
+                                                    # variation feature layer 1
+                                                    #auto_calibration_score=(${auto_cal} 0. 0.)
+                                                    # variation feature layer 2
+                                                    #auto_calibration_score=(0. ${auto_cal} 0.)
+                                                    # variation feature layer 3
+                                                    #auto_calibration_score=(0. 0. ${auto_cal})
+
+                                                    if false; then
                                                     # Same layer as fspt
                                                     feature_layers=("conv_59" "conv_67" "conv_75")
                                                     outfile="${local_cfg_dir}${version}${i}"
@@ -1140,16 +1146,370 @@ do
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))
-                                                    fi
 
                                                     feature_layers=("conv_30" "conv_15" "conv_7")
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))
 
-
-                                                    if true; then
                                                     feature_layers=("conv_20" "conv_10" "conv_5")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+                                                    fi
+
+
+                                                    # Variation feature layer 1
+
+                                                    if false; then
+                                                    feature_layers=("conv_59" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_56" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_53" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_50" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_47" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_44" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_41" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_38" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_35" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_32" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_29" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_26" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_23" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_20" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_17" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_14" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_11" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_8" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_5" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_2" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+                                                    fi
+
+                                                    # Variation layer 2
+
+                                                    if false; then
+                                                    feature_layers=("conv_1" "conv_67" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_64" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_61" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_57" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_53" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_50" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_47" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_44" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_41" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_38" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_35" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_32" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_29" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_26" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_23" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_20" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_17" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_14" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_11" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_8" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_5" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_2" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+                                                    fi
+
+
+                                                    # Variation layer 3
+
+                                                    if false; then
+                                                    feature_layers=("conv_1" "conv_1" "conv_75")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_72")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_69")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_57")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_54")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_51")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_48")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_45")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_42")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_39")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_36")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_33")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_30")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_27")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_24")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_21")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_18")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_15")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_12")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_9")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_6")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_3")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+
+                                                    feature_layers=("conv_1" "conv_1" "conv_1")
+                                                    outfile="${local_cfg_dir}${version}${i}"
+                                                    print_cfg
+                                                    ((i = i + 1))
+                                                    fi
+
+                                                    # Best
+                                                    if true; then
+                                                    feature_layers=("conv_29" "conv_11" "conv_8")
                                                     outfile="${local_cfg_dir}${version}${i}"
                                                     print_cfg
                                                     ((i = i + 1))

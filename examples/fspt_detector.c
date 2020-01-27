@@ -1178,21 +1178,22 @@ static void free_validation_cfg(validation_cfg v) {
 
 static void print_json_validation_cfg(FILE *stream, const validation_cfg *v,
         size_t n){
+    fprintf(stream, "[");
     for (size_t i = 0; i < n; ++i) {
-        if (i > 0) fprintf(stream, "\n");
+        if (i > 0) fprintf(stream, ",\n");
         fprintf(stream,
                 "{\"score\" : %g, \"yolo_thresh\" : %g, \"fspt_thresh\" : %g, \
 \"cfgfile\" : \"%s\", \"outfile_fit\" : \"%s\", \"outfile_val_positif\" : \"%s\", \
 \"outfile_val_negatif\" : \"%s\", \"weightfile\" : \"%s\", \"n_fspt_layers\" : %d, \
-\"fspt_layers\" : [",
+\"fspt_layers\" : [{",
                 v[i].score, v[i].yolo_thresh, v[i].fspt_thresh,
                 v[i].cfgfile, v[i].outfile_fit, v[i].outfile_val_positif,
                 v[i].outfile_val_negatif, v[i].weightfile, v[i].n_fspt_layers);
         for (int l = 0; l < v[i].n_fspt_layers; ++l) {
             if (l > 0)
-                fprintf(stream, ", ");
+                fprintf(stream, "}, ");
             fprintf(stream,
-                    "\"n_input_layers\" : %d, \"input_layers\" : [",
+                    "{\"n_input_layers\" : %d, \"input_layers\" : [",
                     v[i].n_input_layers[l]);
             for (int k = 0; k < v[i].n_input_layers[l]; ++k) {
                 if (k > 0)
@@ -1206,8 +1207,9 @@ static void print_json_validation_cfg(FILE *stream, const validation_cfg *v,
             fprintf(stream, ", \"score_args\" : ");
             print_fspt_score_args_json(stream, v[i].s_args[l]);
         }
-        fprintf(stream, "]}");
+        fprintf(stream, "}]}");
     }
+    fprintf(stream, "]");
 }
 
 static void print_validation_cfg(FILE *stream, const validation_cfg *v,

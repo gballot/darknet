@@ -1,6 +1,6 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-variation-gini-gain-no-clip.output
-#SBATCH -p NV100q,PV100q,GV1002q
+#SBATCH -o gpu-job-multiple-validations-best-layers-1-and-2-high-gini-no-clip.output
+#SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
 #SBATCH -c 24
@@ -17,7 +17,7 @@ cp "${prog}" "${tmpprog}"
 # `clip` or `no-clip`
 clip="no-clip"
 
-val_dir='results/multiple_val-'${clip}'-variation-gini-gain-5percent/'
+val_dir='results/multiple_val-'${clip}'-best-layers-1-and-2-high-gini-10percent/'
 mkdir -p "${val_dir}"
 
 
@@ -29,7 +29,7 @@ negconf='cfg/waymo-full-night-'${clip}'.data'
 yolo_thresh='0.7'
 fspt_thresh='0.1,0.3,0.5,0.7,0.8,0.9'
 
-version="conf-variation-gini-gain-"
+version="conf-best-layers-1-and-2-high-gini-"
 
 run_confs() {
     netcfgs=""
@@ -42,8 +42,8 @@ run_confs() {
     done
     output_valid_files=${val_dir}'valid_'${beg}'to'${end}'_'
     save_weights_file=${val_dir}'weigths_'${beg}'to'${end}'_'
-    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 22000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
-    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 44000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 22000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
+    options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -start 0 -end 44000 -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
     #options='-pos '${posconf}' -neg '${negconf}' -ordered -auto_only -print_stats -yolo_thresh '${yolo_thresh}' -fspt_thresh '${fspt_thresh}' -out '${output_valid_files}' -save_weights_file '${save_weights_file}
     "${tmpprog}" -i 0 fspt valid_multiple ${netcfgs} ${weightfile} ${options} -gpus 0
 }
@@ -104,7 +104,7 @@ run_confs
 beg=500; end=575
 run_confs
 elif true; then
-beg=0; end=15
+beg=0; end=7
 run_confs
 else
 beg=6; end=6

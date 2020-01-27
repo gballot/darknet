@@ -69,7 +69,7 @@ void determine_cause(int n, forbidden_split_cause *causes,
 
 void print_fspt_criterion_args_json(FILE *stream, criterion_args a) {
     fprintf(stream, "{\"merge_nodes\" : %d, \"criterion_function\" : %d, \
-\"fspt\" : %p, \"node\" : %p, \
+\"fspt\" : \"%p\", \"node\" : \"%p\", \
 \"max_depth\" : %d, \"count_max_depth_hit\" : %ld, \
 \"min_samples\" : %d, \"count_min_samples_hit\" : %ld, \
 \"min_volume_p\" : %g, \"count_min_volume_p_hit\" : %ld, \
