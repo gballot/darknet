@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -o gpu-job-multiple-validations-best-layers-1-and-2-high-gini-no-clip.output
+#SBATCH -o gpu-job-multiple-validations-best-layers-1-and-2-high-gini-clip.output
 #SBATCH -p PV1003q,NV100q,PV100q,GV1002q
 #SBATCH --gres=gpu:1
 #SBATCH -n 1
@@ -15,7 +15,7 @@ tmpprog="${tmpdir}/darknet"
 cp "${prog}" "${tmpprog}"
 
 # `clip` or `no-clip`
-clip="no-clip"
+clip="clip"
 
 val_dir='results/multiple_val-'${clip}'-best-layers-1-and-2-high-gini-10percent/'
 mkdir -p "${val_dir}"

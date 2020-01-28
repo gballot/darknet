@@ -568,6 +568,8 @@ static void print_stats(char *datacfg, char *cfgfile, char *weightfile,
         }
     }
     if (outstream != stderr) fclose(outstream);
+    free_list_contents(options);
+    free_list(options);
 }
 
 void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
@@ -637,6 +639,8 @@ void test_fspt(char *datacfg, char *cfgfile, char *weightfile, char *filename,
         free_image(sized);
         if (filename) break;
     }
+    free_list_contents(options);
+    free_list(options);
 }
 
 static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
@@ -714,6 +718,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
             }
             free(nets);
             free(names);
+            free_list_contents(options);
+            free_list(options);
             return;
         }
     }
@@ -836,6 +842,8 @@ static void train_fspt(char *datacfg, char *cfgfile, char *weightfile,
     }
     free(fspt_layers_array);
     free_list(fspt_layers);
+    free_list_contents(options);
+    free_list(options);
     free(nets);
     free(names);
     free(base);
@@ -1119,6 +1127,7 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     else
         *out_val_data = val_datas;
 
+    free_list_contents(options);
     free_list(options);
     free_ptrs((void **) names, classes);
     for (int i = 0; i < n_nets; ++i) free_network(nets[i]);
@@ -1185,7 +1194,7 @@ static void print_json_validation_cfg(FILE *stream, const validation_cfg *v,
                 "{\"score\" : %g, \"yolo_thresh\" : %g, \"fspt_thresh\" : %g, \
 \"cfgfile\" : \"%s\", \"outfile_fit\" : \"%s\", \"outfile_val_positif\" : \"%s\", \
 \"outfile_val_negatif\" : \"%s\", \"weightfile\" : \"%s\", \"n_fspt_layers\" : %d, \
-\"fspt_layers\" : [{",
+\"fspt_layers\" : [",
                 v[i].score, v[i].yolo_thresh, v[i].fspt_thresh,
                 v[i].cfgfile, v[i].outfile_fit, v[i].outfile_val_positif,
                 v[i].outfile_val_negatif, v[i].weightfile, v[i].n_fspt_layers);
