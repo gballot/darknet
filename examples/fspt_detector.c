@@ -1122,10 +1122,14 @@ static void validate_fspt(char *datacfg, char *cfgfile, char *weightfile,
     free(fspt_layers_array);
     free_list(fspt_layers);
     free(stats);
-    if (!out_val_data)
+    if (!out_val_data) {
+        for (int i = 0; i < n_yolo_thresh * n_fspt_thresh; ++i) {
+            free_validation_data(val_datas[i]);
+        }
         free(val_datas);
-    else
+    } else {
         *out_val_data = val_datas;
+    }
 
     free_list_contents(options);
     free_list(options);
@@ -1335,20 +1339,21 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                 }
                 int same_c_args = 1;
                 int same_s_args = 1;
+                int same_layers = 1;
                 for (int k = 0; k < n_fspt_layers; ++k) {
                     layer *l = fspt_layers_array[k];
-                    same_c_args &=
+                    same_layers &=
                         l->inputs == val_cfg.n_input_layers[k];
-                    if (!same_c_args) {
+                    if (!same_layers) {
                         fprintf(stderr,
                                 "Different number of input layers (%d:%d - %d) than cfg %d.\n",
                                 l->inputs, val_cfg.n_input_layers[k], k,
                                 prev_cfg);
                         break;
                     }
-                    same_c_args &= equals_int_array(l->inputs,
+                    same_layers &= equals_int_array(l->inputs,
                             l->input_layers, val_cfg.input_layers[k]);
-                    if (!same_c_args) {
+                    if (!same_layers) {
                         fprintf(stderr,
                                 "Different input layers than cfg %d.\n",
                                 prev_cfg);
@@ -1373,14 +1378,20 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
                         break;
                     }
                 }
-                if (same_c_args) {
+                if (same_layers) {
                     fprintf(stderr,
-                            "Same criterion args than cfg %d.\n", prev_cfg);
-                    similar_weightfile = val_cfg.weightfile;
-                    if (same_s_args) {
+                            "Same layers as cfg %d.\n", prev_cfg);
+                    if (similar_weightfile == weightfile)
+                        similar_weightfile = val_cfg.weightfile;
+                    if (same_c_args) {
                         fprintf(stderr,
-                                "Same score args than cfg %d.\n", prev_cfg);
-                        break;
+                                "Same criterion args than cfg %d.\n", prev_cfg);
+                        similar_weightfile = val_cfg.weightfile;
+                        if (same_s_args) {
+                            fprintf(stderr,
+                                    "Same score args than cfg %d.\n", prev_cfg);
+                            break;
+                        }
                     }
                 }
             }
@@ -1491,6 +1502,8 @@ static void validate_multiple_cfg(char *datacfg_positif, char *datacfg_negatif,
         fclose(fjson);
         /* Free configuration */
         fprintf(stderr, "Free network configuration %d.\n", cfg);
+        free(val_datas_positif);
+        free(val_datas_negatif);
 
         gpu_index = -1; // no gpu space to free in this net.
         free_network(net);
